@@ -1,0 +1,48 @@
+:root {
+  --app-bg-color: #161616;
+  --header-height: 60px;
+  --menu-width: 200px;
+  --menu-collapsed-width: 64px;
+}
+
+html, body, #app {
+  height: calc(100vh - 60px);
+  margin: 0;
+  padding: 0;
+  background-color: var(--app-bg-color);
+  color: #fff;
+}
+
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Element Plus 暗色主題覆蓋 */
+.el-menu {
+  --el-menu-bg-color: #1e1e1e !important;
+  --el-menu-text-color: #fff !important;
+  --el-menu-hover-bg-color: #2c2c2c !important;
+}
+
+.el-button--text {
+  color: #fff !important;
+}
+
+/* 滾動條樣式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
