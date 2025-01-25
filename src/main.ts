@@ -4,7 +4,6 @@ import ElementPlus from 'element-plus'
 import router from './router'
 import 'element-plus/dist/index.css'
 import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap-vue/dist/bootstrap-vue.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 import './style.css'
 

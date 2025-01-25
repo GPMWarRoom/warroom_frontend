@@ -88,11 +88,9 @@ const getChartOptions = (index: number): EChartsOption => {
                     { name: 'Support', max: 38000 },
                     { name: 'Dev', max: 52000 }
                 ],
-                name: {
-                    textStyle: {
-                        color: 'white',
-                        fontSize: 14
-                    }
+                axisName: {
+                    color: 'white',
+                    fontSize: 14
                 }
             },
             series: [{

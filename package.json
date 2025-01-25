@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "vue-tsc -b && vite build && gh-pages -d dist"
   },
   "dependencies": {
+    "-": "^0.0.1",
     "@element-plus/icons-vue": "^2.3.1",
     "@types/bootstrap": "^5.2.10",
     "axios": "^1.7.9",
@@ -16,7 +18,9 @@
     "bootstrap-vue-3": "^0.5.1",
     "echarts": "^5.6.0",
     "element-plus": "^2.9.3",
+    "gh-pages": "^6.3.0",
     "pinia": "^2.3.0",
+    "save": "^2.9.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },

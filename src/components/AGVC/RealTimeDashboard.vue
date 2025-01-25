@@ -111,12 +111,12 @@
                             </template>
                         </el-table-column>
                         <el-table-column align="center" show-overflow-tooltip prop="status" label="異常碼" width="100">
-                            <template #default="{ row }">
+                            <template>
                                 <span>3303</span>
                             </template>
                         </el-table-column>
                         <el-table-column prop="battery" label="警報訊息">
-                            <template #default="{ row }"> Message </template>
+                            <template> Message </template>
                         </el-table-column>
                     </el-table>
                 </el-card>
