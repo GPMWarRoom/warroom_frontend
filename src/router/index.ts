@@ -9,7 +9,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: '首頁',
       icon: HomeFilled,
-      showInMenu: false,
+      showInMenu: true,
     }
   },
   {
@@ -41,11 +41,21 @@ const routes: RouteRecordRaw[] = [
       icon: InfoFilled,
       showInMenu: true
     }
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/Login.vue'),
+    meta: {
+      title: '登入',
+      showInMenu: false,
+      layout: 'blank'
+    }
   }
 ]
 
 const router = createRouter({
-  history: createWebHistory('/warroom_frontend'),
+  history: createWebHistory(),
   routes
 })
 

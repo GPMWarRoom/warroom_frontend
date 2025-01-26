@@ -1,21 +1,26 @@
-import axios from '../utils/axios'
+// api/user.ts
 
-export interface User {
-  id: number
-  name: string
-  email: string
+import { get, post } from '../utils/axios';
+
+const api = {
+    login: '/api/user/login',
+    users: '/api/user/info'
 }
 
-export const userApi = {
-  getUsers() {
-    return axios.get<User[]>('/users')
-  },
-  
-  getUserById(id: number) {
-    return axios.get<User>(`/users/${id}`)
-  },
-  
-  createUser(user: Omit<User, 'id'>) {
-    return axios.post<User>('/users', user)
-  }
-} 
+//登录
+export const login = (params: any) => {
+    return post(api.login, params).then((res: any) => {
+        if (res.code === 200) {
+            localStorage.setItem('token', res.data.token);
+        }
+        return Promise.resolve(res);
+    })
+}
+
+
+//获取用户信息
+export const getUserInfo = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return Promise.reject(new Error('用户未登录'));
+    return get(api.users);
+}

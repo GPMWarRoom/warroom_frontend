@@ -11,10 +11,10 @@ export const versionStore = defineStore('version', {
         async fetchVersions() {
             try {
                 const response = await getVersion()
-                this.versions = response as AGVSFieldVersionInfo[]
+                return response
             } catch (error) {
                 console.error(error)
-                this.versions = [
+                return [
                     new AGVSFieldVersionInfo(3, "AOI", "1.1.0"),
                     new AGVSFieldVersionInfo(3, "MEC", "1.2.0"),
                     new AGVSFieldVersionInfo(4, "AOI", "1.3.0"),

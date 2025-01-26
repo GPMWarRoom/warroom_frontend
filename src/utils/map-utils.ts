@@ -55,16 +55,19 @@ export function createLayerWithFeatures(features: Feature[]) {
   return layer;
 }
 
-export function addLayerToMap(map: Map|null, layer: Layer) {
-  map?.addLayer(layer);
+export function addLayerToMap(map: Map, layer: Layer) {
+  map.addLayer(layer);
+  map.renderSync();
 }
 
 export function removeLayerFromMap(map: Map, layer: Layer) {
   map.removeLayer(layer);
+  map.render();
 }
 
 export function setView(map: Map, center: [number, number], zoom: number) {
   map.getView().setCenter(center);
   map.getView().setZoom(zoom);
+  map.render();
 }
 

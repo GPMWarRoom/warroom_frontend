@@ -9,16 +9,25 @@
                         </el-icon>
                         <span>即時監控</span>
                     </template>
-                    <RealTimeDashboard class="tab-content-component"  />
+                    <RealTimeDashboard class="tab-content-component" />
                 </el-tab-pane>
-                <el-tab-pane  name="traffic-stats">
+                <el-tab-pane name="traffic-stats">
                     <template #label>
                         <el-icon>
                             <List />
                         </el-icon>
                         <span>交管狀態</span>
                     </template>
-                    <TrafficStatsDashboard class="tab-content-component"  />
+                    <TrafficStatsDashboard class="tab-content-component" />
+                </el-tab-pane>
+                <el-tab-pane name="traffic-efficiency">
+                    <template #label>
+                        <el-icon>
+                            <List />
+                        </el-icon>
+                        <span>搬運效能統計</span>
+                    </template>
+                    <TrafficEfficiencyDashboard class="tab-content-component" />
                 </el-tab-pane>
                 <!-- <el-tab-pane label="任務管理" name="tasks">
                     <template #label>
@@ -48,6 +57,7 @@ import { Monitor, List } from '@element-plus/icons-vue'
 import ContentContainer from '../components/ContentContainer.vue'
 import RealTimeDashboard from '../components/AGVC/RealTimeDashboard.vue'
 import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard.vue'
+import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDashboard.vue'
 const activeTab = ref('monitor')
 </script>
 <style scoped>
