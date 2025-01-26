@@ -13,7 +13,9 @@
       </div>
       <div class="header-right">
         <el-dropdown>
-          <span class="user-profile"> Admin <el-icon>
+          <span class="user-profile">
+            Admin
+            <el-icon>
               <ArrowDown />
             </el-icon>
           </span>
@@ -29,8 +31,20 @@
     <!-- Main Container -->
     <div class="app-container">
       <!-- Side Menu -->
-      <el-menu class="side-menu" :collapse="isCollapse" background-color="#1e1e1e" text-color="#fff" active-text-color="#42b983" :collapse-transition="true">
-        <el-menu-item v-for="item in menu" :index="item.path" :route="item.path" @click="handleSelect(item?.path as string)">
+      <el-menu
+        class="side-menu"
+        :collapse="isCollapse"
+        background-color="#1e1e1e"
+        text-color="#fff"
+        active-text-color="#42b983"
+        :collapse-transition="true"
+      >
+        <el-menu-item
+          v-for="item in menu"
+          :index="item.path"
+          :route="item.path"
+          @click="handleSelect(item?.path as string)"
+        >
           <el-icon>
             <component :is="item.icon" />
           </el-icon>
@@ -51,25 +65,25 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { menuRoutes } from './router'
-import ContentContainer from './components/ContentContainer.vue'
-import type { RouteMeta } from 'vue-router'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { menuRoutes } from "./router";
+import ContentContainer from "./components/ContentContainer.vue";
+import type { RouteMeta } from "vue-router";
 const router = useRouter();
 const menu = menuRoutes as RouteMeta[];
-const isCollapse = ref(false)
+const isCollapse = ref(false);
 const toggleSideMenu = () => {
-  isCollapse.value = !isCollapse.value
-}
+  isCollapse.value = !isCollapse.value;
+};
 
 const handleSelect = (Path: string) => {
-  router.push(Path)
-}
+  router.push(Path);
+};
 </script>
 <style scoped>
 .app-header {
-  height: 60px;
+  height: 40px;
   background-color: #1e1e1e;
   border-bottom: 1px solid #333;
   display: flex;
@@ -141,7 +155,7 @@ const handleSelect = (Path: string) => {
     /* 收起時的寬度 */
   }
 
-  .side-menu:not(.el-menu--collapse)+.main-content {
+  .side-menu:not(.el-menu--collapse) + .main-content {
     margin-left: 200px;
   }
 }

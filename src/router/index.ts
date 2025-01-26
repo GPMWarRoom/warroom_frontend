@@ -23,11 +23,11 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/about',
-    name: 'About',
-    component: () => import('../views/About.vue'),
+    path: '/version',
+    name: 'Version',
+    component: () => import('../views/VersionView.vue'),
     meta: {
-      title: '關於',
+      title: '系統版本管理',
       icon: InfoFilled,
       showInMenu: true
     }

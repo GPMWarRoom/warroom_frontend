@@ -3,137 +3,28 @@
         <el-row class="h-100" :gutter="5">
             <el-col :lg="8" class="h-100 pt-2">
                 <div class="agvc-info h-100 d-flex flex-column justify-content-space-between">
-                    <!-- 系統運轉模式 -->
-                    <el-card class="">
-                        <template #header>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>系統運轉模式</span>
-                                <el-button-group>
-                                    <el-button
-                                        :type="systemStatus.maintenance ? 'danger' : 'success'"
-                                        size="small"
-                                        @click="toggleMaintenance"> {{ systemStatus.maintenance ? '維護模式' : '運轉模式' }} </el-button>
-                                </el-button-group>
-                            </div>
-                        </template>
-                        <div class="system-status">
-                            <div class="status-item">
-                                <span class="status-label">Host 連線狀態:</span>
-                                <div class="status-value">
-                                    <el-tag :type="systemStatus.hostConnected ? 'success' : 'info'" class="ml-2">
-                                        <el-icon class="status-icon">
-                                            <component :is="systemStatus.hostConnected ? 'CircleCheckFilled' : 'CircleCloseFilled'" />
-                                        </el-icon> {{ systemStatus.hostConnected ? 'ONLINE' : 'OFFLINE' }} </el-tag>
-                                </div>
-                            </div>
-                            <div class="status-item">
-                                <span class="status-label">搬運命令派送模式:</span>
-                                <div class="status-value">
-                                    <el-tag :type="systemStatus.isRemote ? 'warning' : 'info'" class="ml-2">
-                                        <el-icon class="status-icon">
-                                            <component :is="systemStatus.isRemote ? 'Connection' : 'Switch'" />
-                                        </el-icon> {{ systemStatus.isRemote ? 'REMOTE' : 'LOCAL' }} </el-tag>
-                                </div>
-                            </div>
-                        </div>
-                    </el-card>
-                    <!-- 任務列表 -->
-                    <el-card class="my-2">
-                        <template #header>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>任務列表</span>
-                                <el-button-group>
-                                    <el-button type="primary" size="small">當前任務</el-button>
-                                    <el-button type="info" size="small">歷史記錄</el-button>
-                                </el-button-group>
-                            </div>
-                        </template>
-                        <el-table :data="taskList" stripe height="250px">
-                            <el-table-column show-overflow-tooltip prop="id" label="任務ID" width="120" />
-                            <el-table-column show-overflow-tooltip prop="type" label="類型" width="100" />
-                            <el-table-column show-overflow-tooltip prop="status" label="狀態" width="100">
-                                <template #default="{ row }">
-                                    <el-tag :type="getTaskStatusType(row.status)"> {{ row.status }} </el-tag>
-                                </template>
-                            </el-table-column>
-                            <el-table-column prop="progress" label="進度">
-                                <template #default="{ row }">
-                                    <el-progress :percentage="row.progress" />
-                                </template>
-                            </el-table-column>
-                        </el-table>
-                    </el-card>
-                    <!-- 設備狀態列表 -->
-                    <el-card class="flex-grow-1" id="eq-status-card">
-                        <template #header>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>設備狀態</span> {{ eqStatusCardHeight }},{{ eqStatusTableHeight }}
-                            </div>
-                        </template>
-                        <el-table :data="agvList" stripe :style="{ height: eqStatusTableHeight }">
-                            <el-table-column prop="id" label="ID" width="110" />
-                            <el-table-column prop="status" label="狀態" width="100">
-                                <template #default="{ row }">
-                                    <el-tag :type="getStatusType(row.status)"> {{ row.status }} </el-tag>
-                                </template>
-                            </el-table-column>
-                            <el-table-column prop="battery" label="電量">
-                                <template #default="{ row }">
-                                    <el-progress :percentage="row.battery" />
-                                </template>
-                            </el-table-column>
-                        </el-table>
-                    </el-card>
+                    <SystemStatusCard :system-status="systemStatus" @toggle-maintenance="toggleMaintenance" />
+                    <TaskListCard :task-list="taskList" />
+                    <EquipmentStatusCard :agv-list="agvList" />
                 </div>
             </el-col>
             <el-col :lg="16" class="h-100 d-flex flex-column pt-2">
-                <el-card class="">
-                    <template #header>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>當前警報訊息</span>
-                        </div>
-                    </template>
-                    <div class="alert-message text-danger">
-                        <span>AGV-001 發生故障</span>
-                    </div>
-                </el-card>
-                <el-card class="my-2">
-                    <template #header>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>歷史警報</span>
-                        </div>
-                    </template>
-                    <el-table :data="agvList" stripe style="height: 246px">
-                        <el-table-column prop="id" label="時間" width="120" />
-                        <el-table-column align="center" prop="status" label="等級" width="100">
-                            <template #default="{ row }">
-                                <el-tag :type="getStatusType(row.status)"> {{ row.status }} </el-tag>
-                            </template>
-                        </el-table-column>
-                        <el-table-column align="center" show-overflow-tooltip prop="status" label="異常碼" width="100">
-                            <template>
-                                <span>3303</span>
-                            </template>
-                        </el-table-column>
-                        <el-table-column prop="battery" label="警報訊息">
-                            <template> Message </template>
-                        </el-table-column>
-                    </el-table>
-                </el-card>
-                <el-card class="flex-fill">
-                    <template #header>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>Bird's Eye View</span>
-                        </div>
-                    </template>
-                    <div class="map-container h-100"> 地圖區域 </div>
-                </el-card>
+                <CurrentAlertCard />
+                <HistoricalAlertCard :agv-list="agvList" />
+                <BirdsEyeViewCard />
             </el-col>
         </el-row>
     </div>
 </template>
+
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import SystemStatusCard from './cards/SystemStatusCard.vue'
+import TaskListCard from './cards/TaskListCard.vue'
+import EquipmentStatusCard from './cards/EquipmentStatusCard.vue'
+import CurrentAlertCard from './cards/CurrentAlertCard.vue'
+import HistoricalAlertCard from './cards/HistoricalAlertCard.vue'
+import BirdsEyeViewCard from './cards/BirdsEyeViewCard.vue'
 
 interface AGV {
     id: string
@@ -215,6 +106,7 @@ const getTaskStatusType = (status: string): string => {
     return types[status] || 'info'
 }
 </script>
+
 <style scoped>
 .agvc-map {
     background-color: #1e1e1e;

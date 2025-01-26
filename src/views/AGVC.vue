@@ -2,12 +2,12 @@
     <content-container>
         <div class="h-100 ">
             <el-tabs v-model="activeTab" class="agvc-tabs" type="card">
-                <el-tab-pane label="場域監控" name="monitor">
+                <el-tab-pane label="即時監控" name="monitor">
                     <template #label>
                         <el-icon>
                             <Monitor />
                         </el-icon>
-                        <span>場域監控</span>
+                        <span>即時監控</span>
                     </template>
                     <AGVCMonitor class="tab-content-component" v-if="activeTab === 'monitor'" />
                 </el-tab-pane>
