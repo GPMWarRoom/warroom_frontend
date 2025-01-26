@@ -45,20 +45,20 @@ const routes: RouteRecordRaw[] = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/warroom_frontend'),
   routes
 })
 
 export const menuRoutes = routes.filter(route => route.meta && route.meta.showInMenu)
-                                .map(route => {
-                                    return {
-                                        path: route.path,
-                                        name: route.name,
-                                        icon: route.meta?.icon,
-                                        title: route.meta?.title,
-                                        showInMenu: route.meta?.showInMenu
-                                    }
-                                });
-                             
+  .map(route => {
+    return {
+      path: route.path,
+      name: route.name,
+      icon: route.meta?.icon,
+      title: route.meta?.title,
+      showInMenu: route.meta?.showInMenu
+    }
+  });
+
 
 export default router 

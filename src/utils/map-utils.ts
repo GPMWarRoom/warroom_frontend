@@ -55,8 +55,8 @@ export function createLayerWithFeatures(features: Feature[]) {
   return layer;
 }
 
-export function addLayerToMap(map: Map, layer: Layer) {
-  map.addLayer(layer);
+export function addLayerToMap(map: Map|null, layer: Layer) {
+  map?.addLayer(layer);
 }
 
 export function removeLayerFromMap(map: Map, layer: Layer) {

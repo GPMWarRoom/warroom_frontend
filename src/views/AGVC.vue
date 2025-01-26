@@ -44,7 +44,7 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Monitor, List, Setting } from '@element-plus/icons-vue'
+import { Monitor, List } from '@element-plus/icons-vue'
 import ContentContainer from '../components/ContentContainer.vue'
 import RealTimeDashboard from '../components/AGVC/RealTimeDashboard.vue'
 import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard.vue'

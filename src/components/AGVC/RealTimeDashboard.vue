@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import SystemStatusCard from './cards/SystemStatusCard.vue'
 import TaskListCard from './cards/TaskListCard.vue'
 import EquipmentStatusCard from './cards/EquipmentStatusCard.vue'
@@ -56,10 +56,6 @@ onMounted(() => {
     }, 200)
 })
 
-const eqStatusTableHeight = computed(() => {
-    return (eqStatusCardHeight.value * 0.8) + 'px'
-})
-
 const agvList = ref<AGV[]>([
     { id: 'AGV-001', status: 'online', battery: 85 },
     { id: 'AGV-002', status: 'charging', battery: 30 },
@@ -87,24 +83,6 @@ const toggleMaintenance = () => {
     systemStatus.value.maintenance = !systemStatus.value.maintenance
 }
 
-const getStatusType = (status: string): string => {
-    const types: Record<string, string> = {
-        online: 'success',
-        offline: 'danger',
-        charging: 'warning'
-    }
-    return types[status] || 'info'
-}
-
-const getTaskStatusType = (status: string): string => {
-    const types: Record<string, string> = {
-        processing: 'primary',
-        waiting: 'warning',
-        completed: 'success',
-        failed: 'danger'
-    }
-    return types[status] || 'info'
-}
 </script>
 
 <style scoped>

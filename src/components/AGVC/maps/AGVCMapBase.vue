@@ -5,20 +5,20 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { Map } from 'ol'
-import { createCustomMap, createLayerWithFeatures, addLayerToMap } from '../../../utils/map-utils'
+import { createCustomMap } from '../../../utils/map-utils'
 const map = ref<Map | null>(null)
 const props = defineProps<{
     mapId: string
 }>()
 onMounted(() => {
     map.value = createCustomMap(props.mapId, '', 272, 92)
-    addPoints()
+    // addPoints()
 })  
 
-const addPoints = ()=>{
-    const layer = createLayerWithFeatures([])
-    addLayerToMap(map.value, layer)
-}
+// const addPoints = ()=>{
+//     const layer = createLayerWithFeatures([])
+//     //addLayerToMap(map.value, layer)
+// }
 
 </script>
 
