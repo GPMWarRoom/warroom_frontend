@@ -9,6 +9,7 @@ import './style.css'
 
 import App from './App.vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import 'ol/ol.css';
 
 // 創建 Pinia store
 const pinia = createPinia()

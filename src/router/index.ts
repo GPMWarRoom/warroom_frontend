@@ -9,7 +9,17 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: '首頁',
       icon: HomeFilled,
-      showInMenu: true,
+      showInMenu: false,
+    }
+  },
+  {
+    path: '/overview',
+    name: 'Overview',
+    component: () => import('../views/OverviewView.vue'),
+    meta: {
+      title: '概覽',
+      icon: InfoFilled,
+      showInMenu: true
     }
   },
   {

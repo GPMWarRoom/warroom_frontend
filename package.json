@@ -12,6 +12,7 @@
   "dependencies": {
     "-": "^0.0.1",
     "@element-plus/icons-vue": "^2.3.1",
+    "@microsoft/signalr": "^8.0.7",
     "@types/bootstrap": "^5.2.10",
     "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
@@ -19,6 +20,7 @@
     "echarts": "^5.6.0",
     "element-plus": "^2.9.3",
     "gh-pages": "^6.3.0",
+    "ol": "^10.3.1",
     "pinia": "^2.3.0",
     "save": "^2.9.0",
     "vue": "^3.5.13",
@@ -27,6 +29,7 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/tsconfig": "^0.7.0",
+    "sass-embedded": "^1.83.4",
     "typescript": "~5.6.2",
     "vite": "^6.0.5",
     "vue-tsc": "^2.2.0"

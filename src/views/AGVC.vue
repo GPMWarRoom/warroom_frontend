@@ -9,9 +9,18 @@
                         </el-icon>
                         <span>即時監控</span>
                     </template>
-                    <AGVCMonitor class="tab-content-component" v-if="activeTab === 'monitor'" />
+                    <RealTimeDashboard class="tab-content-component"  />
                 </el-tab-pane>
-                <el-tab-pane label="任務管理" name="tasks">
+                <el-tab-pane  name="traffic-stats">
+                    <template #label>
+                        <el-icon>
+                            <List />
+                        </el-icon>
+                        <span>交管狀態</span>
+                    </template>
+                    <TrafficStatsDashboard class="tab-content-component"  />
+                </el-tab-pane>
+                <!-- <el-tab-pane label="任務管理" name="tasks">
                     <template #label>
                         <el-icon>
                             <List />
@@ -28,7 +37,7 @@
                         <span>系統設定</span>
                     </template>
                     <AGVCMonitor class="tab-content-component" v-if="activeTab === 'settings'" />
-                </el-tab-pane>
+                </el-tab-pane> -->
             </el-tabs>
         </div>
     </content-container>
@@ -37,8 +46,8 @@
 import { ref } from 'vue'
 import { Monitor, List, Setting } from '@element-plus/icons-vue'
 import ContentContainer from '../components/ContentContainer.vue'
-import AGVCMonitor from '../components/AGVC/RealTimeDashboard.vue'
-
+import RealTimeDashboard from '../components/AGVC/RealTimeDashboard.vue'
+import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard.vue'
 const activeTab = ref('monitor')
 </script>
 <style scoped>
