@@ -11,7 +11,7 @@ export const versionStore = defineStore('version', {
         async fetchVersions() {
             try {
                 const response = await getVersion()
-                this.versions = response as AGVSFieldVersionInfo[]
+                this.versions = response;
             } catch (error) {
                 console.error(error)
                 this.versions = [
