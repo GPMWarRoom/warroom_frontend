@@ -35,9 +35,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { login } from '../api/user'
-
+import { userStore } from '../stores/user'
 const router = useRouter()
+const user = userStore()
 const username = ref('')
 const password = ref('')
 const rememberMe = ref(false)
@@ -49,18 +49,14 @@ const handleLogin = async () => {
         errorMessage.value = ''
         isLoading.value = true
 
-        const res = await login({
-            username: username.value,
-            password: password.value
-        })
-
-        if (res.code === 200) {
+        const result = await user.login(username.value, password.value)
+        if (result.code === 200) {
             if (rememberMe.value) {
                 localStorage.setItem('username', username.value)
             }
-            router.push('/')
+            router.push('/overview')
         } else {
-            errorMessage.value = res.message || 'Login failed'
+            errorMessage.value = result.message || 'Login failed'
         }
     } catch (error: any) {
         console.error('Login failed:', error)

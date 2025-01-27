@@ -9,7 +9,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: '首頁',
       icon: HomeFilled,
-      showInMenu: true,
+      showInMenu: false,
     }
   },
   {

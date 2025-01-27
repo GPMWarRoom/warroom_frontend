@@ -13,14 +13,17 @@
             </div>
             <div class="header-right">
                 <el-dropdown>
-                    <span class="user-profile"> Admin <el-icon>
+                    <span class="user-profile"> {{ userName }} <el-icon>
                             <ArrowDown />
                         </el-icon>
                     </span>
                     <template #dropdown>
-                        <el-dropdown-menu>
+                        <el-dropdown-menu v-if="isLogin">
                             <el-dropdown-item>設定</el-dropdown-item>
                             <el-dropdown-item>登出</el-dropdown-item>
+                        </el-dropdown-menu>
+                        <el-dropdown-menu v-else>
+                            <el-dropdown-item @click="login">登入</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
@@ -29,7 +32,7 @@
         <!-- Main Container -->
         <div class="app-container">
             <!-- Side Menu -->
-            <el-menu class="side-menu" :collapse="isCollapse" background-color="#1e1e1e" text-color="#fff" active-text-color="#42b983" :collapse-transition="true">
+            <el-menu class="side-menu" :collapse="isCollapse" background-color="#1e1e1e" text-color="#fff" active-text-color="rgb(32, 160, 255)" :collapse-transition="true">
                 <el-menu-item v-for="item in menu" :index="item.path" :route="item.path" @click="handleSelect(item?.path as string)">
                     <el-icon>
                         <component :is="item.icon" />
@@ -51,13 +54,15 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref ,computed} from "vue";
 import { useRouter } from "vue-router";
 import { menuRoutes } from "../router";
 import ContentContainer from "../components/ContentContainer.vue";
 import type { RouteMeta } from "vue-router";
+import { userStore } from "../stores/user";
 
 const router = useRouter();
+const user = userStore();
 const menu = menuRoutes as RouteMeta[];
 const isCollapse = ref(false);
 
@@ -68,6 +73,18 @@ const toggleSideMenu = () => {
 const handleSelect = (Path: string) => {
     router.push(Path);
 };
+
+const isLogin = computed(() => {
+    return user.getIsLogin
+})
+
+const userName = computed(() => {
+    return user.name
+})
+
+const login = () => {
+    router.push('/login')
+}
 </script>
 <style scoped>
 .app-header {
@@ -120,7 +137,7 @@ const handleSelect = (Path: string) => {
 }
 
 .side-menu:not(.el-menu--collapse) {
-    width: 200px;
+    width: 150px;
 }
 
 .main-content {

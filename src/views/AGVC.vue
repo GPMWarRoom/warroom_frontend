@@ -1,7 +1,20 @@
 <template>
     <content-container>
         <div class="h-100 ">
-            <el-tabs v-model="activeTab" class="agvc-tabs" type="card">
+            <el-tabs v-model="activeTab" class="agvc-tabs" type="card" v-loading="loading">
+                <el-tab-pane :disabled="true" name="select-agvc">
+                    <template #label>
+                        <div class="select-agvc-container">
+                            <el-icon>
+                                <LocationFilled />
+                            </el-icon>
+                            <span class="select-agvc-label">場域</span>
+                            <el-select v-model="selectedAgvc" @change="handleAgvcChange">
+                                <el-option v-for="item in agvcList" :key="item.id" :label="item.name" :value="item.id" />
+                            </el-select>
+                        </div>
+                    </template>
+                </el-tab-pane>
                 <el-tab-pane label="即時監控" name="monitor">
                     <template #label>
                         <el-icon>
@@ -29,6 +42,17 @@
                     </template>
                     <TrafficEfficiencyDashboard class="tab-content-component" />
                 </el-tab-pane>
+
+
+                <el-tab-pane name="utilization" :lazy="true">
+                    <template #label>
+                        <el-icon>
+                            <List />
+                        </el-icon>
+                        <span>設備稼動</span>
+                    </template>
+                    <UtilizationDashboard class="tab-content-component" />
+                </el-tab-pane>
                 <!-- <el-tab-pane label="任務管理" name="tasks">
                     <template #label>
                         <el-icon>
@@ -48,17 +72,40 @@
                     <AGVCMonitor class="tab-content-component" v-if="activeTab === 'settings'" />
                 </el-tab-pane> -->
             </el-tabs>
+            <div class="date-select" v-if="activeTab !== 'monitor'">
+                <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="開始日期" end-placeholder="結束日期" />
+            </div>
         </div>
     </content-container>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Monitor, List } from '@element-plus/icons-vue'
+import { Monitor, List,LocationFilled } from '@element-plus/icons-vue'
 import ContentContainer from '../components/ContentContainer.vue'
 import RealTimeDashboard from '../components/AGVC/RealTimeDashboard/index.vue'
 import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard/index.vue'
 import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDashboard/index.vue'
+import UtilizationDashboard from '../components/AGVC/UtilizationDashboard/index.vue'
+const loading = ref(false)
 const activeTab = ref('monitor')
+const agvcList = ref([
+    {
+        id: 1,
+        name: '場域1'
+    },
+    {
+        id: 2,
+        name: '場域2'
+    }
+])
+const selectedAgvc = ref(null)
+const dateRange = ref([])
+const handleAgvcChange = (value: any) => {
+    loading.value = true
+    setTimeout(() => {
+        loading.value = false
+    }, 1000)
+}
 </script>
 <style scoped>
 .agvc-tabs {
@@ -67,9 +114,30 @@ const activeTab = ref('monitor')
     margin-bottom: 10px;
 }
 
+:deep(#tab-select-agvc) {
+    width: 260px;
+    padding-left: 5px;
+
+    .select-agvc-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        .select-agvc-label {
+            margin-right: 10px;
+            color:#fff;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .el-select {
+            width: 180px;
+        }
+    }
+}
+
+
 .agvc-tabs .tab-content-component {
     height: calc(100vh - var(--tab-offset-top));
-    padding-bottom: 2px;
 }
 
 .agvc-tabs :deep(.el-tabs__header) {
@@ -77,7 +145,7 @@ const activeTab = ref('monitor')
 }
 
 .agvc-tabs :deep(.el-tabs__content) {
-    height: calc(100vh - var(--tab-offset-top));
+    height: calc(100vh - var(--tab-offset-top) + 200px);
     overflow-y: auto;
     /* border: 4px solid #cc00ff; */
 }
@@ -112,4 +180,12 @@ const activeTab = ref('monitor')
     margin-right: 4px;
     vertical-align: middle;
 }
+
+.date-select {
+    padding: 10px;
+    position: absolute;
+    top: 38px;
+    right: 0;
+}
 </style>
+

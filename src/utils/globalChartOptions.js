@@ -12,9 +12,9 @@ export class globalChartOptions {
             }
         }
         this.grid = {
-            top: '15%',
+            top: '20%',
             left: '3%',
-            right: '8%',
+            right: '9%',
             bottom: '3%',
             containLabel: true
         }
