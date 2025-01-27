@@ -34,9 +34,9 @@
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import PathUseStatsMap from './maps/PathUseStatsMap.vue'
-import { getMap } from '../../api/map'
-import { defaultMapModel } from '../../models/MapModel'
+import PathUseStatsMap from '../maps/PathUseStatsMap.vue'
+import { getMap } from '../../../api/map'
+import { defaultMapModel } from '../../../models/MapModel'
 
 const mapModel = ref<typeof defaultMapModel>(defaultMapModel)
 

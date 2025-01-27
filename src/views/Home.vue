@@ -20,7 +20,7 @@
 </template>
 <script setup lang="ts">
 import ContentContainer from '../components/ContentContainer.vue'
-import EChart from '../components/EChart.vue'
+import EChart from '../components/BaseChart.vue'
 import type { EChartsOption } from 'echarts'
 
 const getChartOptions = (index: number): EChartsOption => {

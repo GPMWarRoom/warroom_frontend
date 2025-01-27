@@ -16,15 +16,14 @@
         </el-row>
     </div>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import SystemStatusCard from './cards/SystemStatusCard.vue'
-import TaskListCard from './cards/TaskListCard.vue'
-import EquipmentStatusCard from './cards/EquipmentStatusCard.vue'
-import CurrentAlertCard from './cards/CurrentAlertCard.vue'
-import HistoricalAlertCard from './cards/HistoricalAlertCard.vue'
-import BirdsEyeViewCard from './cards/BirdsEyeViewCard.vue'
+import SystemStatusCard from '../cards/SystemStatusCard.vue'
+import TaskListCard from '../cards/TaskListCard.vue'
+import EquipmentStatusCard from '../cards/EquipmentStatusCard.vue'
+import CurrentAlertCard from '../cards/CurrentAlertCard.vue'
+import HistoricalAlertCard from '../cards/HistoricalAlertCard.vue'
+import BirdsEyeViewCard from '../cards/BirdsEyeViewCard.vue'
 
 interface AGV {
     id: string
@@ -84,7 +83,6 @@ const toggleMaintenance = () => {
 }
 
 </script>
-
 <style scoped>
 .agvc-map {
     background-color: #1e1e1e;
@@ -98,7 +96,7 @@ const toggleMaintenance = () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #666;
+    color: #661;
 }
 
 .el-card {

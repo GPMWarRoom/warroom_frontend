@@ -11,7 +11,7 @@
                     </template>
                     <RealTimeDashboard class="tab-content-component" />
                 </el-tab-pane>
-                <el-tab-pane name="traffic-stats">
+                <el-tab-pane :lazy="true" name="traffic-stats">
                     <template #label>
                         <el-icon>
                             <List />
@@ -20,7 +20,7 @@
                     </template>
                     <TrafficStatsDashboard class="tab-content-component" />
                 </el-tab-pane>
-                <el-tab-pane name="traffic-efficiency">
+                <el-tab-pane :lazy="true" name="traffic-efficiency">
                     <template #label>
                         <el-icon>
                             <List />
@@ -55,9 +55,9 @@
 import { ref } from 'vue'
 import { Monitor, List } from '@element-plus/icons-vue'
 import ContentContainer from '../components/ContentContainer.vue'
-import RealTimeDashboard from '../components/AGVC/RealTimeDashboard.vue'
-import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard.vue'
-import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDashboard.vue'
+import RealTimeDashboard from '../components/AGVC/RealTimeDashboard/index.vue'
+import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard/index.vue'
+import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDashboard/index.vue'
 const activeTab = ref('monitor')
 </script>
 <style scoped>

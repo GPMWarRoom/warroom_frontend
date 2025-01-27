@@ -18,65 +18,45 @@
                 </div>
                 <div class="card my-1">
                     <h3>任務成功率走勢</h3>
-                    <EChart class="content h-100 w-100" :options="getOption()"></EChart>
+                    <div class="content w-100 ">
+                        <LineChart class="content h-100 w-100" :data="data.lineChartData"></LineChart>
+                    </div>
                 </div>
                 <div class="card my-1">
                     <h3>設備Unload平均等待時間</h3>
-                    <div class="content text-light">
-                        <div class="w-100 bg-light h-100">
-                            <EChart class="h-100 w-100" :options="{
-                                title: {
-                                },
-                                xAxis: {
-                                    type: 'category',
-                                    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                                },
-                                yAxis: { type: 'value' },
-                                series: [{
-                                    data: [150, 230, 224, 218, 135, 147, 260],
-                                    type: 'line'
-                                }],
-
-                            }"></EChart>
-                        </div>
+                    <div class="content w-100  d-flex flex-column ">
+                        <el-select placeholder="請選擇" class="mb-2"></el-select>
+                        <BarChart class="content flex-fill h-100 w-100" :useGradient="true" :data="data.barChartData" xAxisName="時間"></BarChart>
                     </div>
                 </div>
             </el-col>
             <el-col :lg="12" class="h-100">
                 <div class="card">
-                    <h3>停等狀態統計</h3>
+                    <h3>From-To 統計數據</h3>
                     <div class="h-100 text-light d-flex flex-column justify-content-between">
-                        <div class="w-100 h-100 ">1</div>
-                        <div class="w-100 h-100 ">1</div>
-                        <div class="w-100 h-100 ">1</div>
-                        <div class="w-100 h-100 ">1S</div>
+                        <FromToTransportStas />
                     </div>
                 </div>
             </el-col>
         </el-row>
     </div>
 </template>
-<script setup lang="ts">
-import { onMounted } from 'vue'
-import EChart from '../../components/EChart.vue'
+<script setup>
+import { reactive, onMounted } from 'vue'
+import LineChart from '../../common/charts/LineChart.vue'
+import BarChart from '../../common/charts/BarChart.vue'
+import FromToTransportStas from './components/FromToTransportStas/index.vue'
+const data = reactive({
+    lineChartData: [100, 90, 80, 70, 60, 50, 30],
+    barChartData: [100, 90, 80, 70, 60, 50, 30]
+})
 
-const getOption = () => {
-    return {
-        title: {
-        },
-        xAxis: {
-            type: 'category',
-            data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        },
-        yAxis: { type: 'value' },
-        series: [{
-            data: [150, 230, 224, 218, 135, 147, 260],
-            type: 'line'
-        }]
-    }
-}
+
 
 onMounted(async () => {
+    setInterval(() => {
+        data.lineChartData[0] = Math.random() * 100;
+    }, 1000)
 })
 </script>
 <style scoped lang="scss">
