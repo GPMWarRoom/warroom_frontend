@@ -8,9 +8,9 @@ const props = defineProps({
     title: {
         type: String,
     },
-    data: {
+    datas: {
         type: Array,
-        required: true
+        default: () => []
     },
     lineColor: {
         type: String,
@@ -29,15 +29,11 @@ const options = new globalChartOptions()
 options.title.text = props.title;
 options.xAxis.name = props.xAxisName;
 options.yAxis.name = props.yAxisName;
-options.series = [
-    {
-        name: '數據',
+
+options.series = props.datas.map((data, index) => ({
+        name: data.name,
         type: 'line',
-        data: props.data,
-        itemStyle: {
-            color: props.lineColor
-        }
-    }
-]
+        data: data.data,
+    }))
 </script>
 <style lang="scss" scoped></style>

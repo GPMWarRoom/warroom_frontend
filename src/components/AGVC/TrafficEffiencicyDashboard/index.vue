@@ -19,7 +19,7 @@
                 <div class="card my-1">
                     <h3>任務成功率走勢</h3>
                     <div class="content w-100 ">
-                        <LineChart class="content h-100 w-100" :data="data.lineChartData"></LineChart>
+                        <LineChart class="content h-100 w-100" :datas="[{name: '數據', data: [1,2,3,4,5,6,7,8,9,10]}]"></LineChart>
                     </div>
                 </div>
                 <div class="card my-1">
@@ -42,7 +42,7 @@
     </div>
 </template>
 <script setup>
-import { reactive, onMounted } from 'vue'
+import { reactive, onMounted, ref } from 'vue'
 import LineChart from '../../common/charts/LineChart.vue'
 import BarChart from '../../common/charts/BarChart.vue'
 import FromToTransportStas from './components/FromToTransportStas/index.vue'
@@ -50,9 +50,6 @@ const data = reactive({
     lineChartData: [100, 90, 80, 70, 60, 50, 30],
     barChartData: [100, 90, 80, 70, 60, 50, 30]
 })
-
-
-
 onMounted(async () => {
     setInterval(() => {
         data.lineChartData[0] = Math.random() * 100;

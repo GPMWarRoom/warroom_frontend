@@ -11,6 +11,13 @@ export class globalChartOptions {
                 fontSize: 12
             }
         }
+        this.legend = {
+            show: true,
+            textStyle: {
+                color: '#fff',
+                fontSize: 12
+            }
+        }
         this.grid = {
             top: '20%',
             left: '3%',
@@ -18,6 +25,18 @@ export class globalChartOptions {
             bottom: '3%',
             containLabel: true
         }
+        this.toolbox= {
+            show: false,
+            feature: {
+              dataZoom: {
+                yAxisIndex: 'none'
+              },
+              dataView: { readOnly: false },
+              magicType: { type: ['line', 'bar'] },
+              restore: {},
+              saveAsImage: {}
+            }
+          }
         this.tooltip = {
             trigger: 'axis',
             backgroundColor: 'rgba(50,50,50,0.9)',
@@ -28,11 +47,6 @@ export class globalChartOptions {
         }
         this.xAxis = {
             name: '時間',
-            axisLine: {
-                lineStyle: {
-                    color: '#666'
-                }
-            },
             axisLabel: {
                 color: '#fff',
                 fontSize: 11
