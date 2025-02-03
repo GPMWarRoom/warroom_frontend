@@ -11,6 +11,7 @@
                 </el-button>
                 <h1>War Room</h1>
             </div>
+            <AlarmMessage class="mx-2" />
             <div class="header-right">
                 <el-dropdown>
                     <span class="user-profile"> {{ userName }} <el-icon>
@@ -54,13 +55,13 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref ,computed} from "vue";
+import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { menuRoutes } from "../router";
 import ContentContainer from "../components/ContentContainer.vue";
 import type { RouteMeta } from "vue-router";
 import { userStore } from "../stores/user";
-
+import AlarmMessage from "../components/Alarms/AlarmMessage.vue";
 const router = useRouter();
 const user = userStore();
 const menu = menuRoutes as RouteMeta[];
@@ -106,6 +107,7 @@ const login = () => {
     display: flex;
     align-items: center;
     gap: 20px;
+    width: 10%;
 }
 
 .header-left h1 {
@@ -116,6 +118,10 @@ const login = () => {
 
 .header-right {
     color: #fff;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    font-weight: bold;
 }
 
 .user-profile {
