@@ -1,19 +1,34 @@
 <template>
     <div class="">
-        <el-row class="h-100" :gutter="5">
-            <el-col :lg="8" class="h-100 pt-2">
-                <div class="agvc-info h-100 d-flex flex-column justify-content-space-between">
-                    <SystemStatusCard :system-status="systemStatus" @toggle-maintenance="toggleMaintenance" />
-                    <TaskListCard :task-list="taskList" />
-                    <EquipmentStatusCard :agv-list="agvList" />
-                </div>
-            </el-col>
-            <el-col :lg="16" class="h-100 d-flex flex-column pt-2">
-                <CurrentAlertCard />
-                <HistoricalAlertCard :agv-list="agvList" />
-                <BirdsEyeViewCard />
-            </el-col>
-        </el-row>
+        <el-carousel height="auto" arrow="always" :autoplay="false">
+            <el-carousel-item style="height: 100vh" :key="1"> 
+                <el-row class="h-100" :gutter="5">
+                    <el-col :lg="8" class="h-100 pt-2">
+                        <div class="agvc-info h-100 d-flex flex-column justify-content-space-between">
+                            <SystemStatusCard :system-status="systemStatus" @toggle-maintenance="toggleMaintenance" />
+                            <TaskListCard :task-list="taskList" />
+                            <EquipmentStatusCard :agv-list="agvList" />
+                        </div>
+                    </el-col>
+                    <el-col :lg="16" class="h-100 d-flex flex-column pt-2">
+                        <CurrentAlertCard />
+                        <HistoricalAlertCard :agv-list="agvList" />
+                        <BirdsEyeViewCard />
+                    </el-col>
+                </el-row>
+            </el-carousel-item>
+            <el-carousel-item style="height: 100vh" :key="2">
+                <el-row class="h-100" :gutter="5">
+                    <el-col :lg="8" class="h-100 pt-2">
+                        <div class="agvc-info h-100 d-flex flex-column justify-content-space-between">
+                            <SystemStatusCard :system-status="systemStatus" @toggle-maintenance="toggleMaintenance" />
+                            <TaskListCard :task-list="taskList" />
+                            <EquipmentStatusCard :agv-list="agvList" />
+                        </div>
+                    </el-col>
+                </el-row>
+            </el-carousel-item>
+        </el-carousel>
     </div>
 </template>
 <script setup lang="ts">
@@ -145,5 +160,12 @@ const toggleMaintenance = () => {
     align-items: center;
     padding: 4px 8px;
     min-width: 90px;
+}
+:deep(.el-carousel__arrow) {
+    top: calc(100vh - 145px);
+    background-color: #00407569;
+    &:hover {
+        background-color: #004075;
+    }
 }
 </style>

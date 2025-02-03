@@ -2,7 +2,9 @@ import { defineStore } from 'pinia'
 
 export const uiStatsStore = defineStore('uiStats', {
     state: () => ({
-        isCollapse: true
+        isCollapse: false,
+        agvcTabSelected: 'monitor',
+        routeSelected: 'monitor'
     }),
 
     actions: {
@@ -11,6 +13,12 @@ export const uiStatsStore = defineStore('uiStats', {
         },
         setCollapse(value: boolean) {
             this.isCollapse = value
+        },
+        setAGVCTabSelected(value: string) {
+            this.agvcTabSelected = value
+        },
+        setRouteSelected(value: string) {
+            this.routeSelected = value
         }
     },
     getters: {

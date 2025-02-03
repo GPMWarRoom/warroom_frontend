@@ -4,7 +4,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <span>系統運轉模式</span>
                 <el-button-group>
-                    <el-button
+                    <el-button class="tag-button"
                         :type="systemStatus.maintenance ? 'danger' : 'success'"
                         size="small"
                         @click="$emit('toggle-maintenance')">
@@ -17,7 +17,7 @@
             <div class="status-item">
                 <span class="status-label">Host 連線狀態:</span>
                 <div class="status-value">
-                    <el-tag :type="systemStatus.hostConnected ? 'success' : 'info'" class="ml-2">
+                    <el-tag :type="systemStatus.hostConnected ? 'success' : 'info'" class="ml-2 tag-button">
                         <el-icon class="status-icon">
                             <component :is="systemStatus.hostConnected ? 'CircleCheckFilled' : 'CircleCloseFilled'" />
                         </el-icon>
@@ -28,7 +28,7 @@
             <div class="status-item">
                 <span class="status-label">搬運命令派送模式:</span>
                 <div class="status-value">
-                    <el-tag :type="systemStatus.isRemote ? 'warning' : 'info'" class="ml-2">
+                    <el-tag :type="systemStatus.isRemote ? 'warning' : 'info'" class="ml-2 tag-button">
                         <el-icon class="status-icon">
                             <component :is="systemStatus.isRemote ? 'Connection' : 'Switch'" />
                         </el-icon>
@@ -61,6 +61,11 @@ defineEmits<{
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+.tag-button {
+    width: 100px;
+    /* border-radius: 10px; */
 }
 
 .status-item {

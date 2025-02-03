@@ -1,7 +1,7 @@
 <template>
     <content-container>
         <div class="h-100 ">
-            <el-tabs v-model="activeTab" class="agvc-tabs" type="card" v-loading="loading">
+            <el-tabs v-model="activeTab" class="agvc-tabs" type="card" v-loading="loading" @tab-change="handleTabChange">
                 <el-tab-pane :disabled="true" name="select-agvc">
                     <template #label>
                         <div class="select-agvc-container">
@@ -86,8 +86,10 @@ import RealTimeDashboard from '../components/AGVC/RealTimeDashboard/index.vue'
 import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard/index.vue'
 import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDashboard/index.vue'
 import UtilizationDashboard from '../components/AGVC/UtilizationDashboard/index.vue'
+import { uiStatsStore } from '../stores/UiStats.ts'
 const loading = ref(false)
 const activeTab = ref('monitor')
+const uiStats = uiStatsStore()
 const agvcList = ref([
     {
         id: 1,
@@ -105,6 +107,9 @@ const handleAgvcChange = (value: any) => {
     setTimeout(() => {
         loading.value = false
     }, 1000)
+}
+const handleTabChange = (tab: string) => {
+    uiStats.setAGVCTabSelected(tab)
 }
 </script>
 <style scoped>

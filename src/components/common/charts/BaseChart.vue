@@ -4,7 +4,7 @@
 <script setup>
 import { onMounted, ref, watch, nextTick, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
-
+import { uiStatsStore } from '../../../stores/UiStats.ts'
 const props = defineProps({
     width: {
         type: String,
@@ -19,7 +19,7 @@ const props = defineProps({
         required: true
     }
 })
-
+const uiStats = uiStatsStore()
 const emit = defineEmits(['chartReady'])
 const chartRef = ref(null)
 let chartInstance = null
@@ -64,6 +64,35 @@ watch(
     },
     { deep: true }
 )
+
+watch(() =>uiStats.isCollapse, (newVal) => {
+    nextTick(() => {
+        setTimeout(() => {
+            handleResize();
+        }, 1000);
+    }),
+    { immediate: true , deep: true }
+})
+
+watch(() => uiStats.agvcTabSelected, (newVal) => {
+    nextTick(() => {
+        setTimeout(() => {
+            handleResize();
+        }, 10);
+    }),
+    { immediate: true , deep: true }
+})
+
+watch(() => uiStats.routeSelected, (newVal) => {
+    nextTick(() => {
+        setTimeout(() => {
+            handleResize();
+        }, 10);
+    }),
+    { immediate: true , deep: true }
+})
+
+
 
 // 生命週期鉤子
 onMounted(() => {

@@ -4,12 +4,12 @@
         <header class="app-header">
             <div class="header-left">
                 <el-button type="text" @click="toggleSideMenu">
-                    <el-icon>
+                    <el-icon size="20">
                         <Fold v-if="isCollapse" />
                         <Expand v-else />
                     </el-icon>
                 </el-button>
-                <h1>War Room</h1>
+                <h1 class="px-1">War Room</h1>
             </div>
             <AlarmMessage class="mx-2" />
             <div class="header-right">
@@ -33,7 +33,7 @@
         <!-- Main Container -->
         <div class="app-container">
             <!-- Side Menu -->
-            <el-menu class="side-menu" :collapse="isCollapse" background-color="#1e1e1e" text-color="#fff" active-text-color="rgb(32, 160, 255)" :collapse-transition="true">
+            <el-menu class="side-menu" :collapse="isCollapse" background-color="#1e1e1e" text-color="#fff" active-text-color="rgb(32, 160, 255)" :collapse-transition="true" @select="handleSelect">
                 <el-menu-item v-for="item in menu" :index="item.path" :route="item.path" @click="handleSelect(item?.path as string)">
                     <el-icon>
                         <component :is="item.icon" />
@@ -59,6 +59,7 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { menuRoutes } from "../router";
 import ContentContainer from "../components/ContentContainer.vue";
+import { uiStatsStore } from "../stores/UiStats.ts";
 import type { RouteMeta } from "vue-router";
 import { userStore } from "../stores/user";
 import AlarmMessage from "../components/Alarms/AlarmMessage.vue";
@@ -66,13 +67,15 @@ const router = useRouter();
 const user = userStore();
 const menu = menuRoutes as RouteMeta[];
 const isCollapse = ref(false);
-
+const uiStats = uiStatsStore();
 const toggleSideMenu = () => {
     isCollapse.value = !isCollapse.value;
+    uiStats.setCollapse(isCollapse.value);
 };
 
 const handleSelect = (Path: string) => {
     router.push(Path);
+    uiStats.setRouteSelected(Path);
 };
 
 const isLogin = computed(() => {
@@ -106,8 +109,7 @@ const login = () => {
 .header-left {
     display: flex;
     align-items: center;
-    gap: 20px;
-    width: 10%;
+    width: 9rem;
 }
 
 .header-left h1 {
