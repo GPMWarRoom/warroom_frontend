@@ -1,5 +1,5 @@
 <template>
-    <el-card class="">
+    <el-card>
         <template #header>
             <div class="d-flex justify-content-between align-items-center">
                 <span>系統運轉模式</span>
@@ -17,10 +17,7 @@
             <div class="status-item">
                 <span class="status-label">Host 連線狀態:</span>
                 <div class="status-value">
-                    <el-tag :type="systemStatus.hostConnected ? 'success' : 'info'" class="ml-2 tag-button">
-                        <el-icon class="status-icon">
-                            <component :is="systemStatus.hostConnected ? 'CircleCheckFilled' : 'CircleCloseFilled'" />
-                        </el-icon>
+                    <el-tag effect="dark":type="systemStatus.hostConnected ? 'success' : 'danger'" class="ml-2 tag-button">
                         {{ systemStatus.hostConnected ? 'ONLINE' : 'OFFLINE' }}
                     </el-tag>
                 </div>
@@ -28,10 +25,7 @@
             <div class="status-item">
                 <span class="status-label">搬運命令派送模式:</span>
                 <div class="status-value">
-                    <el-tag :type="systemStatus.isRemote ? 'warning' : 'info'" class="ml-2 tag-button">
-                        <el-icon class="status-icon">
-                            <component :is="systemStatus.isRemote ? 'Connection' : 'Switch'" />
-                        </el-icon>
+                    <el-tag effect="dark" :type="systemStatus.isRemote ? 'success' : 'warning'" class="ml-2 tag-button">
                         {{ systemStatus.isRemote ? 'REMOTE' : 'LOCAL' }}
                     </el-tag>
                 </div>

@@ -3,7 +3,8 @@
   --header-height: 60px;
   --menu-width: 200px;
   --menu-collapsed-width: 64px;
-  --card-border-color:rgb(51, 51, 51) 
+  --card-border-color:rgb(51, 51, 51) ;
+  --card-header-font-size: 0.9rem;
 }
 
 html,
@@ -62,7 +63,7 @@ body,
     color: #fff;
     margin: 0;
     padding: 0.55rem 0.55rem;
-    font-size: 0.8rem;
+    font-size: var(--card-header-font-size);
     font-weight: bold;
     border-bottom: 1px solid var(--card-border-color);
 
@@ -76,3 +77,4 @@ body,
     padding: 0.3rem;
   }
 }
+

@@ -33,12 +33,12 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import SystemStatusCard from '../cards/SystemStatusCard.vue'
-import TaskListCard from '../cards/TaskListCard.vue'
-import EquipmentStatusCard from '../cards/EquipmentStatusCard.vue'
-import CurrentAlertCard from '../cards/CurrentAlertCard.vue'
-import HistoricalAlertCard from '../cards/HistoricalAlertCard.vue'
-import BirdsEyeViewCard from '../cards/BirdsEyeViewCard.vue'
+import SystemStatusCard from './components/SystemStatusCard.vue'
+import TaskListCard from './components/TaskListCard.vue'
+import EquipmentStatusCard from './components/EquipmentStatusCard.vue'
+import CurrentAlertCard from './components/CurrentAlertCard.vue'
+import HistoricalAlertCard from './components/HistoricalAlertCard.vue'
+import BirdsEyeViewCard from './components/BirdsEyeViewCard.vue'
 
 interface AGV {
     id: string
@@ -167,5 +167,11 @@ const toggleMaintenance = () => {
     &:hover {
         background-color: #004075;
     }
+}
+:deep(.el-card__header){
+  span{
+    font-size: var(--card-header-font-size) !important;
+    font-weight: bold;
+  }
 }
 </style>
