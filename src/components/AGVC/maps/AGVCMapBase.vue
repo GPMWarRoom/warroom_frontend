@@ -8,7 +8,7 @@ import { Point, LineString } from 'ol/geom'
 import { Style, Circle, Fill, Stroke, Text, RegularShape } from 'ol/style'
 import { createCustomMap, createLayerWithFeatures, addLayerToMap } from '../../../utils/map-utils'
 import type { MapModel } from '../../../models/MapModel'
-const map = ref<Map | null>(null)
+const map = ref<Map >()
 const props = defineProps<{
     mapId: string
     mapModel: MapModel
@@ -24,7 +24,9 @@ onMounted(() => {
 const addPoints = () => {
     const features = createMapPointFeatures(props.mapModel)
     const layer = createLayerWithFeatures(features)
-    addLayerToMap(map.value, layer)
+    if (map.value) {
+        addLayerToMap(map.value, layer)
+    }
 }
 
 const createMapPointFeatures = (mapModel: MapModel) => {
@@ -89,7 +91,9 @@ const getTextColor = (stationType: number) => {
 const addPathLines = () => {
     const features = createMapPathLineFeatures(props.mapModel)
     const layer = createLayerWithFeatures(features)
-    addLayerToMap(map.value, layer)
+    if (map.value) {
+        addLayerToMap(map.value, layer)
+    }
 }
 
 const createMapPathLineFeatures = (mapModel: MapModel) => {

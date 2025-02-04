@@ -102,8 +102,9 @@ const agvcList = ref([
 ])
 const selectedAgvc = ref(null)
 const dateRange = ref([])
-const handleAgvcChange = (value: any) => {
+const handleAgvcChange = (value: number) => {
     loading.value = true
+    console.log('Selected AGVC:', value)
     setTimeout(() => {
         loading.value = false
     }, 1000)

@@ -1,15 +1,9 @@
 import axios from '../utils/axios.js'
-import { AGVSFieldVersionInfo } from '../models/Version/FieldVersionModels.ts'
-export async function getVersion (): Promise<AGVSFieldVersionInfo[]> {
-    //use axios to get mock data from json file to simulate api call
-    // const response = await fetch('/src/assets/mock/versions.json')
-    // let data= await response.json()
-    // return data
+import type { AGVSFieldVersionInfo } from '../models/Version/FieldVersionModels.ts'
 
-    const response = await axios.get('/src/assets/mock/versions.json')
-    let result: AGVSFieldVersionInfo[] = []
-    Object.assign(result, response.data)
-    return result
+export async function getVersion(): Promise<AGVSFieldVersionInfo[]> {
+    const response = await axios.get('/api/version/list') as { data: AGVSFieldVersionInfo[] }
+    return response.data
 }
 
 /**

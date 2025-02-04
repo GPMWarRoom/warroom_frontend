@@ -11,7 +11,7 @@
                 </el-button>
                 <h1 class="px-1">War Room</h1>
             </div>
-            <AlarmMessage class="mx-2" />
+            <AlarmMessage v-if="false" class="mx-2" />
             <div class="header-right">
                 <el-dropdown>
                     <span class="user-profile"> {{ userName }} <el-icon>
