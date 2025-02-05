@@ -54,10 +54,12 @@ const handleLogin = async () => {
             if (rememberMe.value) {
                 localStorage.setItem('username', username.value)
             }
+
             router.push('/overview')
         } else {
-            errorMessage.value = result.message || 'Login failed'
+            errorMessage.value = 'Login failed'
         }
+
     } catch (error: any) {
         console.error('Login failed:', error)
         errorMessage.value = error.message || 'Login failed. Please try again.'

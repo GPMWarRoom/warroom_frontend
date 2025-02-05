@@ -22,18 +22,19 @@ const routes: RouteRecordRaw[] = [
       showInMenu: true
     }
   },
-  // {
-  //   path: '/version',
-  //   name: 'Version',
-  //   component: () => import('../views/VersionView.vue'),
-  //   meta: {
-  //     title: '系統版本管理',
-  //     icon: InfoFilled,
-  //     showInMenu: true
-  //   }
-  // },
+  {
+    path: '/version',
+    name: 'Version',
+    component: () => import('../views/VersionListView.vue'),
+    meta: {
+      title: '系統版本管理',
+      icon: InfoFilled,
+      showInMenu: true
+    }
+  },
   {
     path: '/login',
+
     name: 'Login',
     component: () => import('../views/Login.vue'),
     meta: {

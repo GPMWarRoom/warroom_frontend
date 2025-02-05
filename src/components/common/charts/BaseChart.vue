@@ -5,6 +5,7 @@
 import { onMounted, ref, watch, nextTick, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import { uiStatsStore } from '../../../stores/UiStats.ts'
+import { debounce } from '../../../utils/debounce'
 const props = defineProps({
     width: {
         type: String,
@@ -49,10 +50,16 @@ const updateChart = () => {
 
 // 調整圖表大小
 const handleResize = () => {
-    if (chartInstance) {
-        chartInstance.resize()
-    }
+
+    const debouncedResize = debounce(() => {
+        if (chartInstance) {
+            chartInstance.resize();
+        }
+    }, 100);
+    debouncedResize()
 }
+
+
 
 // 監聽 options 變化
 watch(
@@ -65,13 +72,13 @@ watch(
     { deep: true }
 )
 
-watch(() =>uiStats.isCollapse, (newVal) => {
+watch(() => uiStats.isCollapse, (newVal) => {
     nextTick(() => {
         setTimeout(() => {
             handleResize();
         }, 1000);
     }),
-    { immediate: true , deep: true }
+        { immediate: true, deep: true }
 })
 
 watch(() => uiStats.agvcTabSelected, (newVal) => {
@@ -80,7 +87,7 @@ watch(() => uiStats.agvcTabSelected, (newVal) => {
             handleResize();
         }, 10);
     }),
-    { immediate: true , deep: true }
+        { immediate: true, deep: true }
 })
 
 watch(() => uiStats.routeSelected, (newVal) => {
@@ -89,7 +96,7 @@ watch(() => uiStats.routeSelected, (newVal) => {
             handleResize();
         }, 10);
     }),
-    { immediate: true , deep: true }
+        { immediate: true, deep: true }
 })
 
 

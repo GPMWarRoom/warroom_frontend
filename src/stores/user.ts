@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { login } from '../api/user'
+
+import { userApi } from '../api'
 
 export const userStore = defineStore('user', {
     state: () => ({
@@ -14,10 +15,8 @@ export const userStore = defineStore('user', {
     },
     actions: {
         async login(username: string, password: string) {
-            const res = await login({
-                username: username,
-                password: password
-            })
+            const res = await userApi.login({ username, password })
+
             if (res.code === 200) {
                 this.name = username
                 this.role = 'admin'
