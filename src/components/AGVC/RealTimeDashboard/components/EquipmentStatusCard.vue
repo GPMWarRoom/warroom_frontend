@@ -9,7 +9,7 @@
             <el-table-column prop="id" label="ID" width="110" />
             <el-table-column prop="status" label="狀態" width="100">
                 <template #default="{ row }">
-                    <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
+                    <el-tag>{{ row.status }}</el-tag>
                 </template>
             </el-table-column>
             <el-table-column prop="battery" label="電量">
@@ -20,7 +20,6 @@
         </el-table>
     </el-card>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
@@ -51,6 +50,6 @@ const getStatusType = (status: string): string => {
         offline: 'danger',
         charging: 'warning'
     }
-    return types[status] || 'info'
+    return types[status] || 'primary'
 }
-</script> 
+</script>

@@ -92,18 +92,12 @@ const uiStats = uiStatsStore()
 const agvcList = ref([
     {
         id: 1,
-        name: '3F-AOI'
+        name: '場域1'
     },
     {
         id: 2,
-        name: '3F-MEC'
-    },
-    {
-        id: 3,
-        name: '3F-YEL'
-    },
-
-
+        name: '場域2'
+    }
 ])
 const selectedAgvc = ref(null)
 const dateRange = ref([])

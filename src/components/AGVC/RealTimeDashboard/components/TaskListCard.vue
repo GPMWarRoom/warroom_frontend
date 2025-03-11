@@ -14,7 +14,7 @@
             <el-table-column show-overflow-tooltip prop="type" label="類型" width="100" />
             <el-table-column show-overflow-tooltip prop="status" label="狀態" width="100">
                 <template #default="{ row }">
-                    <el-tag :type="getTaskStatusType(row.status)">{{ row.status }}</el-tag>
+                    <el-tag>{{ row.status }}</el-tag>
                 </template>
             </el-table-column>
             <el-table-column prop="progress" label="進度">
@@ -25,7 +25,6 @@
         </el-table>
     </el-card>
 </template>
-
 <script setup lang="ts">
 interface Task {
     id: string
@@ -47,4 +46,4 @@ const getTaskStatusType = (status: string): string => {
     }
     return types[status] || 'info'
 }
-</script> 
+</script>

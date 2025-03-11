@@ -5,7 +5,11 @@
   --menu-collapsed-width: 64px;
   --card-border-color:rgb(51, 51, 51) ;
   --card-header-font-size: 0.9rem;
+  --version-view-table-color: #0556a7;
+  --base-view-height: calc(100vh - 70px);
+  --base-view-padding: 6px 2px;
 }
+
 
 html,
 body,
@@ -76,5 +80,14 @@ body,
     position: relative;
     padding: 0.3rem;
   }
+}
+
+.agv-stats {
+  .header{
+    h3{
+      font-size: 1.2rem;
+    }
+  }
+  
 }
 

@@ -9,7 +9,7 @@
             <el-table-column prop="id" label="時間" width="120" />
             <el-table-column align="center" prop="status" label="等級" width="100">
                 <template #default="{ row }">
-                    <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
+                    <el-tag>{{ row.status }}</el-tag>
                 </template>
             </el-table-column>
             <el-table-column align="center" show-overflow-tooltip prop="status" label="異常碼" width="100">
@@ -23,7 +23,6 @@
         </el-table>
     </el-card>
 </template>
-
 <script setup lang="ts">
 interface AGV {
     id: string
@@ -43,4 +42,4 @@ const getStatusType = (status: string): string => {
     }
     return types[status] || 'info'
 }
-</script> 
+</script>

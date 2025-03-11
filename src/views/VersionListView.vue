@@ -1,25 +1,53 @@
 <template>
     <div class="version-container">
-        <h1 class="title">版本管理</h1>
-        <div class="trees-container">
+        <div class="header">
+            <h1 class="title">版本管理</h1>
+            <div class="view-switch">
+                <el-radio-group v-model="viewType" size="large">
+                    <el-radio-button label="tree">樹狀圖</el-radio-button>
+                    <el-radio-button label="table">表格</el-radio-button>
+                </el-radio-group>
+            </div>
+        </div>
+        <!-- 樹狀圖視圖 -->
+        <div v-if="viewType === 'tree'" class="trees-container">
             <div v-for="floor in versionList" :key="floor.floor" class="tree-wrapper">
                 <h2 class="floor-title">{{ floor.floor }} F</h2>
-                <div :ref="el => setChartRef(el, floor.floor)" class="tree-chart"></div>
+                <div :ref="el => setChartRef(el as Element, floor.floor)" class="tree-chart"></div>
+            </div>
+        </div>
+        <!-- 表格視圖 -->
+        <div v-else class="tables-container">
+            <div v-for="floor in versionList" :key="floor.floor" class="table-wrapper">
+                <h2 class="floor-title">{{ floor.floor }} F</h2>
+                <el-table :data="getTableData(floor)" border>
+                    <el-table-column prop="fieldName" label="場域名稱" />
+                    <el-table-column prop="fieldVersion" label="派車系統版本" />
+                    <el-table-column label="車輛版本">
+                        <template #default="{ row }">
+                            <el-table :data="row.vehicles" border size="small">
+                                <el-table-column prop="name" label="名稱" />
+                                <el-table-column prop="version" label="版本" />
+                            </el-table>
+                        </template>
+                    </el-table-column>
+                </el-table>
             </div>
         </div>
     </div>
 </template>
 <script setup lang="ts">
 import { systemApi } from '@/api'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import type { FloorVersions } from '@api/system'
 import * as echarts from 'echarts'
 
+const viewType = ref<'tree' | 'table'>('tree')
 const versionList = ref<FloorVersions[]>([])
 const chartInstances = new Map<number, echarts.ECharts>()
 
-const setChartRef = (el: HTMLElement | null, floor: number) => {
-    if (el) {
+const setChartRef = (el: Element | null, floor: number) => {
+    if (el && el instanceof HTMLElement) {
         const chart = echarts.init(el)
         chartInstances.set(floor, chart)
     }
@@ -55,8 +83,13 @@ const createChartOption = (floorData: FloorVersions) => {
                 offset: [0, -20],
                 color: 'white',
                 formatter: (params: any) => {
-                    return `${params.name}_${params.value || ''}`
+                    if (params.value) {
+                        return `${params.name} : ${params.value}`
+                    } else {
+                        return params.name
+                    }
                 }
+
             },
             leaves: {
                 label: {
@@ -103,20 +136,52 @@ const handleResize = () => {
     })
 }
 
+// 表格數據轉換
+const getTableData = (floor: FloorVersions) => {
+    return floor.fieldVersions.map(field => ({
+        fieldName: field.name,
+        fieldVersion: field.version,
+        vehicles: field.vehiclesVersions.map(vehicle => ({
+            name: vehicle.name,
+            version: vehicle.version
+        }))
+    }))
+}
+
 onMounted(async () => {
     const res = await systemApi.getVersionList()
     versionList.value = res
-    setTimeout(initCharts, 200)
-    setTimeout(handleResize, 200)
-    window.addEventListener('resize', handleResize)
+    if (viewType.value === 'tree') {
+        setTimeout(initCharts, 200)
+        setTimeout(handleResize, 200)
+        window.addEventListener('resize', handleResize)
+    }
 })
 
+// 監聽視圖類型變化
+watch(viewType, (newType) => {
+    if (newType === 'tree') {
+        nextTick(() => {
+            initCharts()
+            handleResize()
+            window.addEventListener('resize', handleResize)
+        })
+    } else {
+        window.removeEventListener('resize', handleResize)
+        chartInstances.forEach(chart => {
+            chart.dispose()
+        })
+        chartInstances.clear()
+    }
+})
 
 onUnmounted(() => {
-    chartInstances.forEach(chart => {
-        chart.dispose()
-    })
-    window.removeEventListener('resize', handleResize)
+    if (viewType.value === 'tree') {
+        window.removeEventListener('resize', handleResize)
+        chartInstances.forEach(chart => {
+            chart.dispose()
+        })
+    }
 })
 </script>
 <style scoped>
@@ -126,10 +191,17 @@ onUnmounted(() => {
     height: 100%;
 }
 
-.title {
-    color: #303133;
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 30px;
-    text-align: center;
+    padding: 0 20px;
+}
+
+.title {
+    color: #ffffff;
+    margin: 0;
 }
 
 .trees-container {
@@ -153,5 +225,41 @@ onUnmounted(() => {
 .tree-chart {
     width: 100%;
     height: 400px;
+}
+
+.tables-container {
+    padding: 20px;
+}
+
+.table-wrapper {
+    background: #3030307e;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+:deep(.el-table) {
+    background: transparent;
+}
+
+:deep(.el-table th) {
+    background: var(--version-view-table-color);
+    color: white;
+}
+
+
+:deep(.el-table td) {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+:deep(.el-table--border) {
+    border-color: var(--version-view-table-color);
+}
+
+
+:deep(.el-table--border th),
+:deep(.el-table--border td) {
+    border-color: var(--version-view-table-color);
 }
 </style>

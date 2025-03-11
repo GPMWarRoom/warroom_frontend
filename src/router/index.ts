@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { InfoFilled } from '@element-plus/icons-vue'
-const routes: RouteRecordRaw[] = [  
+const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Overview',
@@ -18,6 +18,16 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/AGVC.vue'),
     meta: {
       title: '場域資訊',
+      icon: InfoFilled,
+      showInMenu: true
+    }
+  },
+  {
+    path: '/EquipmentStatus',
+    name: 'EquipmentStatus',
+    component: () => import('../views/EquipmentStatusView.vue'),
+    meta: {
+      title: '設備狀態',
       icon: InfoFilled,
       showInMenu: true
     }

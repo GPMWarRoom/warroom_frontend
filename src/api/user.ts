@@ -26,7 +26,7 @@ export interface LoginParams {
     password: string;
 }
 
-interface LoginResponse {
+export interface LoginResponse {
     code: number;
     data: {
         token: string;
