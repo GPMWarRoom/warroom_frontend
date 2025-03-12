@@ -21,5 +21,6 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
       '@views': path.resolve(__dirname, './src/views'),
     }
-  }
+  },
+  base: process.env.NODE_ENV === 'production' ? '/warroom_frontend/' : '/'
 })

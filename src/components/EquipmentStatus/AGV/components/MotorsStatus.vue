@@ -22,7 +22,7 @@
                         <div class="stat-value" :class="{ warning: motor.current > currentThreshold }"> {{ motor.current.toFixed(1) }}A </div>
                         <el-progress
                             :percentage="(motor.current / currentThreshold) * 100"
-                            :status="motor.current > currentThreshold ? 'exception' : 'normal'"
+                            :status="motor.current > currentThreshold ? 'exception' : 'success'"
                             :stroke-width="8"
                             :show-text="false" />
                     </div>
@@ -35,7 +35,7 @@
                         <div class="stat-value" :class="{ warning: motor.voltage < voltageThreshold }"> {{ motor.voltage.toFixed(1) }}V </div>
                         <el-progress
                             :percentage="(motor.voltage / maxVoltage) * 100"
-                            :status="motor.voltage < voltageThreshold ? 'exception' : 'normal'"
+                            :status="motor.voltage < voltageThreshold ? 'exception' : 'success'"
                             :stroke-width="8"
                             :show-text="false" />
                     </div>
