@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    const path = window.location.pathname;
+    const repo = '/warroom_frontend';
+    if (path.indexOf(repo) === 0) {
+      sessionStorage.redirect = path.slice(repo.length);
+    } else {
+      sessionStorage.redirect = path;
+    }
+    window.location.href = repo;
+  </script>
+</head>
+</html> 
