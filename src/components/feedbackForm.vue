@@ -1,7 +1,7 @@
 <template>
     <div class="feedback-container" @mouseenter="hover = true" @mouseleave="hover = false">
       <transition name="fade">
-          <el-button @click="isLogOpen = true" v-if="hover && isAdmin" class="feedback-info">
+          <el-button @click="isLogOpen = true" v-if="hover" class="feedback-info">
             回報紀錄
           </el-button>
       </transition>
@@ -51,12 +51,13 @@
       </el-dialog>
 
       <!-- 回報紀錄頁 -->
-      <el-dialog v-model="isLogOpen" @opened="getLogData" width="50%" title="回報紀錄" @close="isLogOpen = false; clearForm()" :close-on-click-modal="false">
-        <el-table :data="logData">
-          <el-table-column prop="name" label="回報者姓名" width="auto"></el-table-column>
-          <el-table-column prop="category" label="回報類別" width="auto"></el-table-column>
-          <el-table-column prop="description" label="問題描述" width="auto"></el-table-column>
-          <el-table-column label="附件" width="auto">
+      <el-dialog v-model="isLogOpen" @opened="getLogData" title="回報紀錄" @close="isLogOpen = false; clearForm()" :close-on-click-modal="false">
+        <el-table :data="logData" style="height: 60vh;">
+          <el-table-column prop="name" label="回報者姓名" width="120px"></el-table-column>
+          <el-table-column prop="category" label="回報類別" width="120px"></el-table-column>
+          <el-table-column prop="description" label="問題描述" width="auto">
+          </el-table-column>
+          <el-table-column label="附件" width="120px">
             <template #default="{ row }">
               <a v-if="row.url" :href="row.url" target="_blank" rel="noopener noreferrer">查看附件</a>
             </template>
