@@ -50,6 +50,7 @@
                         </keep-alive>
                     </router-view>
                 </ContentContainer>
+                <feedbackForm></feedbackForm>
             </main>
         </div>
     </div>
@@ -59,6 +60,7 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { menuRoutes } from "../router";
 import ContentContainer from "../components/ContentContainer.vue";
+import feedbackForm from "../components/feedbackForm.vue";
 import { uiStatsStore } from "../stores/UiStats";
 import type { RouteMeta } from "vue-router";
 import { userStore } from "../stores/user";
