@@ -1,6 +1,6 @@
 <template>
     <div class="agv-stats mileage-status">
-        <div class="header mileage-header">
+        <div class="header mileage-header ">
             <h3>里程資訊</h3>
             <el-tag type="info" size="small">{{ formatDate(lastMaintenanceDate) }}</el-tag>
         </div>

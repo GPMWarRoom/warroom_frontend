@@ -14,7 +14,7 @@
       <!-- 懸浮圖示 -->
       <el-button class="feedback-button" :class="{ transparent: hover }" :icon="ChatLineSquare"></el-button>
 
-      <!-- 問題回報表單頁 -->
+      <!-- 問題回報頁 -->
       <el-dialog v-model="isFormOpen" width="30%" title="問題回饋與建議" @close="isFormOpen = false; clearForm()" :close-on-click-modal="false" >
         <el-form ref="formRef" :model="feedbackform" :rules="rules" label-width="auto">
           <el-form-item label="姓名" prop="name">
@@ -51,20 +51,53 @@
       </el-dialog>
 
       <!-- 回報紀錄頁 -->
-      <el-dialog v-model="isLogOpen" @opened="getLogData" title="回報紀錄" @close="isLogOpen = false; clearForm()" :close-on-click-modal="false">
-        <el-table :data="logData" style="height: 60vh;">
+      <el-dialog v-model="isLogOpen" @opened="getLogData" title="回報紀錄" @close="isLogOpen = false; clearForm()" :close-on-click-modal="false" width="70%" align="center">
+        <el-table :data="logData" style="height: 60vh;" v-loading="loading">
+          <el-table-column label="序號" width="60px" align="center">
+            <template #default="{ $index }">
+              {{ $index + 1 }}
+            </template>
+          </el-table-column>
           <el-table-column prop="name" label="回報者姓名" width="120px"></el-table-column>
           <el-table-column prop="category" label="回報類別" width="120px"></el-table-column>
           <el-table-column prop="description" label="問題描述" width="auto">
           </el-table-column>
-          <el-table-column label="附件" width="120px">
+          <el-table-column v-if="logData.some(item => item.url)" label="附件" width="120px" align="center">
             <template #default="{ row }">
               <a v-if="row.url" :href="row.url" target="_blank" rel="noopener noreferrer">查看附件</a>
             </template>
           </el-table-column>
+          <el-table-column label="處理狀態" width="100px" align="center">
+            <template #default="{ row }">
+              <el-button v-if="row.reply === ''" type="warning" @click="isReplyOpen = true; replyForm.docId = row.docId; replyFormState='reply'">
+                待處理
+              </el-button>
+              <el-button v-else type="success" @click="isReplyOpen = true; replyForm.reply = row.reply; replyFormState='edit'">
+                已處理
+              </el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </el-dialog>
-
+      
+      <!-- 問題回覆頁 -->
+      <el-dialog v-model="isReplyOpen" @close="isReplyOpen = false; clearReplyForm()" :close-on-click-modal="false" width="40%" >
+        <el-form label-width="auto">
+          <el-form-item label="問題回覆: ">
+            <el-col :span="22">
+              <el-input v-if="replyFormState === 'reply'" v-model="replyForm.reply" type="textarea" placeholder="請輸入詳細描述..." />
+              <el-text v-else>{{ replyForm.reply }}</el-text>
+            </el-col>
+          </el-form-item>
+          <div class="form-footer" align="center" v-if="replyFormState === 'reply'">
+            <el-form-item>
+              <el-button @click="submitReply" type="success"  >
+                送出
+              </el-button>
+            </el-form-item>
+          </div>
+        </el-form>
+      </el-dialog>
     </div>
 </template>
 
@@ -73,19 +106,28 @@ import { ref, computed } from "vue";
 import { ChatLineSquare } from '@element-plus/icons-vue'
 import { ElMessage } from "element-plus";
 import { db } from "../utils/firebase";
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { userStore } from "../stores/user";
 
 const isAdmin = ref(userStore().role === "admin")
 const hover = ref(false);
 const isFormOpen = ref(false);
 const isLogOpen = ref(false);
+const isReplyOpen = ref(false);
 const formRef = ref(null);
+const loading = ref(false);
+const replyFormState = ref("");
 const feedbackform = ref({
   name: "",
   category: "問題回報",
   description: "",
   url: "",
+  edttime: "",
+  reply: ""
+});
+const replyForm = ref({
+  docId: "",
+  reply:""
 });
 const logData = ref<any[]>([]);
 
@@ -131,6 +173,7 @@ const clearForm = () => {
   feedbackform.value.category = "問題描述";
   feedbackform.value.description = "";
   feedbackform.value.url = "";
+  feedbackform.value.edttime = "";
 };
 
 const submit = async () => {
@@ -139,7 +182,9 @@ const submit = async () => {
       name: feedbackform.value.name,
       category: feedbackform.value.category,
       description: feedbackform.value.description,
-      url: feedbackform.value.url
+      url: feedbackform.value.url,
+      edttime: new Date().toISOString(),
+      reply: feedbackform.value.reply
     });
 
     ElMessage.success('提交成功');
@@ -153,10 +198,16 @@ const submit = async () => {
 
 const getLogData = async () => {
   logData.value = [];
+  loading.value = true;
   try {
-    const querySnapshot = await getDocs(collection(db, 'feedback'));
-    logData.value = querySnapshot.docs.map(doc => doc.data());
-    console.log(logData);
+    const querySnapshot = await getDocs(
+      query(collection(db, "feedback"), orderBy("edttime", "desc"))
+    );
+    
+    logData.value = querySnapshot.docs.map(doc => ({
+      ...doc.data(),  // 將資料展開
+      docId: doc.id   // 添加 docId 屬性
+    }));
     
     if (logData.value.length === 0) {
       console.log('沒有符合條件的資料');
@@ -164,7 +215,31 @@ const getLogData = async () => {
   } catch (error) {
     console.error('拉取資料失敗:', error);
   }
+  loading.value = false;
 }
+
+const clearReplyForm = () => {
+  replyForm.value.docId = "";
+  replyForm.value.reply = "";
+};
+
+const submitReply = async () => {
+  try {
+
+    const docRef = doc(db, "feedback", replyForm.value.docId);
+    await updateDoc(docRef, {
+      reply: replyForm.value.reply
+    });
+
+    ElMessage.success('提交成功');
+
+  } catch (error) {
+    ElMessage.error('提交失敗');
+  }
+  isReplyOpen.value = false;
+  clearReplyForm();
+  getLogData();
+};
 
 </script>
 
