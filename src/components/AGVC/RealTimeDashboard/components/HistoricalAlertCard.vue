@@ -5,41 +5,25 @@
                 <span>歷史警報</span>
             </div>
         </template>
-        <el-table :data="agvList" stripe style="height: 246px">
-            <el-table-column prop="id" label="時間" width="120" />
-            <el-table-column align="center" prop="status" label="等級" width="100">
+        <el-table :data="filteredAlarms" stripe style="height: 246px">
+            <el-table-column prop="FormattedTime" label="時間" width="200" />
+            <el-table-column align="center" prop="Level" label="等級" width="100">
                 <template #default="{ row }">
-                    <el-tag>{{ row.status }}</el-tag>
+                    <el-tag :type="row.Level === 1 ? 'danger' : 'wraning'">{{ row.Level === 1 ? 'ALARM' : 'WARNING' }}</el-tag>
                 </template>
             </el-table-column>
-            <el-table-column align="center" show-overflow-tooltip prop="status" label="異常碼" width="100">
-                <template>
-                    <span>3303</span>
-                </template>
-            </el-table-column>
-            <el-table-column prop="battery" label="警報訊息">
-                <template>Message</template>
-            </el-table-column>
+            <el-table-column align="center" show-overflow-tooltip prop="AlarmCode" label="異常碼" width="100" />
+            <el-table-column prop="Description_En" label="警報訊息" />
         </el-table>
     </el-card>
 </template>
 <script setup lang="ts">
-interface AGV {
-    id: string
-    status: string
-    battery: number
-}
+import { computed } from 'vue'
+import { realTimeStore } from '/src/stores/realTime'
 
-defineProps<{
-    agvList: AGV[]
-}>()
+const realTimeData = realTimeStore()
+const filteredAlarms = computed(() =>
+  realTimeData.AGVC_RealTimeDashboard_SystemAlarms.filter(item => item.Checked === true)
+)
 
-const getStatusType = (status: string): string => {
-    const types: Record<string, string> = {
-        online: 'success',
-        offline: 'danger',
-        charging: 'warning'
-    }
-    return types[status] || 'info'
-}
 </script>

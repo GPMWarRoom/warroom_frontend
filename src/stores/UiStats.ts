@@ -4,7 +4,7 @@ export const uiStatsStore = defineStore('uiStats', {
     state: () => ({
         isCollapse: false,
         agvcTabSelected: 'monitor',
-        routeSelected: 'monitor'
+        routeSelected: 'monitor',
     }),
 
     actions: {

@@ -84,7 +84,12 @@ const taskList = ref<Task[]>([
     { id: 'T002sssdss', type: '充電', status: 'waiting', progress: 0 },
     { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
     { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
-    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 }
+    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
+    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
+    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
+    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
+    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
+
 ])
 
 const systemStatus = ref<SystemStatus>({

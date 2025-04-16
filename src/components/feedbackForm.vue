@@ -15,7 +15,7 @@
       <el-button class="feedback-button" :class="{ transparent: hover }" :icon="ChatLineSquare"></el-button>
 
       <!-- 問題回報頁 -->
-      <el-dialog v-model="isFormOpen" width="30%" title="問題回饋與建議" @close="isFormOpen = false; clearForm()" :close-on-click-modal="false" >
+      <el-dialog v-model="isFormOpen" width="40%" title="問題回饋與建議" @close="isFormOpen = false; clearForm()" :close-on-click-modal="false">
         <el-form ref="formRef" :model="feedbackform" :rules="rules" label-width="auto">
           <el-form-item label="姓名" prop="name">
             <el-col :span="8">
@@ -51,8 +51,8 @@
       </el-dialog>
 
       <!-- 回報紀錄頁 -->
-      <el-dialog v-model="isLogOpen" @opened="getLogData" title="回報紀錄" @close="isLogOpen = false; clearForm()" :close-on-click-modal="false" width="70%" align="center">
-        <el-table :data="logData" style="height: 60vh;" v-loading="loading">
+      <el-dialog v-model="isLogOpen" @opened="getLogData" title="回報紀錄" @close="isLogOpen = false; clearForm()" :close-on-click-modal="false" width="70%" align="center" >
+        <el-table :data="logData" style="height: 60vh;" v-loading="loading" class="dialog-scroll-wrapper">
           <el-table-column label="序號" width="60px" align="center">
             <template #default="{ $index }">
               {{ $index + 1 }}
@@ -294,5 +294,16 @@ const submitReply = async () => {
   display: flex;
   justify-content: center;
   width: 100%; 
+}
+
+.dialog-scroll-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media screen and (max-width: 450px) {
+  :deep(.el-dialog) {
+    width: 95% !important;
+  }
 }
 </style>

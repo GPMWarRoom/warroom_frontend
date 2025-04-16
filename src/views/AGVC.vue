@@ -10,7 +10,7 @@
                             </el-icon>
                             <span class="select-agvc-label">場域</span>
                             <el-select v-model="selectedAgvc" @change="handleAgvcChange">
-                                <el-option v-for="item in agvcList" :key="item.id" :label="item.name" :value="item.id" />
+                                <el-option v-for="item in agvcList" :key="item.id" :label="item.name" :value="item.value" />
                             </el-select>
                         </div>
                     </template>
@@ -77,7 +77,7 @@
     </content-container>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Monitor, List, LocationFilled } from '@element-plus/icons-vue'
 import ContentContainer from '../components/ContentContainer.vue'
 import RealTimeDashboard from '../components/AGVC/RealTimeDashboard/index.vue'
@@ -85,39 +85,152 @@ import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard/inde
 import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDashboard/index.vue'
 import UtilizationDashboard from '../components/AGVC/UtilizationDashboard/index.vue'
 import { uiStatsStore } from '../stores/UiStats'
+import { realTimeStore } from '../stores/realTime'
+import * as signalR from '@microsoft/signalr'
+import { useSignalR } from '@/composables/useSignalR'
+const { startConnection, on, off, connection } = useSignalR()
+
 const loading = ref(false)
 const activeTab = ref('monitor')
 const uiStats = uiStatsStore()
-
 const agvcList = ref([
     {
         id: 1,
-        name: '3F-AOI'
+        name: '3F-ABF',
+        value: "YM_3F_ABF"
     },
     {
         id: 2,
-        name: '3F-MEC'
+        name: '3F-MEC',
+        value: "UMTC_YM_3F_MEC"
     },
     {
         id: 3,
-        name: '3F-YEL'
+        name: '3F-AOI',
+        value: "UMTC_YM_3F_AOI"
     },
-
-
+    {
+        id: 4,
+        name: '4F-ABF',
+        value: "UMTC_YM_4F_ABF"
+    },
+    {
+        id: 5,
+        name: '4F-MEC',
+        value: "UMTC_YM_4F_MEC"
+    },
+    {
+        id: 6,
+        name: '4F-AOI',
+        value: "UMTC_YM_4F_AOI"
+    },
+    {
+        id: 7,
+        name: '4F-AOI',
+        value: "UMTC_YM_4F_AOI"
+    },
+    {
+        id: 8,
+        name: '5F-ABF',
+        value: "UMTC_YM_5F_ABF"
+    },
+    {
+        id: 9,
+        name: '5F-MEC',
+        value: "UMTC_YM_5F_MEC"
+    },
+    {
+        id: 10,
+        name: '5F-AOI',
+        value: "UMTC_YM_5F_AOI"
+    },
+    {
+        id: 11,
+        name: '5F-AOI',
+        value: "UMTC_YM_5F_AOI"
+    },
+    {
+        id: 12,
+        name: 'yel',
+        value: "yel"
+    },
 ])
-const selectedAgvc = ref(null)
+const selectedAgvc = ref('yel')
 const dateRange = ref([])
-const handleAgvcChange = (value: number) => {
+async function handleAgvcChange(value: string) {
     loading.value = true
-    console.log('Selected AGVC:', value)
-    setTimeout(() => {
-        loading.value = false
-    }, 1000)
+    await subscribeToSchema(value, activeTab.value)
+    await connection.value?.invoke(`Init_${currentTab}`)
+    loading.value = false
 }
 const handleTabChange = (tab: string) => {
     uiStats.setAGVCTabSelected(tab)
 }
+const tableMap: Record<string, string> = {
+    EQStatus_AGV: "AGVC_RealTimeDashboard_EQStatus_AGV",
+    Tasks: "AGVC_RealTimeDashboard_Tasks",
+    SysStatus: "AGVC_RealTimeDashboard_SysStatus",
+    SystemAlarms: "AGVC_RealTimeDashboard_SystemAlarms",
+}
+const realTimeData = realTimeStore()
+
+let currentSubscribedSchema: string | null = null
+let currentTab: string | null = null
+
+async function subscribeToSchema(schema: string, tab: string) {
+    if (!connection || connection.value.state !== signalR.HubConnectionState.Connected) return
+
+    if (currentSubscribedSchema && currentTab) {
+    await connection.value.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)
+    console.log(`🔄 取消訂閱: ${currentSubscribedSchema}-${currentTab}`)
+    }
+    await connection.value.invoke('AGVCSubscribe', schema, tab)
+    currentSubscribedSchema = schema
+    currentTab = tab
+    console.log(`✅ 已訂閱 schema: ${schema}-${tab}`)
+}
+
+onMounted(async () => {
+    loading.value = true
+
+    await startConnection()
+
+    // 接收後端推播通知
+    on('ReceiveNotification', (result) => {
+    if(result.type === 'init') {
+        for (const [key, value] of Object.entries(result.data)) {
+            realTimeData.updateRealTimeData(tableMap[key], value)
+        }
+    }
+    else if(result.type === 'update') {
+        if(tableMap[result.table]) {
+            realTimeData.updateRealTimeData(tableMap[result.table], result.data);
+        }
+    }
+    })
+
+    connection.value?.onreconnected(async () => {
+    console.log('🔁 SignalR 已重新連線')
+    if (currentSubscribedSchema && currentTab) {
+        await subscribeToSchema(currentSubscribedSchema, currentTab)
+    }
+    await connection.value?.invoke(`Init_${currentTab}`)
+        console.log(`✅ 已重新初始化 Init_${currentTab}`)
+    })
+
+    try {
+        await subscribeToSchema(selectedAgvc.value, activeTab.value)
+        await connection.value?.invoke(`Init_${currentTab}`)
+    } catch (err) {
+        console.error('❌ SignalR 錯誤：', err)
+    }
+
+    loading.value = false
+})
+
 </script>
+
+
 <style scoped>
 .agvc-tabs {
     --tab-offset-top: 111px;

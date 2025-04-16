@@ -5,10 +5,10 @@
                 <span>系統運轉模式</span>
                 <el-button-group>
                     <el-button class="tag-button"
-                        :type="systemStatus.maintenance ? 'danger' : 'success'"
+                        :type="sysStatus?.RunMode ? 'danger' : 'success'"
                         size="small"
                         @click="$emit('toggle-maintenance')">
-                        {{ systemStatus.maintenance ? '維護模式' : '運轉模式' }}
+                        {{ sysStatus?.RunMode ? '維護模式' : '運轉模式' }}
                     </el-button>
                 </el-button-group>
             </div>
@@ -17,16 +17,16 @@
             <div class="status-item">
                 <span class="status-label">Host 連線狀態:</span>
                 <div class="status-value">
-                    <el-tag effect="dark":type="systemStatus.hostConnected ? 'success' : 'danger'" class="ml-2 tag-button">
-                        {{ systemStatus.hostConnected ? 'ONLINE' : 'OFFLINE' }}
+                    <el-tag effect="dark" :type="sysStatus?.HostConnMode ? 'success' : 'danger'" class="ml-2 tag-button">
+                        {{ sysStatus?.HostConnMode ? 'ONLINE' : 'OFFLINE' }}
                     </el-tag>
                 </div>
             </div>
             <div class="status-item">
                 <span class="status-label">搬運命令派送模式:</span>
                 <div class="status-value">
-                    <el-tag effect="dark" :type="systemStatus.isRemote ? 'success' : 'warning'" class="ml-2 tag-button">
-                        {{ systemStatus.isRemote ? 'REMOTE' : 'LOCAL' }}
+                    <el-tag effect="dark" :type="sysStatus?.HostOperMode ? 'success' : 'warning'" class="ml-2 tag-button">
+                        {{ sysStatus?.HostOperMode ? 'REMOTE' : 'LOCAL' }}
                     </el-tag>
                 </div>
             </div>
@@ -35,19 +35,11 @@
 </template>
 
 <script setup lang="ts">
-interface SystemStatus {
-    maintenance: boolean
-    hostConnected: boolean
-    isRemote: boolean
-}
+import { computed } from 'vue'
+import { realTimeStore } from '/src/stores/realTime'
+const realTimeData = realTimeStore()
+const sysStatus = computed(() => realTimeData.AGVC_RealTimeDashboard_SysStatus[0])
 
-defineProps<{
-    systemStatus: SystemStatus
-}>()
-
-defineEmits<{
-    (e: 'toggle-maintenance'): void
-}>()
 </script>
 
 <style scoped>

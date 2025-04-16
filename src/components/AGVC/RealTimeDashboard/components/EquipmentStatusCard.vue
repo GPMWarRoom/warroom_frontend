@@ -5,36 +5,30 @@
                 <span>設備狀態</span>
             </div>
         </template>
-        <el-table :data="agvList" stripe :style="{ height: tableHeight }">
-            <el-table-column prop="id" label="ID" width="110" />
-            <el-table-column prop="status" label="狀態" width="100">
-                <template #default="{ row }">
-                    <el-tag>{{ row.status }}</el-tag>
-                </template>
-            </el-table-column>
-            <el-table-column prop="battery" label="電量">
-                <template #default="{ row }">
-                    <el-progress :percentage="row.battery" />
-                </template>
-            </el-table-column>
-        </el-table>
+        <div style="max-height: 300px; overflow-y: auto;">
+            <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV" stripe :style="{ height: tableHeight }">
+                <el-table-column prop="Name" label="ID" width="110" />
+                <el-table-column prop="MainStatus" label="狀態" width="100">
+                    <template #default="{ row }">
+                        <el-tag :type="StatusMap[row.StatusText]">{{ row.StatusText }}</el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="BatLevel" label="電量">
+                    <template #default="{ row }">
+                        <el-progress :percentage="row.BatLevel" />
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
     </el-card>
 </template>
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { realTimeStore } from '/src/stores/realTime'
 
-interface AGV {
-    id: string
-    status: string
-    battery: number
-}
-
-defineProps<{
-    agvList: AGV[]
-}>()
 
 const tableHeight = ref('300px')
-
+const realTimeData = realTimeStore()
 onMounted(() => {
     const card = document.getElementById('eq-status-card')
     if (card) {
@@ -44,12 +38,9 @@ onMounted(() => {
     }
 })
 
-const getStatusType = (status: string): string => {
-    const types: Record<string, string> = {
-        online: 'success',
-        offline: 'danger',
-        charging: 'warning'
-    }
-    return types[status] || 'primary'
+const StatusMap: Record<string, string> = {
+    online: 'success',
+    offline: 'danger',
+    charging: 'warning'
 }
 </script>
