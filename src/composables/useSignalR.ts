@@ -1,5 +1,5 @@
 
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, computed  } from 'vue'
 import * as signalR from '@microsoft/signalr'
 
 const connection = ref<signalR.HubConnection | null>(null)
@@ -50,12 +50,17 @@ export function useSignalR() {
     stopConnection()
   })
 
+  const isConnected = computed(() => 
+    connection.value?.state === signalR.HubConnectionState.Connected
+  )
+
   return {
     connection, // 直接暴露 connection 讓使用者可以自由使用
     startConnection,
     stopConnection,
     on,
     off,
+    isConnected
   }
 }
             

@@ -6,20 +6,20 @@
                     <div class="card w-100" style="height:130px">
                         <h3>平均任務成功率</h3>
                         <div class="text-light text-center p-2">
-                            <el-progress type="circle" :percentage="55" :stroke-width="8" width="70"></el-progress>
+                            <el-progress type="circle" :percentage="realTimeData.AGVC_TrafficEfficiency_Tasks[0]?.AvgSuccessRate" :stroke-width="8" width="70"></el-progress>
                         </div>
                     </div>
                     <div class="card w-100" style="height:130px">
                         <h3>自動化比率</h3>
                         <div class="text-light text-center p-2">
-                            <el-progress type="circle" :percentage="55" :stroke-width="8" width="70"></el-progress>
+                            <el-progress type="circle" :percentage="realTimeData.AGVC_TrafficEfficiency_Tasks[0]?.AvgAutoRate" :stroke-width="8" width="70"></el-progress>
                         </div>
                     </div>
                 </div>
                 <div class="card my-1">
                     <h3>任務成功率走勢</h3>
                     <div class="content w-100 ">
-                        <LineChart class="content h-100 w-100" :datas="[{name: '數據', data: [1,2,3,4,5,6,7,8,9,10]}]"></LineChart>
+                        <LineChart class="content h-100 w-100" :datas="[{name: '任務成功率', xData:realTimeData.AGVC_TrafficEfficiency_Tasks.map(item => item.Date), yData:realTimeData.AGVC_TrafficEfficiency_Tasks.map(item => item.DailySuccessRate)}]"></LineChart>
                     </div>
                 </div>
                 <div class="card my-1">
@@ -42,10 +42,13 @@
     </div>
 </template>
 <script setup>
-import { reactive, onMounted, ref } from 'vue'
+import { reactive, onMounted, ref, computed } from 'vue'
+import { realTimeStore } from '@/stores/realTime'
 import LineChart from '../../common/charts/LineChart.vue'
 import BarChart from '../../common/charts/BarChart.vue'
 import FromToTransportStas from './components/FromToTransportStas/index.vue'
+
+const realTimeData = realTimeStore()
 const data = reactive({
     lineChartData: [100, 90, 80, 70, 60, 50, 30],
     barChartData: [100, 90, 80, 70, 60, 50, 30]

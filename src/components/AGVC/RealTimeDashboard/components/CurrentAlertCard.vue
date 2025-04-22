@@ -7,7 +7,9 @@
         </template>
         <transition name="fade">
             <div v-if="currentAlarm" class="alert-message text-danger">
-                <span>{{ currentAlarm.Description_En }}</span>
+                <span>[time: {{ currentAlarm.FormattedTime }}] [code: {{ currentAlarm.AlarmCode }}] [equipment: {{currentAlarm.Equipment_Name}}]
+                 [{{currentAlarm.Description_Zh}}({{currentAlarm.Description_En}})]
+                </span>
             </div>
         </transition>
     </el-card>
@@ -15,7 +17,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { realTimeStore } from '/src/stores/realTime'
+import { realTimeStore } from '@/stores/realTime'
 
 const realTimeData = realTimeStore()
 const filteredAlarms = computed(() =>
@@ -24,13 +26,13 @@ const filteredAlarms = computed(() =>
 const currentAlarm = ref(filteredAlarms.value[0])
 const currentAlarmIndex = ref(0)
 
-let interval: number
+let interval: ReturnType<typeof setInterval>
 
 onMounted(() => {
   interval = setInterval(() => {
     currentAlarmIndex.value = (currentAlarmIndex.value + 1) % filteredAlarms.value.length
     currentAlarm.value = filteredAlarms.value[currentAlarmIndex.value]
-  }, 1500) // 每 3 秒切換
+  }, 2500) // 每 2.5 秒切換
 })
 
 onUnmounted(() => {

@@ -86,9 +86,8 @@ import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDash
 import UtilizationDashboard from '../components/AGVC/UtilizationDashboard/index.vue'
 import { uiStatsStore } from '../stores/UiStats'
 import { realTimeStore } from '../stores/realTime'
-import * as signalR from '@microsoft/signalr'
 import { useSignalR } from '@/composables/useSignalR'
-const { startConnection, on, off, connection } = useSignalR()
+const { startConnection, on, off, connection, isConnected } = useSignalR()
 
 const loading = ref(false)
 const activeTab = ref('monitor')
@@ -160,25 +159,34 @@ const dateRange = ref([])
 async function handleAgvcChange(value: string) {
     loading.value = true
     await subscribeToSchema(value, activeTab.value)
-    await connection.value?.invoke(`Init_${currentTab}`)
+    await connection.value?.invoke('InitDataByTab')
     loading.value = false
 }
-const handleTabChange = (tab: string) => {
+const handleTabChange = async (tab: string) => {
     uiStats.setAGVCTabSelected(tab)
+    await subscribeToSchema(selectedAgvc.value, activeTab.value)
+    await connection.value?.invoke('InitDataByTab')
 }
-const tableMap: Record<string, string> = {
-    EQStatus_AGV: "AGVC_RealTimeDashboard_EQStatus_AGV",
-    Tasks: "AGVC_RealTimeDashboard_Tasks",
-    SysStatus: "AGVC_RealTimeDashboard_SysStatus",
-    SystemAlarms: "AGVC_RealTimeDashboard_SystemAlarms",
-}
+const tabStoreMap: Record<string, Record<string, string>> = {
+    "monitor": {
+        EQStatus_AGV: "AGVC_RealTimeDashboard_EQStatus_AGV",
+        EQStatus_MainEQ: "AGVC_RealTimeDashboard_EQStatus_MainEQ",
+        EQStatus_Rack: "AGVC_RealTimeDashboard_EQStatus_Rack",
+        Tasks: "AGVC_RealTimeDashboard_Tasks",
+        SysStatus: "AGVC_RealTimeDashboard_SysStatus",
+        SystemAlarms: "AGVC_RealTimeDashboard_SystemAlarms",
+    },
+    "traffic-efficiency": {
+        Tasks: "AGVC_TrafficEfficiency_Tasks",
+    },
+};
 const realTimeData = realTimeStore()
 
 let currentSubscribedSchema: string | null = null
 let currentTab: string | null = null
 
 async function subscribeToSchema(schema: string, tab: string) {
-    if (!connection || connection.value.state !== signalR.HubConnectionState.Connected) return
+    if (!isConnected.value) return
 
     if (currentSubscribedSchema && currentTab) {
     await connection.value.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)
@@ -191,41 +199,48 @@ async function subscribeToSchema(schema: string, tab: string) {
 }
 
 onMounted(async () => {
-    loading.value = true
+    // loading.value = true
 
     await startConnection()
 
     // 接收後端推播通知
     on('ReceiveNotification', (result) => {
-    if(result.type === 'init') {
-        for (const [key, value] of Object.entries(result.data)) {
-            realTimeData.updateRealTimeData(tableMap[key], value)
+        const storeMap = tabStoreMap[currentTab];
+
+        if (!storeMap) return;
+
+        if (result.type === 'init') {
+            for (const [key, value] of Object.entries(result.data)) {
+            const storeKey = storeMap[key];
+            if (storeKey) {
+                realTimeData.updateRealTimeData(storeKey, value);
+            }
+            }
+        } else if (result.type === 'update') {
+            const storeKey = storeMap[result.table];
+            if (storeKey) {
+            realTimeData.updateRealTimeData(storeKey, result.data);
+            }
         }
-    }
-    else if(result.type === 'update') {
-        if(tableMap[result.table]) {
-            realTimeData.updateRealTimeData(tableMap[result.table], result.data);
-        }
-    }
-    })
+    });
 
     connection.value?.onreconnected(async () => {
     console.log('🔁 SignalR 已重新連線')
     if (currentSubscribedSchema && currentTab) {
         await subscribeToSchema(currentSubscribedSchema, currentTab)
     }
-    await connection.value?.invoke(`Init_${currentTab}`)
+    await connection.value?.invoke('InitDataByTab')
         console.log(`✅ 已重新初始化 Init_${currentTab}`)
     })
 
     try {
         await subscribeToSchema(selectedAgvc.value, activeTab.value)
-        await connection.value?.invoke(`Init_${currentTab}`)
+        await connection.value?.invoke('InitDataByTab')
     } catch (err) {
         console.error('❌ SignalR 錯誤：', err)
     }
 
-    loading.value = false
+    // loading.value = false
 })
 
 </script>

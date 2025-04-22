@@ -4,16 +4,16 @@
             <div class="d-flex justify-content-between align-items-center">
                 <span>任務列表</span>
                 <el-button-group>
-                <el-button
-                    :type="currentTab === 'current' ? 'primary' : 'info'"
-                    size="small"
-                    @click="currentTab = 'current'"
-                >當前任務</el-button>
-                <el-button
-                    :type="currentTab === 'completed' ? 'primary' : 'info'"
-                    size="small"
-                    @click="currentTab = 'completed'"
-                >歷史記錄</el-button>
+                    <el-button
+                        :type="currentTab === 'current' ? 'primary' : 'info'"
+                        size="small"
+                        @click="currentTab = 'current'"
+                    >當前任務</el-button>
+                    <el-button
+                        :type="currentTab === 'completed' ? 'primary' : 'info'"
+                        size="small"
+                        @click="currentTab = 'completed'"
+                    >歷史記錄</el-button>
                 </el-button-group>
             </div>
         </template>
@@ -39,7 +39,7 @@
 </template>
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { realTimeStore } from '/src/stores/realTime'
+import { realTimeStore } from '@/stores/realTime'
 
 const realTimeData = realTimeStore()
 const currentTab = ref<'current' | 'completed'>('current')
@@ -53,14 +53,15 @@ const filteredTasks = computed(() => {
   })
 })
 
-const getTaskStatusType = (status: string): string => {
-    const types: Record<number, string> = {
-        1: 'primary',
-        4: 'success',
-        5: 'warning',
-        6: 'danger'
-    }
-    return types[status] || 'info'
+const taskStatustypes: Record<number, 'success' | 'warning' | 'info' | 'primary' | 'danger'> = {
+    1: 'primary',
+    4: 'success',
+    5: 'warning',
+    6: 'danger'
+}
+
+const getTaskStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+  return taskStatustypes[status] ?? 'info'
 }
 
 const actionMap: Record<number, string> = {

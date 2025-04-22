@@ -5,14 +5,14 @@
                 <el-row class="h-100" :gutter="5">
                     <el-col :lg="8" class="h-100 pt-2">
                         <div class="agvc-info h-100 d-flex flex-column justify-content-space-between">
-                            <SystemStatusCard :system-status="systemStatus" @toggle-maintenance="toggleMaintenance" />
-                            <TaskListCard :task-list="taskList" />
-                            <EquipmentStatusCard :agv-list="agvList" />
+                            <SystemStatusCard/>
+                            <TaskListCard />
+                            <EquipmentStatusCard />
                         </div>
                     </el-col>
                     <el-col :lg="16" class="h-100 d-flex flex-column pt-2">
                         <CurrentAlertCard />
-                        <HistoricalAlertCard :agv-list="agvList" />
+                        <HistoricalAlertCard/>
                         <BirdsEyeViewCard />
                     </el-col>
                 </el-row>
@@ -21,9 +21,9 @@
                 <el-row class="h-100" :gutter="5">
                     <el-col :lg="8" class="h-100 pt-2">
                         <div class="agvc-info h-100 d-flex flex-column justify-content-space-between">
-                            <SystemStatusCard :system-status="systemStatus" @toggle-maintenance="toggleMaintenance" />
-                            <TaskListCard :task-list="taskList" />
-                            <EquipmentStatusCard :agv-list="agvList" />
+                            <SystemStatusCard />
+                            <TaskListCard />
+                            <EquipmentStatusCard />
                         </div>
                     </el-col>
                 </el-row>
@@ -40,25 +40,6 @@ import CurrentAlertCard from './components/CurrentAlertCard.vue'
 import HistoricalAlertCard from './components/HistoricalAlertCard.vue'
 import BirdsEyeViewCard from './components/BirdsEyeViewCard.vue'
 
-interface AGV {
-    id: string
-    status: string
-    battery: number
-}
-
-interface Task {
-    id: string
-    type: string
-    status: string
-    progress: number
-}
-
-interface SystemStatus {
-    maintenance: boolean
-    hostConnected: boolean
-    isRemote: boolean
-}
-
 const eqStatusCardHeight = ref<number>(0)
 
 onMounted(() => {
@@ -70,37 +51,6 @@ onMounted(() => {
     }, 200)
 })
 
-const agvList = ref<AGV[]>([
-    { id: 'AGV-001', status: 'online', battery: 85 },
-    { id: 'AGV-002', status: 'charging', battery: 30 },
-    { id: 'AGV-002', status: 'charging', battery: 30 },
-    { id: 'AGV-002', status: 'charging', battery: 30 },
-    { id: 'AGV-002', status: 'charging', battery: 30 },
-    { id: 'AGV-002', status: 'charging', battery: 30 },
-])
-
-const taskList = ref<Task[]>([
-    { id: 'T001sssssddddds', type: '搬運', status: 'processing', progress: 45 },
-    { id: 'T002sssdss', type: '充電', status: 'waiting', progress: 0 },
-    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
-    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
-    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
-    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
-    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
-    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
-    { id: 'T003ssdddddssss', type: '搬運', status: 'completed', progress: 100 },
-
-])
-
-const systemStatus = ref<SystemStatus>({
-    maintenance: false,
-    hostConnected: false,
-    isRemote: false
-})
-
-const toggleMaintenance = () => {
-    systemStatus.value.maintenance = !systemStatus.value.maintenance
-}
 
 </script>
 <style scoped>

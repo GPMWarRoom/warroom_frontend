@@ -36,7 +36,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { realTimeStore } from '/src/stores/realTime'
+import { realTimeStore } from '@/stores/realTime'
 const realTimeData = realTimeStore()
 const sysStatus = computed(() => realTimeData.AGVC_RealTimeDashboard_SysStatus[0])
 
