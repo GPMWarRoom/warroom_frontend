@@ -1,65 +1,90 @@
 <template>
-    <BaseChart ref="chartRef" :options="chartOptions" :width="width" :height="height" />
+    <BaseChart
+        ref="chartRef"
+        v-show="options.series.length > 0"
+        :options="options"
+    />
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { reactive, watch } from 'vue'
 import BaseChart from './BaseChart.vue'
 import { globalChartOptions } from '../../../utils/globalChartOptions.js'
+import * as echarts from 'echarts'
+import 'echarts/lib/chart/boxplot'
+import 'echarts/lib/component/tooltip'
+import 'echarts/lib/component/title'
 
 const props = defineProps({
     title: {
         type: String,
+        default: ''
     },
-    data: {
-        type: Array,
-        required: true
-        // 數據格式應為: [[min, Q1, median, Q3, max], ...]
-    },
-    categories: {
-        type: Array,
-        default: () => []
+    datas: {
+        type: Object,
+        required: true, // { name: '資料名稱', xData: ['2025/04/22'], yDataList: [[min, Q1, Q2, Q3, max], ...] }
     },
     xAxisName: {
         type: String,
-        default: '類別'
+        default: '類別',
     },
     yAxisName: {
         type: String,
-        default: '數值'
+        default: '數值',
     },
     boxColor: {
         type: String,
-        default: 'rgb(32, 160, 255)'
+        default: '#20A0FF',
     },
     useGradient: {
         type: Boolean,
-        default: true
+        default: true,
     },
     startColor: {
         type: String,
-        default: '#83bff6'
+        default: '#83bff6',
     },
     endColor: {
         type: String,
-        default: '#188df0'
+        default: '#188df0',
     }
 })
 
-const chartOptions = computed(() => {
-    const options = new globalChartOptions()
-    options.xAxis.name = props.xAxisName
-    options.xAxis.type = 'category'
-    options.xAxis.data = props.categories
-    options.yAxis.name = props.yAxisName
-    options.title.text = props.title
+const options = reactive(new globalChartOptions())
 
-    options.series = [{
-        name: '箱型圖',
+watch(
+  () => props.datas,
+  (newDatas) => {
+    const { name, xData, yDataList } = newDatas || {}
+    // 防錯檢查：確保 xData 和 yDataList 是有效的，並且長度一致
+    if (
+        typeof name === 'string' &&
+        Array.isArray(xData) &&
+        Array.isArray(yDataList) &&
+        yDataList.length === xData.length &&
+        yDataList.length > 0 &&
+        yDataList.every(item => Array.isArray(item) && item.length === 5)
+    ) {
+    // 轉置 yDataList: [[min, Q1, Q2, Q3, max], ...] => 5 組陣列
+    const transformedYDataList = yDataList[0].map((_, index) => {
+        return yDataList.map(row => row[index])
+    })
+
+    const boxData = yDataList.map(row => ({
+        value: row
+    }))
+
+    options.title.text = props.title || name
+    options.xAxis.data = xData
+
+    options.series = [
+        {
+        name,
         type: 'boxplot',
-        data: props.data,
+        data: boxData,
         itemStyle: {
-            color: props.useGradient ? {
+            color: props.useGradient
+            ? {
                 type: 'linear',
                 x: 0,
                 y: 0,
@@ -69,26 +94,30 @@ const chartOptions = computed(() => {
                     { offset: 1, color: props.startColor },
                     { offset: 0, color: props.endColor }
                 ]
-            } : props.boxColor,
+                }
+            : props.boxColor,
             borderColor: '#fff',
             borderWidth: 1
         },
         tooltip: {
             formatter: function (param) {
-                return [
-                    `${param.name}: `,
-                    `最大值: ${param.data[4]}`,
-                    `上四分位數: ${param.data[3]}`,
-                    `中位數: ${param.data[2]}`,
-                    `下四分位數: ${param.data[1]}`,
-                    `最小值: ${param.data[0]}`
-                ].join('<br/>')
+            const [min, Q1, Q2, Q3, max] = param.data.value
+            return [
+                `${param.name}:`,
+                `最大值: ${max}`,
+                `上四分位數: ${Q3}`,
+                `中位數: ${Q2}`,
+                `下四分位數: ${Q1}`,
+                `最小值: ${min}`
+            ].join('<br/>')
             }
         }
-    }]
-
-    return options
-})
+        }
+    ]
+    } 
+    },
+    { immediate: true, deep: true }
+)
 </script>
 
-<style lang="scss" scoped></style>
+<style scoped lang="scss"></style>

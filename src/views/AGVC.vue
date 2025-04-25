@@ -22,7 +22,7 @@
                         </el-icon>
                         <span>即時監控</span>
                     </template>
-                    <RealTimeDashboard class="tab-content-component" />
+                    <RealTimeDashboard v-if="activeTab === 'monitor'" class="tab-content-component" />
                 </el-tab-pane>
                 <el-tab-pane :lazy="true" name="traffic-stats">
                     <template #label>
@@ -31,7 +31,7 @@
                         </el-icon>
                         <span>交管狀態</span>
                     </template>
-                    <TrafficStatsDashboard class="tab-content-component" />
+                    <TrafficStatsDashboard v-if="activeTab === 'traffic-stats'" class="tab-content-component" />
                 </el-tab-pane>
                 <el-tab-pane :lazy="true" name="traffic-efficiency">
                     <template #label>
@@ -40,7 +40,7 @@
                         </el-icon>
                         <span>搬運效能統計</span>
                     </template>
-                    <TrafficEfficiencyDashboard class="tab-content-component" />
+                    <TrafficEfficiencyDashboard v-if="activeTab === 'traffic-efficiency'" class="tab-content-component" :connection="connection"/>
                 </el-tab-pane>
                 <el-tab-pane name="utilization" :lazy="true">
                     <template #label>
@@ -49,7 +49,7 @@
                         </el-icon>
                         <span>設備稼動</span>
                     </template>
-                    <UtilizationDashboard class="tab-content-component" />
+                    <UtilizationDashboard v-if="activeTab === 'utilization'" class="tab-content-component" />
                 </el-tab-pane>
                 <!-- <el-tab-pane label="任務管理" name="tasks">
                     <template #label>
@@ -89,7 +89,8 @@ import { realTimeStore } from '../stores/realTime'
 import { useSignalR } from '@/composables/useSignalR'
 const { startConnection, on, off, connection, isConnected } = useSignalR()
 
-const loading = ref(false)
+const realTimeData = realTimeStore()
+const loading = ref(realTimeData.loading)
 const activeTab = ref('monitor')
 const uiStats = uiStatsStore()
 const agvcList = ref([
@@ -156,16 +157,27 @@ const agvcList = ref([
 ])
 const selectedAgvc = ref('yel')
 const dateRange = ref([])
+async function _Init() {
+    switch (activeTab.value) {
+        case 'monitor':
+            await connection.value?.invoke('InitDataByTab');
+            break;
+        case 'traffic-efficiency':
+            await connection.value?.invoke('InitAGVEfficiency', realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
+                realTimeData.AGVC_TrafficEfficiency_Selector.source, realTimeData.AGVC_TrafficEfficiency_Selector.target);
+            break;
+    }
+}
 async function handleAgvcChange(value: string) {
     loading.value = true
     await subscribeToSchema(value, activeTab.value)
-    await connection.value?.invoke('InitDataByTab')
+    await _Init()
     loading.value = false
 }
 const handleTabChange = async (tab: string) => {
     uiStats.setAGVCTabSelected(tab)
     await subscribeToSchema(selectedAgvc.value, activeTab.value)
-    await connection.value?.invoke('InitDataByTab')
+    await _Init()
 }
 const tabStoreMap: Record<string, Record<string, string>> = {
     "monitor": {
@@ -176,11 +188,7 @@ const tabStoreMap: Record<string, Record<string, string>> = {
         SysStatus: "AGVC_RealTimeDashboard_SysStatus",
         SystemAlarms: "AGVC_RealTimeDashboard_SystemAlarms",
     },
-    "traffic-efficiency": {
-        Tasks: "AGVC_TrafficEfficiency_Tasks",
-    },
 };
-const realTimeData = realTimeStore()
 
 let currentSubscribedSchema: string | null = null
 let currentTab: string | null = null
@@ -209,33 +217,41 @@ onMounted(async () => {
 
         if (!storeMap) return;
 
-        if (result.type === 'init') {
-            for (const [key, value] of Object.entries(result.data)) {
-            const storeKey = storeMap[key];
-            if (storeKey) {
-                realTimeData.updateRealTimeData(storeKey, value);
-            }
-            }
-        } else if (result.type === 'update') {
-            const storeKey = storeMap[result.table];
-            if (storeKey) {
-            realTimeData.updateRealTimeData(storeKey, result.data);
+        if (currentTab ==='monitor') {
+            if (result.type === 'init') {
+                for (const [key, value] of Object.entries(result.data)) {
+                const storeKey = storeMap[key];
+                if (storeKey) {
+                    realTimeData.updateRealTimeData(storeKey, value);
+                }
+                }
+            } else if (result.type === 'update') {
+                const storeKey = storeMap[result.table];
+                if (storeKey) {
+                    realTimeData.updateRealTimeData(storeKey, result.data);
+                }
             }
         }
     });
+    on('ReceiveAGVEfficiency', (result) => {
+        realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_Tasks', result.TaskSuccess.Result)
+        realTimeData.updateRealTimeData('MainEQList', result.MainEQList.Result)
+        realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_UnloadWaitTime', result.UnloadWaitTime.Result)
+        realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStatics', result.CarryStatics.Result)
+    });
 
     connection.value?.onreconnected(async () => {
-    console.log('🔁 SignalR 已重新連線')
-    if (currentSubscribedSchema && currentTab) {
-        await subscribeToSchema(currentSubscribedSchema, currentTab)
-    }
-    await connection.value?.invoke('InitDataByTab')
-        console.log(`✅ 已重新初始化 Init_${currentTab}`)
+        console.log('🔁 SignalR 已重新連線')
+        if (currentSubscribedSchema && currentTab) {
+            await subscribeToSchema(currentSubscribedSchema, currentTab)
+            await _Init()
+            console.log(`✅ 已重新初始化 Init_${currentTab}`)
+        }
     })
 
     try {
         await subscribeToSchema(selectedAgvc.value, activeTab.value)
-        await connection.value?.invoke('InitDataByTab')
+        await _Init()
     } catch (err) {
         console.error('❌ SignalR 錯誤：', err)
     }

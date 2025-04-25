@@ -6,27 +6,41 @@
                     <div class="card w-100" style="height:130px">
                         <h3>平均任務成功率</h3>
                         <div class="text-light text-center p-2">
-                            <el-progress type="circle" :percentage="realTimeData.AGVC_TrafficEfficiency_Tasks[0]?.AvgSuccessRate" :stroke-width="8" width="70"></el-progress>
+                            <el-progress type="circle" :percentage="realTimeData.AGVC_TrafficEfficiency_Tasks[0]?.AvgSuccessRate" :stroke-width="8" :width="70"></el-progress>
                         </div>
                     </div>
                     <div class="card w-100" style="height:130px">
                         <h3>自動化比率</h3>
                         <div class="text-light text-center p-2">
-                            <el-progress type="circle" :percentage="realTimeData.AGVC_TrafficEfficiency_Tasks[0]?.AvgAutoRate" :stroke-width="8" width="70"></el-progress>
+                            <el-progress type="circle" :percentage="realTimeData.AGVC_TrafficEfficiency_Tasks[0]?.AvgAutoRate" :stroke-width="8" :width="70"></el-progress>
                         </div>
                     </div>
                 </div>
                 <div class="card my-1">
                     <h3>任務成功率走勢</h3>
                     <div class="content w-100 ">
-                        <LineChart class="content h-100 w-100" :datas="[{name: '任務成功率', xData:realTimeData.AGVC_TrafficEfficiency_Tasks.map(item => item.Date), yData:realTimeData.AGVC_TrafficEfficiency_Tasks.map(item => item.DailySuccessRate)}]"></LineChart>
+                        <LineChart class="content h-100 w-100" :datas="[{name: '任務成功率', xData:realTimeData.AGVC_TrafficEfficiency_Tasks.map(item => item.Date), 
+                            yData:realTimeData.AGVC_TrafficEfficiency_Tasks.map(item => item.DailySuccessRate)}]"></LineChart>
                     </div>
                 </div>
                 <div class="card my-1">
                     <h3>設備Unload平均等待時間</h3>
                     <div class="content w-100  d-flex flex-column ">
-                        <el-select placeholder="請選擇" class="mb-2"></el-select>
-                        <BarChart class="content flex-fill h-100 w-100" :useGradient="true" :data="data.barChartData" xAxisName="時間"></BarChart>
+                        <el-select v-model="realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ" class="mb-2" >
+                            <el-option
+                                label="全部設備"
+                                value="all"
+                            />
+                            <el-option
+                                v-for="item in realTimeData.MainEQList"
+                                :label="item.Name"
+                                :value="item.Name"
+                            />
+                        </el-select>
+                        <BarChart class="content flex-fill h-100 w-100" :useGradient="true" 
+                            :datas="[{ name: '平均等待時間', xData:realTimeData.AGVC_TrafficEfficiency_UnloadWaitTime.map(item => item.Date), 
+                                yData:realTimeData.AGVC_TrafficEfficiency_UnloadWaitTime.map(item => item.AvgUnloadTime)}]">
+                        </BarChart>
                     </div>
                 </div>
             </el-col>
@@ -41,23 +55,46 @@
         </el-row>
     </div>
 </template>
-<script setup>
-import { reactive, onMounted, ref, computed } from 'vue'
+<script setup lang="ts">
+import { reactive, onMounted, onUnmounted, ref } from 'vue'
 import { realTimeStore } from '@/stores/realTime'
 import LineChart from '../../common/charts/LineChart.vue'
 import BarChart from '../../common/charts/BarChart.vue'
 import FromToTransportStas from './components/FromToTransportStas/index.vue'
 
+const props = defineProps({
+  connection: Object // 接收父頁面傳遞過來的 connection
+})
 const realTimeData = realTimeStore()
 const data = reactive({
     lineChartData: [100, 90, 80, 70, 60, 50, 30],
     barChartData: [100, 90, 80, 70, 60, 50, 30]
 })
-onMounted(async () => {
-    setInterval(() => {
-        data.lineChartData[0] = Math.random() * 100;
-    }, 1000)
+const intervalId = ref<number | null>(null)
+const timeoutId = ref<number | null>(null)
+
+onMounted(() => {
+    const now = new Date()
+    const minutes = now.getMinutes()
+    const seconds = now.getSeconds()
+    const msToNextHour = ((60 - minutes - 1) * 60 + (60 - seconds)) * 1000
+
+    timeoutId.value = window.setTimeout(() => {
+        props.connection?.invoke('InitAGVEfficiency', realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
+            realTimeData.AGVC_TrafficEfficiency_Selector.source, realTimeData.AGVC_TrafficEfficiency_Selector.target);
+        intervalId.value = window.setInterval(() => {
+            props.connection?.invoke('InitAGVEfficiency', realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
+                realTimeData.AGVC_TrafficEfficiency_Selector.source, realTimeData.AGVC_TrafficEfficiency_Selector.target);
+        }, 60 * 60 * 1000)
+    }, msToNextHour)
 })
+
+onUnmounted(() => {
+    if (timeoutId.value !== null) clearTimeout(timeoutId.value)
+    if (intervalId.value !== null) clearInterval(intervalId.value)
+    
+})
+
 </script>
 <style scoped lang="scss">
 .traffic-efficiency-dashboard {

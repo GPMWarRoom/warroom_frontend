@@ -44,7 +44,10 @@ const initChart = () => {
 // 更新圖表
 const updateChart = () => {
     if (chartInstance) {
-        chartInstance.setOption(props.options)
+        chartInstance.setOption(props.options, {
+            notMerge: true,
+            lazyUpdate: false
+        })
     }
 }
 
@@ -103,8 +106,10 @@ watch(() => uiStats.routeSelected, (newVal) => {
 
 // 生命週期鉤子
 onMounted(() => {
-    initChart()
-    window.addEventListener('resize', handleResize)
+    nextTick(() => {
+        initChart()
+        window.addEventListener('resize', handleResize)
+    })
 })
 
 onUnmounted(() => {

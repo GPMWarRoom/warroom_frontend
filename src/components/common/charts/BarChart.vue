@@ -1,15 +1,21 @@
 <template>
-    <BaseChart ref="chartRef" :options="chartOptions" :width="width" :height="height" />
+    <BaseChart
+        ref="chartRef"
+        v-show="options.series.length > 0"
+        :options="options"
+    />
 </template>
+
 <script setup>
-import { ref, computed } from 'vue'
+import { reactive, watch } from 'vue'
 import BaseChart from './BaseChart.vue'
 import { globalChartOptions } from '../../../utils/globalChartOptions.js'
+
 const props = defineProps({
     title: {
         type: String,
     },
-    data: {
+    datas: {
         type: Array,
         required: true
     },
@@ -19,7 +25,7 @@ const props = defineProps({
     },
     yAxisName: {
         type: String,
-        default: '數據'
+        default: '等待時間(分)'
     },
     barColor: {
         type: String,
@@ -42,36 +48,48 @@ const props = defineProps({
         default: '#188df0'
     }
 })
-const chartOptions = computed(() => {
-    const options = new globalChartOptions()
-    options.xAxis.name = props.xAxisName;
-    options.yAxis.name = props.yAxisName;
-    options.title.text = props.title;
-    options.series = [
+
+// 確保是 reactive 才會更新圖表
+const options = reactive(new globalChartOptions())
+
+watch(
+  () => props.datas,
+  (newDatas) => {
+    if (Array.isArray(newDatas) && newDatas.length > 0 && newDatas[0]?.xData && newDatas[0]?.yData) {
+      options.title.text = props.title
+      options.xAxis.name = props.xAxisName
+      options.yAxis.name = props.yAxisName
+      options.xAxis.data = newDatas[0].xData
+      options.series = [
         {
-            name: '數據',
-            type: 'bar',
-            data: props.data,
-            itemStyle: {
-                color: props.useGradient ? {
-                    type: 'linear',
-                    x: 0,
-                    y: 0,
-                    x2: 0,
-                    y2: 1,
-                    colorStops: [
-                        { offset: 1, color: props.startColor },
-                        { offset: 0, color: props.endColor }
-                    ]
-                } : props.barColor,
-                borderRadius: [5, 5, 0, 0],
-                borderColor: '#fff',
-                borderWidth: 1,
-            },
-            barWidth: props.barWidth
+          name: newDatas[0].name,
+          type: 'bar',
+          data: newDatas[0].yData,
+          smooth: false,
+          itemStyle: {
+            color: props.useGradient
+              ? {
+                  type: 'linear',
+                  x: 0,
+                  y: 0,
+                  x2: 0,
+                  y2: 1,
+                  colorStops: [
+                    { offset: 1, color: props.startColor },
+                    { offset: 0, color: props.endColor }
+                  ]
+                }
+              : props.barColor,
+            borderRadius: [5, 5, 0, 0],
+            borderColor: '#fff',
+            borderWidth: 1
+          },
+          barWidth: props.barWidth
         }
-    ]
-    return options
-})
+      ]
+    }
+  },
+  { immediate: true, deep: true }
+)
 </script>
 <style lang="scss" scoped></style>

@@ -32,24 +32,12 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
 import SystemStatusCard from './components/SystemStatusCard.vue'
 import TaskListCard from './components/TaskListCard.vue'
 import EquipmentStatusCard from './components/EquipmentStatusCard.vue'
 import CurrentAlertCard from './components/CurrentAlertCard.vue'
 import HistoricalAlertCard from './components/HistoricalAlertCard.vue'
 import BirdsEyeViewCard from './components/BirdsEyeViewCard.vue'
-
-const eqStatusCardHeight = ref<number>(0)
-
-onMounted(() => {
-    const eqStatusCard = document.getElementById('eq-status-card')
-    if (!eqStatusCard)
-        return
-    setTimeout(() => {
-        eqStatusCardHeight.value = eqStatusCard?.clientHeight || 0
-    }, 200)
-})
 
 
 </script>

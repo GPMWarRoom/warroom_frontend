@@ -1,10 +1,8 @@
 <template>
     <BaseChart
         ref="chartRef"
-        v-if="options.series.length > 0"
+        v-show="options.series.length > 0"
         :options="options"
-        :width="width"
-        :height="height"
     />
 </template>
 

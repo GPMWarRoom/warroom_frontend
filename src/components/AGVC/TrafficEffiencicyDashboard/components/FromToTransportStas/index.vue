@@ -4,25 +4,31 @@
         <div class="flex-fill d-flex flex-column justify-content-between">
             <h3>搬運結果</h3>
             <div class="h-100">
-                <StackedBarChart
-    :series="[
-        { name: '系列1', data: [120, 132, 101] },
-        { name: '系列2', data: [220, 182, 191] },
-        { name: '系列3', data: [150, 232, 201] }
-    ]"
-    :categories="['1月', '2月', '3月']"
-/>
+                <StackedBarChart :datas="{ name: ['取消', '失敗', '完成'],
+                    xData: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.Date),
+                    yDataList: [realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.CanceledCount),
+                        realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.FailedCount),
+                        realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.CompletedCount)] }" />
             </div>
             <h3>執行時間</h3>
             <div class="h-100">
-                <BarChart :data="[1,2,3,4,5,6,7,8,9,10]"/>
+                <BarChart :useGradient="true" :yAxisName="'執行時間(分)'"
+                    :datas="[{ name: '執行時間', xData:realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.Date), 
+                        yData:realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.AvgExecMinutes) }]"/>
             </div>
             <h3>執行時間 Box Plot</h3>
             <div class="h-100">
-                <BoxPlotChart
-    :data="[[850, 900, 950, 1000, 1100], [750, 800, 850, 900, 1000]]"
-    :categories="['A組', 'B組']"
-/>
+                <BoxPlotChart :useGradient="true" :datas="{
+                    name: '執行時間', 
+                    xData: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.Date), 
+                    yDataList: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => [
+                    item.MinExecMinutes, 
+                    item.Q1, 
+                    item.Median, 
+                    item.Q3, 
+                    item.MaxExecMinutes
+                    ])
+                }"/>
             </div>
         </div>
     </div>
@@ -32,6 +38,8 @@ import FromToSelector from './FromToSelector.vue'
 import BarChart from '../../../../common/charts/BarChart.vue';
 import StackedBarChart from '../../../../common/charts/StackedBarChart.vue';
 import BoxPlotChart from '../../../../common/charts/BoxPlotChart.vue';
+import { realTimeStore } from '@/stores/realTime'
+const realTimeData = realTimeStore()
 </script>
 <style lang="scss" scoped>
 .from-to-transport-stats {
