@@ -23,11 +23,11 @@ import { realTimeStore } from '@/stores/realTime'
 const realTimeData = realTimeStore()
 const sourceList = [
     {name: 'AGV', value: 'AGV'},
-    {name: '生產設備', value: 'MainEQ'},
+    {name: 'MainEQ', value: 'MainEQ'},
     {name: 'Rack', value: 'Rack'},
 ]
 const targetList = [
-    {name: '生產設備', value: 'MainEQ'},
+    {name: 'MainEQ', value: 'MainEQ'},
     {name: 'Rack', value: 'Rack'},
 ]
 

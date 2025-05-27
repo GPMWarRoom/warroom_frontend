@@ -71,7 +71,8 @@
                 </el-tab-pane> -->
             </el-tabs>
             <div class="date-select" v-if="activeTab !== 'monitor'">
-                <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="開始日期" end-placeholder="結束日期" />
+                <el-date-picker v-model="realTimeData.DateRange" type="daterange" range-separator="至" start-placeholder="開始日期" end-placeholder="結束日期" />
+                <el-button style="margin: 0px 2px" @click="_Init">查詢</el-button>
             </div>
         </div>
     </content-container>
@@ -156,16 +157,24 @@ const agvcList = ref([
     },
 ])
 const selectedAgvc = ref('yel')
-const dateRange = ref([])
 async function _Init() {
     switch (activeTab.value) {
         case 'monitor':
             await connection.value?.invoke('InitDataByTab');
             break;
         case 'traffic-efficiency':
-            await connection.value?.invoke('InitAGVEfficiency', realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
-                realTimeData.AGVC_TrafficEfficiency_Selector.source, realTimeData.AGVC_TrafficEfficiency_Selector.target);
+            await connection.value?.invoke('InitAGVEfficiency', 
+                realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
+                realTimeData.AGVC_TrafficEfficiency_Selector.source,    
+                realTimeData.AGVC_TrafficEfficiency_Selector.target,
+                realTimeData.DateRange
+            );
             break;
+        case 'utilization':
+        await connection.value?.invoke('InitAGVUtilization', 
+            realTimeData.DateRange
+        );
+        break;
     }
 }
 async function handleAgvcChange(value: string) {
@@ -187,6 +196,7 @@ const tabStoreMap: Record<string, Record<string, string>> = {
         Tasks: "AGVC_RealTimeDashboard_Tasks",
         SysStatus: "AGVC_RealTimeDashboard_SysStatus",
         SystemAlarms: "AGVC_RealTimeDashboard_SystemAlarms",
+        NoRealTimeTask: "AGVC_RealTimeDashboard_NoRealTimeTasks",
     },
 };
 
@@ -239,7 +249,14 @@ onMounted(async () => {
         realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_UnloadWaitTime', result.UnloadWaitTime.Result)
         realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStatics', result.CarryStatics.Result)
     });
-
+    on('ReceiveAGVUtilization', (result) => {
+        realTimeData.updateRealTimeData('AGVC_Utilization_AGVAvailabilitys', result.AGVAvailabilitys.Result)
+        realTimeData.updateRealTimeData('AGVC_Utilization_NoAGVTasks', result.NoAGVTasks.Result.NoTasks)
+        realTimeData.updateRealTimeData('AGVC_Utilization_RemoteRate', result.NoAGVTasks.Result.RemoteRate)
+        realTimeData.updateRealTimeData('AGVC_Utilization_NoAGVAlarm', result.NoAGVAlarm.Result)
+        realTimeData.updateRealTimeData('AGVC_Utilization_NoReject', result.NoAGVTasks.Result.NoReject)
+        console.log(result.NoAGVTasks.Result.NoReject)
+    });
     connection.value?.onreconnected(async () => {
         console.log('🔁 SignalR 已重新連線')
         if (currentSubscribedSchema && currentTab) {

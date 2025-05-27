@@ -1,7 +1,7 @@
 <template>
     <BaseChart
         ref="chartRef"
-        v-show="options.series.length > 0"
+        v-if="options.series.length > 0"
         :options="options"
     />
 </template>
@@ -42,32 +42,43 @@ const props = defineProps({
     }
 })
   
+const defaultColors = [
+  'rgb(32, 160, 255)',  // 藍
+  'rgb(255, 159, 64)',  // 橘
+  'rgb(255, 99, 132)',  // 紅
+  'rgb(255, 206, 86)',  // 黃
+  'rgb(153, 102, 255)', // 紫
+  'rgb(75, 192, 192)',  // 青
+]
   // 確保是 reactive 才會更新圖表
 const options = reactive(new globalChartOptions())
 
 watch(
 () => props.datas,
 (newDatas) => {
-    if (newDatas.length > 0 && newDatas[0].xData && newDatas[0].yData) {
-    options.title.text = props.title
-    options.xAxis.name = props.xAxisName
-    options.yAxis.name = props.yAxisName
-    options.xAxis.data = newDatas[0].xData
-    options.yAxis.min = 0
-    options.yAxis.max = 100
-    options.series = [
-        {
-        name: newDatas[0].name,
-        type: 'line',
-        data: newDatas[0].yData,
-        smooth: false,
-        lineStyle: { color: props.lineColor },
-        itemStyle: { color: props.lineColor }
-        }
-    ]
+    if (newDatas.length > 0) {
+        options.title.text = props.title
+        options.xAxis.name = props.xAxisName
+        options.yAxis.name = props.yAxisName
+        options.xAxis.data = newDatas[0].xData
+
+        options.series = newDatas.map((item, index) => {
+            const color = defaultColors[index % defaultColors.length]
+            return {
+            name: item.name,
+            type: 'line',
+            data: item.yData,
+            smooth: false,
+            lineStyle: { color },
+            itemStyle: { color }
+            }
+        })
+    } else {
+        options.series = []
+        options.xAxis.data = []
     }
-},
-{ immediate: true, deep: true }
+  },
+  { immediate: true, deep: true }
 )
 </script>
 

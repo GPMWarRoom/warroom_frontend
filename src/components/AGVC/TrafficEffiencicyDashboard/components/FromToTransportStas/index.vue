@@ -4,11 +4,12 @@
         <div class="flex-fill d-flex flex-column justify-content-between">
             <h3>搬運結果</h3>
             <div class="h-100">
-                <StackedBarChart :datas="{ name: ['取消', '失敗', '完成'],
+                <StackedBarChart :datas="{ stacks: ['完成', '失敗', '取消'],
                     xData: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.Date),
-                    yDataList: [realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.CanceledCount),
+                    groups:['agv_001'],
+                    yDataList: [[realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.CompletedCount),
                         realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.FailedCount),
-                        realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.CompletedCount)] }" />
+                        realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.CanceledCount)]] }" />
             </div>
             <h3>執行時間</h3>
             <div class="h-100">

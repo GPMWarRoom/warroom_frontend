@@ -1,14 +1,21 @@
 <template>
     <div class="agv-status border">
+        <div class="header-bar">
+            <el-button link @click="router.back" :icon="Back" class="back-btn">
+                返回
+            </el-button>
+            <div class="header-divider"></div>
+            <span class="header-title">{{ equipmentId }}：</span>
+        </div>
         <div class="status-grid">
             <!-- 左側區域：電池和里程 -->
             <div class="left-panel ">
                 <div class="panel-section">
                     <BatteryStatus
-                        :percentage="50"
+                        :percentage="Number(currentEquipment?.BatLevel?.toFixed(2))"
                         :temperature="20"
-                        :current="10"
-                        :voltage="22.40" />
+                        :current="currentEquipment?.BatChargeCurrent"
+                        :voltage="currentEquipment?.BatVoltage" />
                 </div>
                 <div class="panel-section">
                     <Mileage
@@ -31,37 +38,77 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import BatteryStatus from './components/BatteryStatus.vue'
 import MotorsStatus from './components/MotorsStatus.vue'
 import Mileage from './components/Mileage.vue'
 import TaskStats from './components/TaskStats.vue'
+import { Back } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
+import { realTimeStore } from '@/stores/realTime'
 
-const motors = ref([
-    {
-        name: '左輪',
-        current: 10,
-        voltage: 12
-    },
 
+const route = useRoute()
+const router = useRouter()
+const realTimeData = realTimeStore()
+
+const equipmentId = ref(route.params.id)
+
+watch(
+  () => route.params.id,
+  (newId) => {
+    equipmentId.value = newId
+  }
+)
+
+const currentEquipment = computed(() =>
+  realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV.find(
+    (item: any) => item.Name === equipmentId.value
+  )
+)
+const currentTask = computed(() =>
+  realTimeData.AGVC_RealTimeDashboard_NoRealTimeTasks.find(
+    (item: any) => item.AGVName === equipmentId.value
+  )
+)
+
+
+const motors = computed(() => {
+  if (!currentEquipment.value) return []
+  return [
     {
-        name: '右輪',
-        current: 10,
-        voltage: 12
+      name: '左輪',
+      current: currentEquipment.value.MotorLeftCurrent ?? 0,
+      voltage: currentEquipment.value.MotorLeftVoltage ?? 0
     },
     {
-        name: '升降馬達',
-        current: 10,
-        voltage: 12
+      name: '右輪',
+      current: currentEquipment.value.MotorRightCurrent ?? 0,
+      voltage: currentEquipment.value.MotorRightVoltage ?? 0
+    },
+    {
+      name: '升降馬達',
+      current: currentEquipment.value.LiftMotorCurrent ?? 0,
+      voltage: currentEquipment.value.LiftMotorVoltage ?? 0
     }
-])
-const transportTasks = ref({
-    completed: 10,
-    total: 20
+  ]
 })
-const chargingTasks = ref({
-    completed: 10,
-    total: 20
+
+const transportTasks = computed(() => {
+  if (!currentTask.value) return { completed: 0, total: 0 }
+  return {
+    completed: currentTask.value.TransportCompleted ?? 0,
+    total: currentTask.value.TransportTotal ?? 0
+  }
+})
+
+const chargingTasks = computed(() => {
+  if (!currentTask.value) return { completed: 0, total: 0 }
+  return {
+    completed: currentTask.value.ChargingCompleted ?? 0,
+    total: currentTask.value.ChargingTotal ?? 0
+  }
 })
 </script>
 <style scoped lang="scss">
@@ -140,4 +187,37 @@ const chargingTasks = ref({
         border-bottom: 1px solid #333;
     }
 }
+
+.header-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 5px;
+    padding: 10px 20px; // 高度縮小
+    background: #23272f;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    min-height: 10px; // 可視需要調整
+}
+
+.back-btn {
+    font-weight: bold;
+    color: #fff;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+}
+
+.header-title {
+    font-size: 1.0rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.header-divider {
+  width: 1px;
+  height: 24px;
+  background: #4b5563; 
+  margin: 0 8px;
+}
+
 </style>

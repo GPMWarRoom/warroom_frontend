@@ -19,7 +19,12 @@
                 <div class="card">
                     <h3>AGV MTBF MTBI</h3>
                     <div class="content">
-                        <LineChart class="w-100" :datas="[{ name: 'AGV1', data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }, { name: 'AGV2', data: [111, 112, 113, 114, 115, 116, 117, 118, 119, 120] }]" />
+                        <BarChart :useGradient="true" :yAxisName="'時間'"
+                            :datas="[{
+                                name: 'MTBI',
+                                xData: MTBFList.map(item => item.date),
+                                yData: MTBFList.map(item => item.mtbi !== null ? Number(item.mtbi) : null)
+                            }]"/>
                     </div>
                 </div>
             </el-col>
@@ -29,7 +34,7 @@
                 <div class="card">
                     <h3>AGV任務數</h3>
                     <div class="content">
-                        <LineChart class="w-100" :datas="[{ name: 'AGV1', data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }, { name: 'AGV2', data: [111, 112, 113, 114, 115, 116, 117, 118, 119, 120] }]" />
+                        <LineChart class=" w-100" :yAxisName="'任務數(件)'" :datas="realTimeData.AGVC_Utilization_NoAGVTasks"></LineChart>
                     </div>
                 </div>
             </el-col>
@@ -37,7 +42,7 @@
                 <div class="card">
                     <h3>AGV上線率 (Remote)</h3>
                     <div class="content">
-                        <LineChart class="w-100" :datas="[{ name: 'AGV1', data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }, { name: 'AGV2', data: [111, 112, 113, 114, 115, 116, 117, 118, 119, 120] }]" />
+                        <LineChart class=" w-100" :yAxisName="'上線率'" :datas="realTimeData.AGVC_Utilization_RemoteRate"></LineChart>
                     </div>
                 </div>
             </el-col>
@@ -45,7 +50,7 @@
                 <div class="card">
                     <h3>AGV 警報次數</h3>
                     <div class="content">
-                        <LineChart class="w-100" :datas="[{ name: 'AGV1', data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }, { name: 'AGV2', data: [111, 112, 113, 114, 115, 116, 117, 118, 119, 120] }]" />
+                        <LineChart class=" w-100" :yAxisName="'次數'" :datas="realTimeData.AGVC_RealTimeDashboard_EQStatus_Rack"></LineChart>
                     </div>
                 </div>
             </el-col>
@@ -55,7 +60,9 @@
                 <div class="card">
                     <h3>設備狀態異常而拒絕任務數</h3>
                     <div class="content">
-                        <LineChart class="w-100" :datas="[{ name: '拒絕次數', data: [111, 112, 113, 114, 115, 116, 117, 118, 119, 120] }]" />
+                        <LineChart class="w-100" :yAxisName="'次數'" :datas="[{ name: '拒絕任務數',
+                            xData:realTimeData.AGVC_Utilization_NoAGVAlarm.map(item => item.Date), 
+                            yData:realTimeData.AGVC_Utilization_NoAGVAlarm.map(item => item.Count)}]" />
                     </div>
                 </div>
             </el-col>
@@ -72,11 +79,24 @@
 </template>
 <script setup>
 import LineChart from '../../common/charts/LineChart.vue'
+import BarChart from '../../common/charts/BarChart.vue'
 import AgvUtilization from './components/AgvUtilization.vue'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { realTimeStore } from '@/stores/realTime'
 
 const selectedAgvUtilizationType = ref('status')
+const realTimeData = realTimeStore()
 
+const MTBFList = computed(() => {
+    return realTimeData.AGVC_Utilization_AGVAvailabilitys.map(item =>{
+        const alarm = realTimeData.AGVC_Utilization_NoAGVAlarm.find(w => w.Date === item.Date)
+        const count = alarm?.Count
+        return {
+            date: item.Date,
+            mtbi: (count ?? null) > 0 ? (item.RUN_TIME / count).toFixed(2) : null
+        }
+    })
+})
 </script>
 <style lang="scss" scoped>
 .utilization-dashboard {

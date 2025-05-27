@@ -34,7 +34,7 @@
                             <el-option
                                 v-for="item in realTimeData.MainEQList"
                                 :label="item.Name"
-                                :value="item.Name"
+                                :value="item.Tag"
                             />
                         </el-select>
                         <BarChart class="content flex-fill h-100 w-100" :useGradient="true" 
@@ -80,11 +80,19 @@ onMounted(() => {
     const msToNextHour = ((60 - minutes - 1) * 60 + (60 - seconds)) * 1000
 
     timeoutId.value = window.setTimeout(() => {
-        props.connection?.invoke('InitAGVEfficiency', realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
-            realTimeData.AGVC_TrafficEfficiency_Selector.source, realTimeData.AGVC_TrafficEfficiency_Selector.target);
+        props.connection?.invoke('InitAGVEfficiency', 
+            realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
+            realTimeData.AGVC_TrafficEfficiency_Selector.source, 
+            realTimeData.AGVC_TrafficEfficiency_Selector.target, 
+            realTimeData.DateRange
+        );
         intervalId.value = window.setInterval(() => {
-            props.connection?.invoke('InitAGVEfficiency', realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
-                realTimeData.AGVC_TrafficEfficiency_Selector.source, realTimeData.AGVC_TrafficEfficiency_Selector.target);
+            props.connection?.invoke('InitAGVEfficiency', 
+                realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
+                realTimeData.AGVC_TrafficEfficiency_Selector.source, 
+                realTimeData.AGVC_TrafficEfficiency_Selector.target, 
+                realTimeData.DateRange
+            );
         }, 60 * 60 * 1000)
     }, msToNextHour)
 })

@@ -23,13 +23,13 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/EquipmentStatus',
+    path: '/EquipmentStatus/:id/:type',
     name: 'EquipmentStatus',
     component: () => import('../views/EquipmentStatusView.vue'),
     meta: {
       title: '設備狀態',
       icon: InfoFilled,
-      showInMenu: true
+      showInMenu: false
     }
   },
   {

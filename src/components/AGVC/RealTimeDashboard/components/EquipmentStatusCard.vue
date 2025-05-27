@@ -28,8 +28,10 @@
             </div>
         </template>
         <div v-if="currentTab==='AGV' "style="max-height: 300px; overflow-y: auto;">
-            <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV" stripe :style="{ height: tableHeight }">
-                <el-table-column prop="Name" label="ID" width="90" />
+            <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV" stripe 
+                        :style="{ height: tableHeight }"
+                        @row-click="(row) => handleRowClick(row.Name, 'agv')">
+                <el-table-column align="center" prop="Name" label="ID" width="90" />
                 <el-table-column align="center" prop="MainStatus" label="狀態" width="110">
                     <template #default="{ row }">
                         <el-tag :type="StatusMap[row.StatusText]">{{ row.StatusText }}</el-tag>
@@ -49,17 +51,18 @@
         </div>
         <div v-if="currentTab==='mainEq' "style="max-height: 300px; overflow-y: auto;">
             <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_MainEQ" stripe :style="{ height: tableHeight }">
-                <el-table-column prop="Name" label="ID" width="110" />
-                <el-table-column align="center" prop="MainStatus" label="狀態" width="auto">
+                <el-table-column align="center" prop="Name" label="ID" width="110" />
+                <el-table-column align="center" prop="MainStatus" label="狀態" width="110">
                     <template #default="{ row }">
                         <el-tag :type="StatusMap[row.StatusText]">{{ row.StatusText }}</el-tag>
                     </template>
                 </el-table-column>
+                <<el-table-column align="center" prop="MaterialID" label="Material ID" />
             </el-table>
         </div>
         <div v-if="currentTab==='chargingStation' "style="max-height: 300px; overflow-y: auto;">
             <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV" stripe :style="{ height: tableHeight }">
-                <el-table-column prop="Name" label="ID" width="110" />
+                <el-table-column align="center" prop="Name" label="ID" width="110" />
                 <el-table-column align="center" prop="MainStatus" label="狀態" width="100">
                     <template #default="{ row }">
                         <el-tag :type="StatusMap[row.StatusText]">{{ row.StatusText }}</el-tag>
@@ -73,11 +76,15 @@
             </el-table>
         </div>
         <div v-if="currentTab==='rack' "style="max-height: 300px; overflow-y: auto;">
-            <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_Rack" stripe :style="{ height: tableHeight }">
-                <el-table-column prop="Name" label="ID" width="110" />
-                <el-table-column align="center" prop="MainStatus" label="狀態" width="auto">
+            <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_Rack" stripe 
+                :style="{ height: tableHeight }"
+                @row-click="(row) => handleRowClick(row.rack_name, 'rack')">
+                <el-table-column align="center" prop="rack_name" label="ID" width="auto" />
+                <el-table-column align="center" label="狀態" width="auto">
                     <template #default="{ row }">
-                        <el-tag :type="StatusMap[row.StatusText]">{{ row.StatusText }}</el-tag>
+                        <div style="display: flex; justify-content: center;">
+                            <el-tag style="width: 100px;" :type="StatusMap[row.StatusText]">{{ row.StatusText }}</el-tag>
+                        </div>
                     </template>
                 </el-table-column>
             </el-table>
@@ -87,7 +94,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { realTimeStore } from '@/stores/realTime'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 
 const currentTab = ref<'AGV' | 'mainEq' | 'chargingStation' | 'rack'>('AGV')
 const tableHeight = ref('300px')
@@ -107,4 +116,9 @@ const StatusMap: Record<string, 'success' | 'warning' | 'info' | 'primary' | 'da
     down: 'danger',
     charging: 'primary'
 }
+
+function handleRowClick(id: any, type: any) {
+    router.push({ name: 'EquipmentStatus', params: { id: id, type:  type } })
+}
+
 </script>
