@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import dayjs from 'dayjs'
+import { defaultMapModel } from '@/models/MapModel'
 interface SysStatus {
     RunMode: boolean
     HostConnMode: boolean
@@ -9,6 +10,7 @@ interface SysStatus {
 export const realTimeStore = defineStore('realTime', {
     state: () => ({
         loading: false,
+        selectedAgvc: 'UMTC_YM_3F_ABF',
         MainEQList: [] as any[],
         AGVC_TrafficEfficiency_Selector: { unloadEQ:"all", source:"AGV", target:"MainEQ" },
         AGVC_RealTimeDashboard_EQStatus_AGV: [] as any[],
@@ -26,6 +28,10 @@ export const realTimeStore = defineStore('realTime', {
         AGVC_Utilization_RemoteRate: [] as any[],
         AGVC_Utilization_NoReject: [] as any[],
         AGVC_Utilization_NoAGVAlarm: [] as any[],
+        AGVC_TrafficStats_tagStopStats: [] as any[],
+        AGVC_TrafficStats_pathUseStats: [] as any[],
+        Overview_Data: [] as any[],
+        AGVC_TrafficStats_mapModel: defaultMapModel as typeof defaultMapModel,
         DateRange: [
             dayjs().subtract(60, 'day').toDate(),
             dayjs().toDate()

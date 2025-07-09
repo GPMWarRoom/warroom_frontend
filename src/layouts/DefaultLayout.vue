@@ -3,7 +3,7 @@
         <!-- Header -->
         <header class="app-header">
             <div class="header-left">
-                <el-button type="text" @click="toggleSideMenu">
+                <el-button link @click="toggleSideMenu">
                     <el-icon size="20">
                         <Fold v-if="isCollapse" />
                         <Expand v-else />
@@ -33,7 +33,7 @@
         <!-- Main Container -->
         <div class="app-container">
             <!-- Side Menu -->
-            <el-menu class="side-menu" :collapse="isCollapse" background-color="#1e1e1e" text-color="#fff" active-text-color="rgb(32, 160, 255)" :collapse-transition="true" @select="handleSelect">
+            <el-menu class="side-menu" :collapse="isCollapse" background-color="#1e1e1e" text-color="#fff" active-text-color="rgb(32, 160, 255)" :collapse-transition="true" :default-active="route.path" @select="handleSelect">
                 <el-menu-item v-for="item in menu" :index="item.path + ''" :route="item.path" @click="handleSelect(item?.path as string)">
                     <el-icon>
                         <component :is="item.icon" />
@@ -65,6 +65,8 @@ import { uiStatsStore } from "../stores/UiStats";
 import type { RouteMeta } from "vue-router";
 import { userStore } from "../stores/user";
 import AlarmMessage from "../components/Alarms/AlarmMessage.vue";
+import { useRoute } from "vue-router";
+const route = useRoute();
 const router = useRouter();
 const user = userStore();
 const menu = menuRoutes as RouteMeta[];

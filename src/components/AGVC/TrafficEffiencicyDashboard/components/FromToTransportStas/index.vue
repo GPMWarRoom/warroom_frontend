@@ -1,6 +1,6 @@
 <template>
     <div class="from-to-transport-stats h-100 d-flex flex-column">
-        <FromToSelector />
+        <FromToSelector @selector-change="handleSelectorChange" />
         <div class="flex-fill d-flex flex-column justify-content-between">
             <h3>搬運結果</h3>
             <div class="h-100">
@@ -41,6 +41,12 @@ import StackedBarChart from '../../../../common/charts/StackedBarChart.vue';
 import BoxPlotChart from '../../../../common/charts/BoxPlotChart.vue';
 import { realTimeStore } from '@/stores/realTime'
 const realTimeData = realTimeStore()
+
+const emit = defineEmits(['selector-change'])
+function handleSelectorChange() {
+  emit('selector-change')
+}
+
 </script>
 <style lang="scss" scoped>
 .from-to-transport-stats {

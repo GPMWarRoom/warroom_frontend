@@ -6,7 +6,7 @@
                     <h3 class="d-flex justify-content-between">AGV稼動率 <div class="d-flex justify-content-end">
                         <el-radio-group v-model="selectedAgvUtilizationType" size="small">
                             <el-radio-button value="status" type="primary" @click="selectedAgvUtilizationType = 'status'">依狀態</el-radio-button>
-                            <el-radio-button value="odometer" type="primary" @click="selectedAgvUtilizationType = 'odometer'">依里程</el-radio-button>
+                            <el-radio-button v-if="false" value="odometer" type="primary" @click="selectedAgvUtilizationType = 'odometer'">依里程</el-radio-button>
                         </el-radio-group>
                     </div></h3>
                     
@@ -50,23 +50,23 @@
                 <div class="card">
                     <h3>AGV 警報次數</h3>
                     <div class="content">
-                        <LineChart class=" w-100" :yAxisName="'次數'" :datas="realTimeData.AGVC_RealTimeDashboard_EQStatus_Rack"></LineChart>
+                        <LineChart class=" w-100" :yAxisName="'次數'" :datas="[{ name:'警報次數', 
+                            xData:realTimeData.AGVC_Utilization_NoAGVAlarm.map(item => item.Date),
+                            yData:realTimeData.AGVC_Utilization_NoAGVAlarm.map(item => item.Count) }]"></LineChart>
                     </div>
                 </div>
             </el-col>
         </el-row>
         <el-row class="" :gutter="8">
-            <el-col :lg="12" :md="12" :sm="24">
+            <el-col :lg="24" :md="24" :sm="24">
                 <div class="card">
                     <h3>設備狀態異常而拒絕任務數</h3>
                     <div class="content">
-                        <LineChart class="w-100" :yAxisName="'次數'" :datas="[{ name: '拒絕任務數',
-                            xData:realTimeData.AGVC_Utilization_NoAGVAlarm.map(item => item.Date), 
-                            yData:realTimeData.AGVC_Utilization_NoAGVAlarm.map(item => item.Count)}]" />
+                        <LineChart class="w-100" :yAxisName="'次數'" :datas="realTimeData.AGVC_Utilization_NoReject" />
                     </div>
                 </div>
             </el-col>
-            <el-col :lg="12" :md="12" :sm="24">
+            <el-col :lg="12" :md="12" :sm="24" v-if="false">
                 <div class="card">
                     <h3>充電站使用率</h3>
                     <div class="content">

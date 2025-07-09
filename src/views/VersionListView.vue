@@ -38,17 +38,42 @@
 </template>
 <script setup lang="ts">
 import { systemApi } from '@/api'
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick, onActivated, onDeactivated } from 'vue'
 import type { FloorVersions } from '@api/system'
 import * as echarts from 'echarts'
+import { useSignalR } from '@/composables/useSignalR'
+const { on, off, connection } = useSignalR()
 
 const viewType = ref<'tree' | 'table'>('tree')
 const versionList = ref<FloorVersions[]>([])
 const chartInstances = new Map<number, echarts.ECharts>()
 
+function handleReceiveVersion(result: FloorVersions[]) {
+    versionList.value = result
+    if (viewType.value === 'tree') {
+        nextTick(() => {
+            initCharts()
+            handleResize()
+        })
+    }
+}
+
+onActivated(async () => {
+    on('ReceiveVersion', handleReceiveVersion)
+    await connection.value?.invoke('InitVersion')
+})
+
+onDeactivated(() => {
+    off('ReceiveVersion', handleReceiveVersion)
+})
+
 const setChartRef = (el: Element | null, floor: number) => {
     if (el && el instanceof HTMLElement) {
-        const chart = echarts.init(el)
+        let chart = echarts.getInstanceByDom(el)
+        if (chart) {
+            chart.dispose()
+        }
+        chart = echarts.init(el)
         chartInstances.set(floor, chart)
     }
 }
@@ -148,9 +173,7 @@ const getTableData = (floor: FloorVersions) => {
     }))
 }
 
-onMounted(async () => {
-    const res = await systemApi.getVersionList()
-    versionList.value = res
+onMounted(() => {
     if (viewType.value === 'tree') {
         setTimeout(initCharts, 200)
         setTimeout(handleResize, 200)

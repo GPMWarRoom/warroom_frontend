@@ -5,6 +5,7 @@ export const uiStatsStore = defineStore('uiStats', {
         isCollapse: false,
         agvcTabSelected: 'monitor',
         routeSelected: 'monitor',
+        selectedAgvc: '', 
     }),
 
     actions: {
@@ -19,6 +20,9 @@ export const uiStatsStore = defineStore('uiStats', {
         },
         setRouteSelected(value: string) {
             this.routeSelected = value
+        },
+        setSelectedAgvc(value: string) {
+            this.selectedAgvc = value
         }
     },
     getters: {

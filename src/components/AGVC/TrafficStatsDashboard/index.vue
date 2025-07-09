@@ -5,7 +5,10 @@
                 <div class="card">
                     <h3>停等狀態統計</h3>
                     <div class="content">
-                        <PathUseStatsMap class="h-100 w-100" mapId="map1" :map-model="mapModel" />
+                        <TagStopStatsMap class="h-100 w-100" v-if="showMap"
+                            mapId="map1" 
+                            :map-model="realTimeData.AGVC_TrafficStats_mapModel"
+                            :key="mapModelKey" />
                     </div>
                 </div>
             </div>
@@ -13,37 +16,37 @@
                 <div class="card">
                     <h3>路線使用統計</h3>
                     <div class="content">
-                        <PathUseStatsMap class="h-100 w-100" mapId="map2" :map-model="mapModel" />
+                        <PathUseStatsMap class="h-100 w-100" v-if="showMap"
+                            mapId="map2" 
+                            :map-model="realTimeData.AGVC_TrafficStats_mapModel"
+                            :key="mapModelKey" />
                     </div>
-                </div>
-            </div>
-            <div class="grid-item">
-                <div class="card">
-                    <h3>Statistics 2</h3>
-                    <div class="content"> Content 3 </div>
-                </div>
-            </div>
-            <div class="grid-item">
-                <div class="card">
-                    <h3>Statistics 3</h3>
-                    <div class="content"> Content 4 </div>
                 </div>
             </div>
         </div>
     </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import PathUseStatsMap from '../maps/PathUseStatsMap.vue'
-import { getMap } from '../../../api/map'
-import { defaultMapModel } from '../../../models/MapModel'
+import TagStopStatsMap from '../maps/TagStopStatsMap.vue'
+import { realTimeStore } from '@/stores/realTime'
+import { ref, watch } from 'vue'
 
-const mapModel = ref<typeof defaultMapModel>(defaultMapModel)
+const realTimeData = realTimeStore()
+const mapModelKey = ref(Date.now())
 
-onMounted(async () => {
-    const res = await getMap()
-    mapModel.value = res
-})
+const showMap = ref(false)
+watch(
+  () => realTimeData.AGVC_TrafficStats_mapModel,
+  (val) => {
+    if (val && val.Map) {
+      showMap.value = false
+      setTimeout(() => { showMap.value = true }, 0)
+    }
+  },
+  { deep: true }
+)
+
 </script>
 <style scoped lang="scss">
 .traffic-stats-dashboard {
@@ -51,21 +54,14 @@ onMounted(async () => {
     width: 100%;
     padding-top: 0.5rem;
     display: flex;
+    overflow: hidden;
 
     .dashboard-grid {
         flex: 1;
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: repeat(2, 1fr);
+        grid-template-rows: repeat(1, 1fr);
         gap: 0.5rem;
-
-        @media (max-width: 768px) {
-            grid-template-columns: 1fr;
-            grid-template-rows: repeat(4, minmax(350px, 1fr));
-            height: auto;
-            min-height: 100%;
-            overflow-y: auto;
-        }
 
         .grid-item {
             @media (max-width: 768px) {

@@ -14,7 +14,7 @@
                         size="small"
                         @click="currentTab = 'mainEq'"
                     >主要設備</el-button>
-                    <el-button
+                    <el-button v-if="false" 
                         :type="currentTab === 'chargingStation' ? 'primary' : 'info'"
                         size="small"
                         @click="currentTab = 'chargingStation'"

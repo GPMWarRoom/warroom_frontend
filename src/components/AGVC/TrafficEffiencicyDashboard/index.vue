@@ -26,7 +26,8 @@
                 <div class="card my-1">
                     <h3>設備Unload平均等待時間</h3>
                     <div class="content w-100  d-flex flex-column ">
-                        <el-select v-model="realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ" class="mb-2" >
+                        <el-select v-model="realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ" 
+                            @change="handleSelectorChange" class="mb-2" >
                             <el-option
                                 label="全部設備"
                                 value="all"
@@ -34,7 +35,7 @@
                             <el-option
                                 v-for="item in realTimeData.MainEQList"
                                 :label="item.Name"
-                                :value="item.Tag"
+                                :value="item.Name"
                             />
                         </el-select>
                         <BarChart class="content flex-fill h-100 w-100" :useGradient="true" 
@@ -48,7 +49,7 @@
                 <div class="card">
                     <h3>From-To 統計數據</h3>
                     <div class="h-100 text-light d-flex flex-column justify-content-between">
-                        <FromToTransportStas />
+                        <FromToTransportStas @selector-change="handleSelectorChange"/>
                     </div>
                 </div>
             </el-col>
@@ -62,6 +63,11 @@ import LineChart from '../../common/charts/LineChart.vue'
 import BarChart from '../../common/charts/BarChart.vue'
 import FromToTransportStas from './components/FromToTransportStas/index.vue'
 
+const emit = defineEmits(['selector-change'])
+function handleSelectorChange() {
+  emit('selector-change')
+}
+
 const props = defineProps({
   connection: Object // 接收父頁面傳遞過來的 connection
 })
@@ -72,36 +78,6 @@ const data = reactive({
 })
 const intervalId = ref<number | null>(null)
 const timeoutId = ref<number | null>(null)
-
-onMounted(() => {
-    const now = new Date()
-    const minutes = now.getMinutes()
-    const seconds = now.getSeconds()
-    const msToNextHour = ((60 - minutes - 1) * 60 + (60 - seconds)) * 1000
-
-    timeoutId.value = window.setTimeout(() => {
-        props.connection?.invoke('InitAGVEfficiency', 
-            realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
-            realTimeData.AGVC_TrafficEfficiency_Selector.source, 
-            realTimeData.AGVC_TrafficEfficiency_Selector.target, 
-            realTimeData.DateRange
-        );
-        intervalId.value = window.setInterval(() => {
-            props.connection?.invoke('InitAGVEfficiency', 
-                realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
-                realTimeData.AGVC_TrafficEfficiency_Selector.source, 
-                realTimeData.AGVC_TrafficEfficiency_Selector.target, 
-                realTimeData.DateRange
-            );
-        }, 60 * 60 * 1000)
-    }, msToNextHour)
-})
-
-onUnmounted(() => {
-    if (timeoutId.value !== null) clearTimeout(timeoutId.value)
-    if (intervalId.value !== null) clearInterval(intervalId.value)
-    
-})
 
 </script>
 <style scoped lang="scss">

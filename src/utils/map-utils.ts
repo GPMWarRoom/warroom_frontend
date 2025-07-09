@@ -23,18 +23,22 @@ export function createCustomMap(target: string, imageUrl: string, imageWidth: nu
   });
 
   // 建立圖層
-  const imageLayer = new ImageLayer({
-    source: new Static({
-      url: imageUrl,
-      projection: projection,
-      imageExtent: extent
-    })
-  });
+  const layers = [];
+  if (imageUrl) {
+    const imageLayer = new ImageLayer({
+      source: new Static({
+        url: imageUrl,
+        projection: projection,
+        imageExtent: extent
+      })
+    });
+    layers.push(imageLayer);
+  }
 
   // 建立地圖
   const map = new Map({
     target: target,
-    layers: [imageLayer],
+    layers: layers,
     view: new View({
       projection: projection,
       center: getCenter(extent),

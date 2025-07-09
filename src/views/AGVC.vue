@@ -2,14 +2,14 @@
     <content-container>
         <div class="h-100 ">
             <el-tabs v-model="activeTab" class="agvc-tabs" type="card" v-loading="loading" @tab-change="handleTabChange">
-                <el-tab-pane :disabled="true" name="select-agvc">
+                <el-tab-pane :disabled="true" name="select-agvc" >
                     <template #label>
                         <div class="select-agvc-container">
                             <el-icon>
                                 <LocationFilled />
                             </el-icon>
                             <span class="select-agvc-label">場域</span>
-                            <el-select v-model="selectedAgvc" @change="handleAgvcChange">
+                            <el-select v-model="realTimeData.selectedAgvc" @change="handleAgvcChange">
                                 <el-option v-for="item in agvcList" :key="item.id" :label="item.name" :value="item.value" />
                             </el-select>
                         </div>
@@ -31,7 +31,7 @@
                         </el-icon>
                         <span>交管狀態</span>
                     </template>
-                    <TrafficStatsDashboard v-if="activeTab === 'traffic-stats'" class="tab-content-component" />
+                    <TrafficStatsDashboard v-if="activeTab === 'traffic-stats' && realTimeData.AGVC_TrafficStats_mapModel" class="tab-content-component" ref="TrafficStatsRef"/>
                 </el-tab-pane>
                 <el-tab-pane :lazy="true" name="traffic-efficiency">
                     <template #label>
@@ -40,7 +40,8 @@
                         </el-icon>
                         <span>搬運效能統計</span>
                     </template>
-                    <TrafficEfficiencyDashboard v-if="activeTab === 'traffic-efficiency'" class="tab-content-component" :connection="connection"/>
+                    <TrafficEfficiencyDashboard v-if="activeTab === 'traffic-efficiency'" class="tab-content-component" 
+                        @selector-change="_Init" :connection="connection"/>
                 </el-tab-pane>
                 <el-tab-pane name="utilization" :lazy="true">
                     <template #label>
@@ -78,7 +79,7 @@
     </content-container>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onActivated, onDeactivated, onMounted } from 'vue'
 import { Monitor, List, LocationFilled } from '@element-plus/icons-vue'
 import ContentContainer from '../components/ContentContainer.vue'
 import RealTimeDashboard from '../components/AGVC/RealTimeDashboard/index.vue'
@@ -88,79 +89,50 @@ import UtilizationDashboard from '../components/AGVC/UtilizationDashboard/index.
 import { uiStatsStore } from '../stores/UiStats'
 import { realTimeStore } from '../stores/realTime'
 import { useSignalR } from '@/composables/useSignalR'
-const { startConnection, on, off, connection, isConnected } = useSignalR()
+import { getMap } from '@/api/map'
+const { on, off, connection, isConnected } = useSignalR()
 
+const TrafficStatsRef = ref()
 const realTimeData = realTimeStore()
 const loading = ref(realTimeData.loading)
 const activeTab = ref('monitor')
 const uiStats = uiStatsStore()
-const agvcList = ref([
-    {
-        id: 1,
-        name: '3F-ABF',
-        value: "YM_3F_ABF"
-    },
-    {
-        id: 2,
-        name: '3F-MEC',
-        value: "UMTC_YM_3F_MEC"
-    },
-    {
-        id: 3,
-        name: '3F-AOI',
-        value: "UMTC_YM_3F_AOI"
-    },
-    {
-        id: 4,
-        name: '4F-ABF',
-        value: "UMTC_YM_4F_ABF"
-    },
-    {
-        id: 5,
-        name: '4F-MEC',
-        value: "UMTC_YM_4F_MEC"
-    },
-    {
-        id: 6,
-        name: '4F-AOI',
-        value: "UMTC_YM_4F_AOI"
-    },
-    {
-        id: 7,
-        name: '4F-AOI',
-        value: "UMTC_YM_4F_AOI"
-    },
-    {
-        id: 8,
-        name: '5F-ABF',
-        value: "UMTC_YM_5F_ABF"
-    },
-    {
-        id: 9,
-        name: '5F-MEC',
-        value: "UMTC_YM_5F_MEC"
-    },
-    {
-        id: 10,
-        name: '5F-AOI',
-        value: "UMTC_YM_5F_AOI"
-    },
-    {
-        id: 11,
-        name: '5F-AOI',
-        value: "UMTC_YM_5F_AOI"
-    },
-    {
-        id: 12,
-        name: 'yel',
-        value: "yel"
-    },
-])
-const selectedAgvc = ref('yel')
+const agvcList = ref([])
+onMounted(async () => {
+    const res = await fetch('/config.json')
+    const config = await res.json()
+    agvcList.value = config.Schemas
+})
 async function _Init() {
+    loading.value = true
+    const map = ref()
     switch (activeTab.value) {
         case 'monitor':
             await connection.value?.invoke('InitDataByTab');
+            try {
+                const mapData = await getMap(realTimeData.selectedAgvc)
+                if (mapData) {
+                    map.value = mapData
+                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', map)
+                }
+            } catch (e) {
+                // 地圖抓不到就不更新
+                map.value = null
+                realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
+            }
+            break;
+        case 'traffic-stats':
+            try {
+                const mapData = await getMap(realTimeData.selectedAgvc)
+                if (mapData) {
+                    map.value = mapData
+                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', map)
+                }
+            } catch (e) {
+                map.value = null
+                realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
+            }
+            await connection.value?.invoke('InitTrafficStats', realTimeData.DateRange)
             break;
         case 'traffic-efficiency':
             await connection.value?.invoke('InitAGVEfficiency', 
@@ -171,21 +143,20 @@ async function _Init() {
             );
             break;
         case 'utilization':
-        await connection.value?.invoke('InitAGVUtilization', 
-            realTimeData.DateRange
-        );
-        break;
+            await connection.value?.invoke('InitAGVUtilization', 
+                realTimeData.DateRange
+            );
+            break;
     }
+    loading.value = false
 }
 async function handleAgvcChange(value: string) {
-    loading.value = true
     await subscribeToSchema(value, activeTab.value)
     await _Init()
-    loading.value = false
 }
 const handleTabChange = async (tab: string) => {
     uiStats.setAGVCTabSelected(tab)
-    await subscribeToSchema(selectedAgvc.value, activeTab.value)
+    await subscribeToSchema(realTimeData.selectedAgvc, activeTab.value)
     await _Init()
 }
 const tabStoreMap: Record<string, Record<string, string>> = {
@@ -216,47 +187,94 @@ async function subscribeToSchema(schema: string, tab: string) {
     console.log(`✅ 已訂閱 schema: ${schema}-${tab}`)
 }
 
-onMounted(async () => {
-    // loading.value = true
+function handleNotification(result: any) {
+    const storeMap = tabStoreMap[currentTab];
 
-    await startConnection()
+    if (!storeMap) return;
 
-    // 接收後端推播通知
-    on('ReceiveNotification', (result) => {
-        const storeMap = tabStoreMap[currentTab];
-
-        if (!storeMap) return;
-
-        if (currentTab ==='monitor') {
-            if (result.type === 'init') {
-                for (const [key, value] of Object.entries(result.data)) {
-                const storeKey = storeMap[key];
-                if (storeKey) {
-                    realTimeData.updateRealTimeData(storeKey, value);
-                }
-                }
-            } else if (result.type === 'update') {
-                const storeKey = storeMap[result.table];
-                if (storeKey) {
-                    realTimeData.updateRealTimeData(storeKey, result.data);
-                }
+    if (currentTab ==='monitor') {
+        if (result.type === 'init') {
+            for (const [key, value] of Object.entries(result.data)) {
+            const storeKey = storeMap[key];
+            if (storeKey) {
+                realTimeData.updateRealTimeData(storeKey, value);
+            }
+            }
+        } else if (result.type === 'update') {
+            const storeKey = storeMap[result.table];
+            if (storeKey) {
+                realTimeData.updateRealTimeData(storeKey, result.data);
             }
         }
-    });
-    on('ReceiveAGVEfficiency', (result) => {
-        realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_Tasks', result.TaskSuccess.Result)
-        realTimeData.updateRealTimeData('MainEQList', result.MainEQList.Result)
-        realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_UnloadWaitTime', result.UnloadWaitTime.Result)
-        realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStatics', result.CarryStatics.Result)
-    });
-    on('ReceiveAGVUtilization', (result) => {
-        realTimeData.updateRealTimeData('AGVC_Utilization_AGVAvailabilitys', result.AGVAvailabilitys.Result)
-        realTimeData.updateRealTimeData('AGVC_Utilization_NoAGVTasks', result.NoAGVTasks.Result.NoTasks)
-        realTimeData.updateRealTimeData('AGVC_Utilization_RemoteRate', result.NoAGVTasks.Result.RemoteRate)
-        realTimeData.updateRealTimeData('AGVC_Utilization_NoAGVAlarm', result.NoAGVAlarm.Result)
-        realTimeData.updateRealTimeData('AGVC_Utilization_NoReject', result.NoAGVTasks.Result.NoReject)
-        console.log(result.NoAGVTasks.Result.NoReject)
-    });
+    }
+}
+
+function handleAGVEfficiency(result: any) {
+    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_Tasks', result.TaskSuccess)
+    realTimeData.updateRealTimeData('MainEQList', result.MainEQList)
+    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_UnloadWaitTime', result.UnloadWaitTime)
+    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStatics', result.CarryStatics)
+}
+
+function handleAGVUtilization(result: any) {
+    realTimeData.updateRealTimeData('AGVC_Utilization_AGVAvailabilitys', result.AGVAvailabilitys)
+    realTimeData.updateRealTimeData('AGVC_Utilization_NoAGVTasks', result.NoAGVTasks.NoTasks)
+    realTimeData.updateRealTimeData('AGVC_Utilization_RemoteRate', result.NoAGVTasks.RemoteRate)
+    realTimeData.updateRealTimeData('AGVC_Utilization_NoReject', result.NoAGVTasks.NoReject)
+    realTimeData.updateRealTimeData('AGVC_Utilization_NoAGVAlarm', result.NoAGVAlarm)
+}
+
+function handleReceiveTrafficStats(result: any) {
+    const stats = result.tagStopStats
+    const min = Math.min(...stats.map((s: any) => s.avgdurationseconds))
+    const max = Math.max(...stats.map((s: any) => s.avgdurationseconds))
+    const colorMap: Record<string, { color: string, avgdurationseconds: number }> = {}
+    stats.forEach((s: any) => {
+        // 綠到紅的比例
+        const ratio = max === min ? 0 : (s.avgdurationseconds - min) / (max - min)
+        // 綠(0,255,0)→紅(255,0,0)
+        const r = Math.round(0 + ratio * (255 - 0))
+        const g = Math.round(255 - ratio * 255)
+        const b = 0
+        colorMap[String(s.tag)] = {
+            color: `rgba(${r},${g},${b},0.9)`,
+            avgdurationseconds: s.avgdurationseconds
+        }
+    })
+    const points = realTimeData.AGVC_TrafficStats_mapModel.Map.Points
+    Object.values(points).forEach((point: any) => {
+        const info = colorMap[String(point.TagNumber)]
+        if (info) {
+            point.TagStopColor = info.color
+            point.TagStopInfo = info // 這裡存整個物件，hover 可用
+        } else {
+            point.TagStopColor = 'rgba(255,255,255,.2)'
+            point.TagStopInfo = null
+        }
+    })
+    const pathStats = result.pathUseStats || []
+    const counts = pathStats.map((s: any) => s.count)
+    const minCount = Math.min(...counts)
+    const maxCount = Math.max(...counts)
+    const pathUseStatsMap: Record<string, { count: number, color: string }> = {}
+    pathStats.forEach((s: any) => {
+        const ratio = maxCount === minCount ? 0 : (s.count - minCount) / (maxCount - minCount)
+        const r = Math.round(0 + ratio * 255)
+        const g = Math.round(255 - ratio * 255)
+        const color = `rgba(${r},${g},0,0.3)`
+        pathUseStatsMap[`${s.tagA}-${s.tagB}`] = { count: s.count, color }
+    })
+    realTimeData.updateRealTimeData('AGVC_TrafficStats_pathUseStats', pathUseStatsMap)
+    console.log(pathUseStatsMap)
+}
+
+let intervalId: ReturnType<typeof setInterval> | null = null
+onActivated(async () => {
+    // 接收後端推播通知
+    on('ReceiveNotification', handleNotification);
+    on('ReceiveAGVEfficiency', handleAGVEfficiency);
+    on('ReceiveAGVUtilization', handleAGVUtilization);
+    on('ReceiveTrafficStats', handleReceiveTrafficStats)
     connection.value?.onreconnected(async () => {
         console.log('🔁 SignalR 已重新連線')
         if (currentSubscribedSchema && currentTab) {
@@ -267,19 +285,48 @@ onMounted(async () => {
     })
 
     try {
-        await subscribeToSchema(selectedAgvc.value, activeTab.value)
+        await subscribeToSchema(realTimeData.selectedAgvc, activeTab.value)
         await _Init()
     } catch (err) {
         console.error('❌ SignalR 錯誤：', err)
     }
+    if (activeTab.value !== 'monitor') {
+        intervalId = setInterval(() => {
+            _Init()
+        }, 60 * 60 * 1000) // 每小時
+    }
+})
 
-    // loading.value = false
+onDeactivated(async () => {
+    if (intervalId) {
+        clearInterval(intervalId)
+        intervalId = null
+    }
+    
+    off('ReceiveNotification', handleNotification)
+    off('ReceiveAGVEfficiency', handleAGVEfficiency)
+    off('ReceiveAGVUtilization', handleAGVUtilization)
+    off('ReceiveTrafficStats', handleReceiveTrafficStats)
+
+    if (currentSubscribedSchema && currentTab) {
+    await connection.value.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)
+    console.log(`🔄 取消訂閱: ${currentSubscribedSchema}-${currentTab}`)
+    }
 })
 
 </script>
 
 
 <style scoped>
+
+.agvc-tabs :deep(.el-tabs__item:first-child) {
+    border: none !important;
+    background: transparent !important;
+    cursor: default !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+}
+
 .agvc-tabs {
     --tab-offset-top: 111px;
     padding: 0 10px;

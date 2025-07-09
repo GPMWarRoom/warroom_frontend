@@ -10,7 +10,7 @@ export default defineConfig({
     vue(),
     viteMockServe({
       mockPath: 'mock',
-      enable: true,
+      enable: false,
     })
   ],
   resolve: {

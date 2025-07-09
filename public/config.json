@@ -1,0 +1,65 @@
+{
+    "API_URL": "http://localhost:5000/dashboardHub",
+    "Schemas": [
+        {
+            "id": 1,
+            "name": "3F-ABF",
+            "value": "UMTC_YM_3F_ABF"
+        },
+        {
+            "id": 2,
+            "name": "3F-MEC",
+            "value": "UMTC_YM_3F_MEC"
+        },
+        {
+            "id": 3,
+            "name": "3F-AOI",
+            "value": "UMTC_YM_3F_AOI"
+        },
+        {
+            "id": 4,
+            "name": "4F-ABF",
+            "value": "UMTC_YM_4F_ABF"
+        },
+        {
+            "id": 5,
+            "name": "4F-MEC",
+            "value": "UMTC_YM_4F_MEC"
+        },
+        {
+            "id": 6,
+            "name": "4F-AOI",
+            "value": "UMTC_YM_4F_AOI"
+        },
+        {
+            "id": 7,
+            "name": "4F-YEL",
+            "value": "UMTC_YM_4F_YEL"
+        },
+        {
+            "id": 8,
+            "name": "5F-ABF",
+            "value": "UMTC_YM_5F_ABF"
+        },
+        {
+            "id": 9,
+            "name": "5F-MEC",
+            "value": "UMTC_YM_5F_MEC"
+        },
+        {
+            "id": 10,
+            "name": "5F-AOI",
+            "value": "UMTC_YM_5F_AOI"
+        },
+        {
+            "id": 11,
+            "name": "5F-YEL",
+            "value": "UMTC_YM_5F_YEL"
+        },
+        {
+            "id": 12,
+            "name": "yel",
+            "value": "yel"
+        }
+    ]
+}

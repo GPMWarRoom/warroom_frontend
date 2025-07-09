@@ -14,9 +14,6 @@ const layout = computed(() => {
     ? BlankLayout
     : DefaultLayout
 })
-onMounted(() => {
-
-})
 </script>
 <style>
 /* Only global styles if needed */

@@ -1,5 +1,5 @@
 <template>
-    <div class="">
+    <div class="agvc-dashboard-scroll">
         <el-carousel height="auto" arrow="always" :autoplay="false">
             <el-carousel-item style="height: 100vh" :key="1"> 
                 <el-row class="h-100" :gutter="5">
@@ -17,7 +17,7 @@
                     </el-col>
                 </el-row>
             </el-carousel-item>
-            <el-carousel-item style="height: 100vh" :key="2">
+            <!-- <el-carousel-item style="height: 100vh" :key="2">
                 <el-row class="h-100" :gutter="5">
                     <el-col :lg="8" class="h-100 pt-2">
                         <div class="agvc-info h-100 d-flex flex-column justify-content-space-between">
@@ -27,7 +27,7 @@
                         </div>
                     </el-col>
                 </el-row>
-            </el-carousel-item>
+            </el-carousel-item> -->
         </el-carousel>
     </div>
 </template>
@@ -42,6 +42,11 @@ import BirdsEyeViewCard from './components/BirdsEyeViewCard.vue'
 
 </script>
 <style scoped>
+.agvc-dashboard-scroll {
+    height: 100vh;
+    overflow-y: auto;
+}
+
 .agvc-map {
     background-color: #1e1e1e;
     border-radius: 4px;

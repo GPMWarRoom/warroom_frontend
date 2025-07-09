@@ -105,6 +105,7 @@ interface MapData {
 
 export interface MapModel {
     Map: MapData;
+    Vehicles: any[];
 }
 
 export const defaultMapModel: MapModel = {
@@ -133,7 +134,8 @@ export const defaultMapModel: MapModel = {
         Map_Image_Boundary: [0, 0, 0, 0],
         Points: {},
         Segments: []
-    }
+    },
+    Vehicles: [] as any[],
 };
 
 export default defaultMapModel;
