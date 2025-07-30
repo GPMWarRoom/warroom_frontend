@@ -16,7 +16,7 @@
                     <div class="label">總任務數</div>
                     <div class="value">{{ totalTasks }}</div>
                     <el-progress
-                        :percentage="completionRate"
+                        :percentage="completionRate || 0"
                         :format="format"
                         :stroke-width="8" />
                 </div>
@@ -37,7 +37,7 @@
                             <span class="total">{{ transportTasks.total }}</span>
                         </div>
                         <el-progress
-                            :percentage="(transportTasks.completed / transportTasks.total) * 100"
+                            :percentage="(transportTasks.completed / transportTasks.total) * 100 || 0"
                             :stroke-width="8"
                             :show-text="false" />
                     </div>
@@ -57,7 +57,7 @@
                             <span class="total">{{ chargingTasks.total }}</span>
                         </div>
                         <el-progress
-                            :percentage="(chargingTasks.completed / chargingTasks.total) * 100"
+                            :percentage="(chargingTasks.completed / chargingTasks.total) * 100 || 0"
                             :stroke-width="8"
                             :show-text="false" />
                     </div>

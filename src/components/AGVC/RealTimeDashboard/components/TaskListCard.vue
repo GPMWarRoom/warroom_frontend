@@ -18,22 +18,23 @@
             </div>
         </template>
         <el-table :data="filteredTasks" stripe height="250px">
-            <el-table-column show-overflow-tooltip prop="TaskName" label="任務ID" width="120" />
-            <el-table-column show-overflow-tooltip prop="Action" label="類型" width="100">
+            <el-table-column show-overflow-tooltip prop="DesignatedAGVName" label="AGV" width="auto" align="center"/>
+            <el-table-column show-overflow-tooltip prop="TaskName" label="任務ID" width="120" align="center" />
+            <el-table-column show-overflow-tooltip prop="Action" label="類型" width="100" align="center">
                 <template #default="{ row }">
                     {{ actionMap[row.Action] }}
                 </template>
             </el-table-column>
-            <el-table-column show-overflow-tooltip prop="State" label="狀態" width="100">
+            <el-table-column show-overflow-tooltip prop="State" label="狀態" width="120" align="center">
                 <template #default="{ row }">
                     <el-tag :type="getTaskStatusType(row.State)">{{ stateMap[row.State] }}</el-tag>
                 </template>
             </el-table-column>
-            <el-table-column prop="progress" label="進度">
+            <!-- <el-table-column prop="progress" label="進度">
                 <template #default="{ row }">
                     <el-progress :percentage="row.progress" />
                 </template>
-            </el-table-column>
+            </el-table-column> -->
         </el-table>
     </el-card>
 </template>

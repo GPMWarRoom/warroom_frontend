@@ -13,6 +13,40 @@
             </div>
             <AlarmMessage v-if="false" class="mx-2" />
             <div class="header-right">
+                <el-dropdown trigger="hover">
+                    <template #default>
+                        <el-button
+                        class="bell-btn"
+                        type="text"
+                        circle
+                        style="margin-right: 8px;"
+                        :class="{ 'bell-alarm': alarmStore.isAlarmPlaying }"
+                        @click="alarmStore.isAlarmPlaying ? alarmStore.stopAlarm() : null"
+                        >
+                        <el-icon style="font-size: 22px;">
+                            <BellFilled />
+                        </el-icon>
+                        </el-button>
+                    </template>
+                    <template #dropdown>
+                        <el-dropdown-menu>
+                        <el-dropdown-item
+                            :disabled="!alarmStore.isMuted"
+                            @click="alarmStore.unmuteAlarm()"
+                        >
+                            <el-icon style="margin-right:4px;"><BellFilled /></el-icon>
+                            正常
+                        </el-dropdown-item>
+                        <el-dropdown-item
+                            :disabled="alarmStore.isMuted"
+                            @click="alarmStore.muteAlarm()"
+                        >
+                            <el-icon style="margin-right:4px;"><Mute /></el-icon>
+                            永久靜音
+                        </el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
                 <el-dropdown>
                     <span class="user-profile"> {{ userName }} <el-icon>
                             <ArrowDown />
@@ -66,6 +100,10 @@ import type { RouteMeta } from "vue-router";
 import { userStore } from "../stores/user";
 import AlarmMessage from "../components/Alarms/AlarmMessage.vue";
 import { useRoute } from "vue-router";
+import { BellFilled, ArrowDown, Fold, Expand } from '@element-plus/icons-vue'
+import { useAlarmStore } from '@/stores/alert'
+
+const alarmStore = useAlarmStore()
 const route = useRoute();
 const router = useRouter();
 const user = userStore();
@@ -175,5 +213,20 @@ const login = () => {
     .side-menu:not(.el-menu--collapse)+.main-content {
         margin-left: 200px;
     }
+}
+.bell-btn .el-icon {
+  opacity: 0.3;
+  transition: color 0.2s, opacity 0.2s;
+}
+.bell-btn.bell-alarm .el-icon {
+  color: #ff4d4f;
+  opacity: 0.7;
+}
+.bell-btn.bell-alarm:hover .el-icon {
+  color: #ff4d4f;
+  opacity: 1;
+}
+.bell-btn {
+  position: relative;
 }
 </style>

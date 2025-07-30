@@ -16,7 +16,7 @@ const props = defineProps<{
     mapId: string
     mapModel: MapModel
     showMode?: string
-    pathUseStats?: []
+    pathUseStats?: any[]
 }>()
 const tooltip = document.createElement('div');
 tooltip.style.position = 'fixed';
@@ -30,28 +30,68 @@ tooltip.style.fontSize = '12px';
 tooltip.style.display = 'none';
 document.body.appendChild(tooltip);
 
-function throttle(fn: (...args: any[]) => void, delay: number) {
-    let last = 0
-    return function (...args: any[]) {
-        const now = Date.now()
-        if (now - last > delay) {
-            last = now
-            fn(...args)
-        }
-    }
-}
+// function throttle(fn: (...args: any[]) => void, delay: number) {
+//     let last = 0
+//     return function (...args: any[]) {
+//         const now = Date.now()
+//         if (now - last > delay) {
+//             last = now
+//             fn(...args)
+//         }
+//     }
+// }
 
-const handlePointerMove = throttle((evt: any) => {
+// const handlePointerMove = throttle((evt: any) => {
+//     let found = false;
+//     if (props.showMode === 'tagStopStats') {
+//         map.value.forEachFeatureAtPixel(evt.pixel, (feature) => {
+//             const info = feature.get('TagStopInfo');
+//             if (info && info.avgdurationseconds != null) {
+//                 tooltip.innerText = `停等時間: ${info.avgdurationseconds.toFixed(2)} 秒`;
+//                 tooltip.style.fontSize = '16px';
+//                 tooltip.style.left = evt.originalEvent.clientX + 10 + 'px';
+//                 tooltip.style.top = evt.originalEvent.clientY + 10 + 'px';
+//                 tooltip.style.display = 'block';
+//                 found = true;
+//             }
+//         });
+//     } else if (props.showMode === 'pathUseStats') {
+//         map.value.forEachFeatureAtPixel(evt.pixel, (feature) => {
+//             const info = feature.get('PathUseInfo');
+//             if (info && info.count != null) {
+//                 tooltip.innerText = `走行次數: ${info.count}`;
+//                 tooltip.style.fontSize = '16px';
+//                 tooltip.style.left = evt.originalEvent.clientX + 10 + 'px';
+//                 tooltip.style.top = evt.originalEvent.clientY + 10 + 'px';
+//                 tooltip.style.display = 'block';
+//                 found = true;
+//             }
+//         });
+//     }
+//     if (!found) {
+//         tooltip.style.display = 'none';
+//     }
+// }, 30); // 30ms 可依效能調整
+
+let lastClickPos = { x: 0, y: 0 }
+let tooltipVisible = false
+
+const handleSingleClick = (evt: any) => {
     let found = false;
+    lastClickPos = {
+        x: evt.originalEvent.clientX,
+        y: evt.originalEvent.clientY
+    }
     if (props.showMode === 'tagStopStats') {
         map.value.forEachFeatureAtPixel(evt.pixel, (feature) => {
             const info = feature.get('TagStopInfo');
             if (info && info.avgdurationseconds != null) {
                 tooltip.innerText = `停等時間: ${info.avgdurationseconds.toFixed(2)} 秒`;
                 tooltip.style.fontSize = '16px';
-                tooltip.style.left = evt.originalEvent.clientX + 10 + 'px';
-                tooltip.style.top = evt.originalEvent.clientY + 10 + 'px';
+                tooltip.style.left = lastClickPos.x + 10 + 'px';
+                tooltip.style.top = lastClickPos.y + 10 + 'px';
                 tooltip.style.display = 'block';
+                tooltipVisible = true;
                 found = true;
             }
         });
@@ -61,31 +101,51 @@ const handlePointerMove = throttle((evt: any) => {
             if (info && info.count != null) {
                 tooltip.innerText = `走行次數: ${info.count}`;
                 tooltip.style.fontSize = '16px';
-                tooltip.style.left = evt.originalEvent.clientX + 10 + 'px';
-                tooltip.style.top = evt.originalEvent.clientY + 10 + 'px';
+                tooltip.style.left = lastClickPos.x + 10 + 'px';
+                tooltip.style.top = lastClickPos.y + 10 + 'px';
                 tooltip.style.display = 'block';
+                tooltipVisible = true;
                 found = true;
             }
         });
     }
     if (!found) {
         tooltip.style.display = 'none';
+        tooltipVisible = false;
     }
-}, 30); // 30ms 可依效能調整
+}
+
+// 監聽 pointermove，移動超過 30px 關閉 tooltip
+const handlePointerMoveForTooltip = (evt: any) => {
+    if (!tooltipVisible) return;
+    const dx = evt.originalEvent.clientX - lastClickPos.x;
+    const dy = evt.originalEvent.clientY - lastClickPos.y;
+    if (Math.sqrt(dx * dx + dy * dy) > 30) {
+        tooltip.style.display = 'none';
+        tooltipVisible = false;
+    }
+}
 
 onMounted(() => {
     setTimeout(() => {
         map.value = createCustomMap(props.mapId, '', 272, 92)
+        map.value.getLayers().clear()
         addPathLines();
         addPoints();
         initVehicleLayer()
         updateVehicleMarkers()
 
         if (map.value) {
-            map.value.on('pointermove', handlePointerMove);
+            map.value.on('singleclick', handleSingleClick);
+            map.value.on('pointermove', handlePointerMoveForTooltip);
+            map.value.getViewport().addEventListener('pointerleave', () => {
+                tooltip.style.display = 'none';
+                tooltipVisible = false;
+            });
         }
-    }, 1000)
+    }, 10)
 })
+
 // 初始化車輛圖層
 function initVehicleLayer() {
     vehicleLayer.value = new VectorLayer({
@@ -134,10 +194,26 @@ watch(
     },
     { deep: true }
 )
-
+// 監聽 pathUseStats 變動，動態重繪路線
+watch(
+  () => props.pathUseStats,
+  () => {
+    if (map.value) {
+      // 清除舊路線圖層
+      // 你可以用 getLayers().clear() 或只移除路線圖層
+      map.value.getLayers().clear()
+      addPathLines()
+      addPoints()
+      initVehicleLayer()
+      updateVehicleMarkers()
+    }
+  },
+  { deep: true }
+)
 const addPoints = () => {
     const features = createMapPointFeatures(props.mapModel)
     const layer = createLayerWithFeatures(features)
+    layer.setZIndex(200)
     if (map.value) {
         addLayerToMap(map.value, layer)
     }
@@ -219,6 +295,7 @@ const getTextColor = (stationType: number) => {
 const addPathLines = () => {
     const features = createMapPathLineFeatures(props.mapModel)
     const layer = createLayerWithFeatures(features)
+    layer.setZIndex(100)
     if (map.value) {
         addLayerToMap(map.value, layer)
     }

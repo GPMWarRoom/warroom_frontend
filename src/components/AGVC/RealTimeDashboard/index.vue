@@ -1,17 +1,17 @@
 <template>
     <div class="agvc-dashboard-scroll">
-        <el-carousel height="auto" arrow="always" :autoplay="false">
+        <el-carousel height="auto" arrow="never" :autoplay="false">
             <el-carousel-item style="height: 100vh" :key="1"> 
                 <el-row class="h-100" :gutter="5">
                     <el-col :lg="8" class="h-100 pt-2">
                         <div class="agvc-info h-100 d-flex flex-column justify-content-space-between">
                             <SystemStatusCard/>
                             <TaskListCard />
-                            <EquipmentStatusCard />
+                            <EquipmentStatusCard @show-equipment-status="(payload) => $emit('show-equipment-status', payload)"/>
                         </div>
                     </el-col>
                     <el-col :lg="16" class="h-100 d-flex flex-column pt-2">
-                        <CurrentAlertCard />
+                        <CurrentAlertCard style="flex-shrink:0;" />
                         <HistoricalAlertCard/>
                         <BirdsEyeViewCard />
                     </el-col>
@@ -38,7 +38,7 @@ import EquipmentStatusCard from './components/EquipmentStatusCard.vue'
 import CurrentAlertCard from './components/CurrentAlertCard.vue'
 import HistoricalAlertCard from './components/HistoricalAlertCard.vue'
 import BirdsEyeViewCard from './components/BirdsEyeViewCard.vue'
-
+defineEmits(['show-equipment-status'])
 
 </script>
 <style scoped>

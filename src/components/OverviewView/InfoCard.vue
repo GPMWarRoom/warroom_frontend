@@ -1,6 +1,7 @@
 <template>
   <div class="floor-container">
-    <div
+    <div 
+      v-if="realTimeData.Overview_Data"
       v-for="floor in Object.keys(realTimeData.Overview_Data).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))"
       :key="floor"
       class="floor-section"
@@ -11,14 +12,29 @@
           v-for="(devices, zone) in realTimeData.Overview_Data[floor]"
           :key="zone"
           class="device-card"
-          :class="{ 'has-alarm': devices.SystemAlarms?.length }"
-          @click="gotoAGVC(devices.Channel)"
+          :class="{
+            'has-alarm': devices.SystemAlarms?.length,
+            'not-alive': !devices.Alive.isAlive || !devices.Alive.isVMSAlive,
+          }"
+          @dblclick="gotoAGVC(devices.Channel)"
         >
+          <template v-if="devices.SystemAlarms?.length > 0 || (!devices.Alive.isAlive || !devices.Alive.isVMSAlive)">
+            {{ alarmStore.playAlarm() }}
+          </template>
+          <template v-else>
+            {{ alarmStore.stopAlarm() }}
+          </template>
           <div class="device-header">
             <div class="zone-title">{{floor}} - {{ zone }}</div>
             <div class="error-tag">
               <template v-if="devices.SystemAlarms && devices.SystemAlarms.length">
                 <el-tag type="danger" effect="plain" size="small">警報</el-tag>
+              </template>
+              <template v-if="!devices.Alive.isAlive">
+                <el-tag type="warning" effect="plain" size="small">通訊異常</el-tag>
+              </template>
+              <template v-if="!devices.Alive.isVMSAlive">
+                <el-tag type="warning" effect="plain" size="small">派車系統異常</el-tag>
               </template>
             </div>
           </div>
@@ -111,8 +127,11 @@
 
 
 <script setup lang="ts">
+import { watch, computed } from 'vue'
 import { realTimeStore } from '@/stores/realTime'
 import { useRouter } from 'vue-router'
+import { useAlarmStore } from '@/stores/alert'
+const alarmStore = useAlarmStore()
 const router = useRouter()
 const realTimeData = realTimeStore()
 
@@ -153,6 +172,11 @@ function getAgvStatusType(status) {
   color: #fff;
   margin-bottom: 12px;
 }
+.zone-title {
+  font-size: 18px;
+  color: #5a90bd;
+  font-weight: 600;
+}
 .zone-row {
   display: flex;
   flex-wrap: wrap;
@@ -162,12 +186,15 @@ function getAgvStatusType(status) {
   background-color: #333;
   border-radius: 12px;
   padding: 16px;
-  width: 300px;
+  width: 340px;
   color: #eee;
   border: 1px solid #444;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   max-height: 420px;         /* 你可以依需求調整高度 */
   overflow-y: auto; 
+}
+.device-card, .el-tag {
+  transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
 }
 .device-header {
   display: flex;
@@ -178,6 +205,10 @@ function getAgvStatusType(status) {
 .error-tag {
   font-size: 12px;
   color: #ccc;
+  display: flex;
+  gap: 4px;    
+  align-items: center;
+  margin: 0;
 }
 .device-status {
   display: flex;
@@ -206,6 +237,17 @@ function getAgvStatusType(status) {
   border-color: #409eff; 
   box-shadow: 0 0 12px 0 #0d81f5b0;
 }
+.device-card::-webkit-scrollbar {
+  width: 2px;           /* 幾乎不佔空間 */
+  background: transparent;
+}
+.device-card::-webkit-scrollbar-thumb {
+  background: transparent; /* 完全透明 */
+}
+.device-card {
+  scrollbar-width: thin;      /* Firefox: 極細 */
+  scrollbar-color: transparent transparent; /* Firefox: 透明 */
+}
 .status-desc {
   font-size: 12px;
   font-weight: 500;
@@ -214,9 +256,12 @@ function getAgvStatusType(status) {
 }
 .device-card.has-alarm {
   border-color: #ff4d4f !important;
-  box-shadow: 0 0 12px 0 #fc0206b9;
+  box-shadow: 0 0 12px 0 #ff1d21b9;
 }
-
+.device-card.not-alive:not(.has-alarm) {
+  border-color: #fdc84ca4 !important; /* 亮橘色 */
+  box-shadow: 0 0 16px 0 #ffcb5283;
+}
 .agv-status {
   margin-top: 12px;
   font-size: 13px;

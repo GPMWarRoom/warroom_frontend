@@ -43,6 +43,9 @@ onUnmounted(() => {
 
 <style scoped>
 .alert-message {
-    border: 1px solid #333;
+  border: 1px solid #333;
+  padding: 8px 12px;
+  font-size: 1rem;
+  word-break: break-all;
 }
 </style>

@@ -5,7 +5,7 @@ export class globalChartOptions {
             fontSize: 12
         }
         this.title = {
-            text: '123',
+            text: '',
             textStyle: {
                 color: '#fff',
                 fontSize: 12

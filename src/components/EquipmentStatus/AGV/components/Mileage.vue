@@ -2,7 +2,7 @@
     <div class="agv-stats mileage-status">
         <div class="header mileage-header ">
             <h3>里程資訊</h3>
-            <el-tag type="info" size="small">{{ formatDate(lastMaintenanceDate) }}</el-tag>
+            <!-- <el-tag type="info" size="small">{{ formatDate(lastMaintenanceDate) }}</el-tag> -->
         </div>
         <div class="mileage-content">
             <div class="mileage-card total">
@@ -22,7 +22,7 @@
                         <el-icon>
                             <Timer />
                         </el-icon>
-                        <span>當日里程</span>
+                        <span>目前里程</span>
                     </div>
                     <div class="stat-value">{{ formatDistance(dailyMileage) }}</div>
                     <el-progress

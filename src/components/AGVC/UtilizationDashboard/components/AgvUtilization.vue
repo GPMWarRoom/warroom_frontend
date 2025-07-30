@@ -4,8 +4,9 @@
             groups: chartData.groups,
             stacks: chartData.stacks,
             yDataList: chartData.yDataList,
-            originalDataList: chartData.originalDataList }" />
-        <LineChart v-if="selectedUtilizationType === 'odometer'" :datas="datas" />
+            originalDataList: chartData.originalDataList }"
+            :barWidth="8" />
+        <LineChart v-if="selectedUtilizationType === 'odometer'" :yAxisName="'公里'" :datas="realTimeData.AGVC_Utilization_TotalMileage"/>
     </div>
 </template>
 <script setup>
@@ -40,22 +41,21 @@ const chartData = computed(() => {
         const groupOriginal = stacks.map(() => [])
 
         xData.forEach(date => {
-        const record = raw.find(r => r.AGVName === group && r.Date.startsWith(date))
-        const total = record
-            ? stacks.reduce((sum, key) => sum + record[key], 0)
-            : 0
-
-        stacks.forEach((key, i) => {
-            const value = record ? record[key] : 0
-            groupOriginal[i].push(value)
-            groupData[i].push(total > 0 ? +(value / total * 100).toFixed(1) : 0)
+            // 找出所有該 group、該日期的資料
+            const records = raw.filter(r => r.AGVName === group && r.Date.startsWith(date))
+            // 對每個 stack 做加總
+            const stackValues = stacks.map(key =>
+                records.reduce((sum, rec) => sum + (rec[key] || 0), 0)
+            )
+            stackValues.forEach((value, i) => groupOriginal[i].push(value))
+            const total = stackValues.reduce((sum, v) => sum + v, 0)
+            stackValues.forEach((value, i) => {
+                groupData[i].push(total > 0 ? +(value / total * 100).toFixed(1) : 0)
+            })
         })
-        })
-
         yDataList.push(groupData)
         originalDataList.push(groupOriginal)
     })
-
     return {
         xData,
         groups,

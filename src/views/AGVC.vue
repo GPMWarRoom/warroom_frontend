@@ -1,6 +1,10 @@
 <template>
     <content-container>
-        <div class="h-100 ">
+        <div class="h-100 "
+            :class="{
+                'not-alive': aliveCheck && (aliveCheck.isAlive === false || aliveCheck.isVMSAlive === false)
+            }"
+        >
             <el-tabs v-model="activeTab" class="agvc-tabs" type="card" v-loading="loading" @tab-change="handleTabChange">
                 <el-tab-pane :disabled="true" name="select-agvc" >
                     <template #label>
@@ -22,7 +26,7 @@
                         </el-icon>
                         <span>即時監控</span>
                     </template>
-                    <RealTimeDashboard v-if="activeTab === 'monitor'" class="tab-content-component" />
+                    <RealTimeDashboard v-if="activeTab === 'monitor'" class="tab-content-component" @show-equipment-status="handleShowEquipmentStatus" />
                 </el-tab-pane>
                 <el-tab-pane :lazy="true" name="traffic-stats">
                     <template #label>
@@ -52,6 +56,15 @@
                     </template>
                     <UtilizationDashboard v-if="activeTab === 'utilization'" class="tab-content-component" />
                 </el-tab-pane>
+                <el-tab-pane name="utilizationEQ" :lazy="true">
+                    <template #label>
+                        <el-icon>
+                            <List />
+                        </el-icon>
+                        <span>週邊設備</span>
+                    </template>
+                    <UtilizationEQDashboard v-if="activeTab === 'utilizationEQ'" class="tab-content-component" />
+                </el-tab-pane>
                 <!-- <el-tab-pane label="任務管理" name="tasks">
                     <template #label>
                         <el-icon>
@@ -71,6 +84,18 @@
                     <AGVCMonitor class="tab-content-component" v-if="activeTab === 'settings'" />
                 </el-tab-pane> -->
             </el-tabs>
+
+            <el-drawer
+                v-model="showEquipmentDrawer"
+                :with-header="false"
+                size="55%"
+                direction="rtl"
+                :close-on-click-modal="true"
+            >
+                <AgvStatus v-if="equipmentType === 'agv'" :id="selectedEquipmentId" @back="showEquipmentDrawer = false"/>
+                <RackStatus v-else-if="equipmentType === 'rack'" :id="selectedEquipmentId" @back="showEquipmentDrawer = false"/>
+            </el-drawer>
+
             <div class="date-select" v-if="activeTab !== 'monitor'">
                 <el-date-picker v-model="realTimeData.DateRange" type="daterange" range-separator="至" start-placeholder="開始日期" end-placeholder="結束日期" />
                 <el-button style="margin: 0px 2px" @click="_Init">查詢</el-button>
@@ -79,17 +104,33 @@
     </content-container>
 </template>
 <script setup lang="ts">
-import { ref, onActivated, onDeactivated, onMounted } from 'vue'
+import { ref, onActivated, onDeactivated, onMounted, watch } from 'vue'
 import { Monitor, List, LocationFilled } from '@element-plus/icons-vue'
+import { ElNotification } from 'element-plus'
 import ContentContainer from '../components/ContentContainer.vue'
 import RealTimeDashboard from '../components/AGVC/RealTimeDashboard/index.vue'
 import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard/index.vue'
 import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDashboard/index.vue'
 import UtilizationDashboard from '../components/AGVC/UtilizationDashboard/index.vue'
+import UtilizationEQDashboard from '../components/AGVC/UtilizationEQDashboard/index.vue'
 import { uiStatsStore } from '../stores/UiStats'
 import { realTimeStore } from '../stores/realTime'
 import { useSignalR } from '@/composables/useSignalR'
 import { getMap } from '@/api/map'
+import AgvStatus from '@/components/EquipmentStatus/AGV/index.vue'
+import RackStatus from '@/components/EquipmentStatus/Rack/index.vue'
+import { useAlarmStore } from '@/stores/alert'
+
+const alarmStore = useAlarmStore()
+const showEquipmentDrawer = ref(false)
+const equipmentType = ref('')
+const selectedEquipmentId = ref(null)
+function handleShowEquipmentStatus({ id, type }) {
+  equipmentType.value = type
+  selectedEquipmentId.value = id
+  showEquipmentDrawer.value = true
+}
+
 const { on, off, connection, isConnected } = useSignalR()
 
 const TrafficStatsRef = ref()
@@ -98,6 +139,7 @@ const loading = ref(realTimeData.loading)
 const activeTab = ref('monitor')
 const uiStats = uiStatsStore()
 const agvcList = ref([])
+const aliveCheck = ref({ isAlive: true, isVMSAlive: true })
 onMounted(async () => {
     const res = await fetch('/config.json')
     const config = await res.json()
@@ -135,6 +177,16 @@ async function _Init() {
             await connection.value?.invoke('InitTrafficStats', realTimeData.DateRange)
             break;
         case 'traffic-efficiency':
+            try {
+                const mapData = await getMap(realTimeData.selectedAgvc)
+                if (mapData) {
+                    map.value = mapData
+                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', map)
+                }
+            } catch (e) {
+                map.value = null
+                realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
+            }
             await connection.value?.invoke('InitAGVEfficiency', 
                 realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
                 realTimeData.AGVC_TrafficEfficiency_Selector.source,    
@@ -144,6 +196,11 @@ async function _Init() {
             break;
         case 'utilization':
             await connection.value?.invoke('InitAGVUtilization', 
+                realTimeData.DateRange
+            );
+            break;
+        case 'utilizationEQ':
+            await connection.value?.invoke('InitUtilizationEQ', 
                 realTimeData.DateRange
             );
             break;
@@ -210,10 +267,12 @@ function handleNotification(result: any) {
 }
 
 function handleAGVEfficiency(result: any) {
-    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_Tasks', result.TaskSuccess)
+    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_TaskSuccess', result.TaskSuccess)
     realTimeData.updateRealTimeData('MainEQList', result.MainEQList)
     realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_UnloadWaitTime', result.UnloadWaitTime)
     realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStatics', result.CarryStatics)
+    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_TaskList', result.TaskList)
+    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStaticsByPath', result.CarryStaticsByPath)
 }
 
 function handleAGVUtilization(result: any) {
@@ -222,6 +281,18 @@ function handleAGVUtilization(result: any) {
     realTimeData.updateRealTimeData('AGVC_Utilization_RemoteRate', result.NoAGVTasks.RemoteRate)
     realTimeData.updateRealTimeData('AGVC_Utilization_NoReject', result.NoAGVTasks.NoReject)
     realTimeData.updateRealTimeData('AGVC_Utilization_NoAGVAlarm', result.NoAGVAlarm)
+    realTimeData.updateRealTimeData('AGVC_Utilization_TotalMileage', result.NoAGVTasks.TotalMileage)
+    realTimeData.updateRealTimeData('AGVC_Utilization_ExchangeCount', result.NoAGVTasks.ExchangeCount)
+    realTimeData.updateRealTimeData('AGVC_Utilization_TaskTypeRatio', result.TaskTypeRatio)
+    realTimeData.updateRealTimeData('AGVC_Utilization_TaskAutoRatio', result.TaskAutoRatio)
+}
+
+function handleAGVUtilizationEQ(result: any) {
+    realTimeData.updateRealTimeData('AGVC_UtilizationEQ_deviceData', result.deviceData)
+}
+
+function handleReceiveAliveCheck(result: any) {
+    aliveCheck.value = result
 }
 
 function handleReceiveTrafficStats(result: any) {
@@ -237,7 +308,7 @@ function handleReceiveTrafficStats(result: any) {
         const g = Math.round(255 - ratio * 255)
         const b = 0
         colorMap[String(s.tag)] = {
-            color: `rgba(${r},${g},${b},0.9)`,
+            color: `rgba(${r},${g},${b},0.8)`,
             avgdurationseconds: s.avgdurationseconds
         }
     })
@@ -265,16 +336,18 @@ function handleReceiveTrafficStats(result: any) {
         pathUseStatsMap[`${s.tagA}-${s.tagB}`] = { count: s.count, color }
     })
     realTimeData.updateRealTimeData('AGVC_TrafficStats_pathUseStats', pathUseStatsMap)
-    console.log(pathUseStatsMap)
 }
 
 let intervalId: ReturnType<typeof setInterval> | null = null
+let intervalAlive: ReturnType<typeof setInterval> | null = null
 onActivated(async () => {
     // 接收後端推播通知
     on('ReceiveNotification', handleNotification);
     on('ReceiveAGVEfficiency', handleAGVEfficiency);
     on('ReceiveAGVUtilization', handleAGVUtilization);
-    on('ReceiveTrafficStats', handleReceiveTrafficStats)
+    on('ReceiveTrafficStats', handleReceiveTrafficStats);
+    on('ReceiveAliveCheck', handleReceiveAliveCheck);
+    on('ReceiveUtilizationEQ', handleAGVUtilizationEQ);
     connection.value?.onreconnected(async () => {
         console.log('🔁 SignalR 已重新連線')
         if (currentSubscribedSchema && currentTab) {
@@ -295,6 +368,10 @@ onActivated(async () => {
             _Init()
         }, 60 * 60 * 1000) // 每小時
     }
+    
+    intervalAlive = setInterval(async() => {
+        await connection.value?.invoke('GetAliveCheck')
+    }, 2 * 1000) 
 })
 
 onDeactivated(async () => {
@@ -307,6 +384,8 @@ onDeactivated(async () => {
     off('ReceiveAGVEfficiency', handleAGVEfficiency)
     off('ReceiveAGVUtilization', handleAGVUtilization)
     off('ReceiveTrafficStats', handleReceiveTrafficStats)
+    off('ReceiveAliveCheck', handleReceiveAliveCheck)
+    off('ReceiveUtilizationEQ', handleAGVUtilizationEQ)
 
     if (currentSubscribedSchema && currentTab) {
     await connection.value.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)
@@ -314,11 +393,63 @@ onDeactivated(async () => {
     }
 })
 
+const errorMessageVisible = ref(false)
+
+watch(
+  () => aliveCheck.value,
+  (val) => {
+    if (val && (!val.isAlive || !val.isVMSAlive)) {
+        if (!errorMessageVisible.value) {
+            errorMessageVisible.value = true
+            let messages: string[] = []
+            if (val.isAlive === false) messages.push('連線異常，請檢查設備連線狀態。')
+            if (val.isVMSAlive === false) messages.push('派車系統異常，請檢查VMS系統狀態。')
+                ElNotification({
+                title: '警告',
+                message: messages.join('<br>'),
+                type: 'warning',
+                showClose: true,
+                duration: 0,
+                position: 'bottom-right',
+                dangerouslyUseHTMLString: true,
+                onClose: () => {
+                    errorMessageVisible.value = false
+                }
+            })
+        }
+        alarmStore.playAlarm()
+    } else {
+      errorMessageVisible.value = false
+      alarmStore.stopAlarm()
+    }
+  },
+  { immediate: true, deep: true }
+)
+
+watch(
+  () => realTimeData.AGVC_RealTimeDashboard_SystemAlarms,
+  (alarms) => {
+    if (alarms.some((alarm: any) => !alarm.Checked)) {
+      alarmStore.playAlarm()
+    } else {
+      alarmStore.stopAlarm()
+    }
+  },
+  { immediate: true, deep: true }
+)
+
 </script>
 
 
 <style scoped>
-
+.h-100 {
+  border: 2px solid #444;
+  border-radius: 12px;
+  padding: 4px;
+}
+.h-100.not-alive {
+  border-color: #fdc84ca4 !important; /* 亮橘色 */
+}
 .agvc-tabs :deep(.el-tabs__item:first-child) {
     border: none !important;
     background: transparent !important;
@@ -357,7 +488,7 @@ onDeactivated(async () => {
 
 
 .agvc-tabs .tab-content-component {
-    height: calc(100vh - var(--tab-offset-top));
+    height: calc(100vh - var(--tab-offset-top) - 20px);
 }
 
 .agvc-tabs :deep(.el-tabs__header) {
@@ -404,7 +535,7 @@ onDeactivated(async () => {
 .date-select {
     padding: 10px;
     position: absolute;
-    top: 38px;
-    right: 0;
+    top: 44px;
+    right: 10px;
 }
 </style>

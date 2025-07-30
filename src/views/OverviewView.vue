@@ -21,23 +21,20 @@ import InfoCard from '@/components/OverviewView/InfoCard.vue'
 
 const realTimeData = realTimeStore()
 const { on, off, connection } = useSignalR()
-const _Init = async () => {
-    await connection.value?.invoke('InitOverviewData');
-}
 
 const handleOverviewData = (result: any) => {
-    realTimeData.updateRealTimeData('Overview_Data', result);
+  realTimeData.updateRealTimeData('Overview_Data', result);
 }
 
 onActivated(async () => {
-    // 接收後端推播通知
-    on('ReceiveOverview', handleOverviewData);
-    _Init();
+  // 接收後端推播通知
+  on('ReceiveOverview', handleOverviewData);
+  await connection.value.invoke('StartOverviewSubscription', 2);
 })
 
 onDeactivated(async () => {
-    
-    off('ReceiveOverview', handleOverviewData)
+  off('ReceiveOverview', handleOverviewData)
+  await connection.value?.invoke('StopOverviewSubscription');
 })
 
 </script>

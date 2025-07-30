@@ -4,23 +4,26 @@
         <div class="flex-fill d-flex flex-column justify-content-between">
             <h3>搬運結果</h3>
             <div class="h-100">
-                <StackedBarChart :datas="{ stacks: ['完成', '失敗', '取消'],
-                    xData: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.Date),
-                    groups:['agv_001'],
-                    yDataList: [[realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.CompletedCount),
-                        realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.FailedCount),
-                        realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.CanceledCount)]] }" />
-            </div>
-            <h3>執行時間</h3>
-            <div class="h-100">
-                <BarChart :useGradient="true" :yAxisName="'執行時間(分)'"
-                    :datas="[{ name: '執行時間', xData:realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.Date), 
-                        yData:realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.AvgExecMinutes) }]"/>
+                <MixBarLineChart :datas="{
+                        xData: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.Date),
+                        barSeries: [
+                            { name: '完成', data: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.CompletedCount) },
+                            { name: '失敗', data: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.FailedCount) },
+                            { name: '取消', data: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.CanceledCount) }
+                        ],
+                        lineSeries: [
+                            { name: '執行時間', data: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.AvgExecMinutes) }
+                        ],
+                        yAxisBarName: '件數',
+                        yAxisLineName: '執行時間(分)'
+                    }" 
+                    :barWidth="8"
+                />
             </div>
             <h3>執行時間 Box Plot</h3>
             <div class="h-100">
                 <BoxPlotChart :useGradient="true" :datas="{
-                    name: '執行時間', 
+                    name: '執行時間(分)', 
                     xData: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.Date), 
                     yDataList: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => [
                     item.MinExecMinutes, 
@@ -36,8 +39,7 @@
 </template>
 <script setup>
 import FromToSelector from './FromToSelector.vue'
-import BarChart from '../../../../common/charts/BarChart.vue';
-import StackedBarChart from '../../../../common/charts/StackedBarChart.vue';
+import MixBarLineChart from '../../../../common/charts/MixBarLineChart.vue';
 import BoxPlotChart from '../../../../common/charts/BoxPlotChart.vue';
 import { realTimeStore } from '@/stores/realTime'
 const realTimeData = realTimeStore()
@@ -53,7 +55,7 @@ function handleSelectorChange() {
     h3 {
         margin: 0;
         border-bottom:none;
-        margin-block: 10px;
+        margin-block: 2px;
     }
 }
 </style>

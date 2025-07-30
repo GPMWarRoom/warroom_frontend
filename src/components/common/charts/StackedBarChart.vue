@@ -71,82 +71,87 @@ watch(
     options.xAxis.data = virtualXLabels
     options.yAxis.name = props.yAxisName
     options.title.text = props.title
+    options.dataZoom = [
+      {
+        type: 'inside',
+        xAxisIndex: [0],
+        start: 0,
+        end: 100
+      }
+    ]
+
     options.series = []
     options.tooltip = {
-    trigger: 'axis',
-    backgroundColor: 'rgba(50, 50, 50, 0.95)',
-    textStyle: {
-        color: '#fff'  // 文字白色
-    },
-    extraCssText: 'box-shadow: none; border: none;',
-    axisPointer: { type: 'shadow' },
-    formatter(params) {
+      trigger: 'axis',
+      backgroundColor: 'rgba(50, 50, 50, 0.95)',
+      textStyle: {
+        color: '#fff'
+      },
+      extraCssText: 'box-shadow: none; border: none;',
+      axisPointer: { type: 'shadow' },
+      formatter(params) {
         const index = params[0].dataIndex
+        const groups = props.datas.groups
+        const stacks = props.datas.stacks
         const hasOrigin = Array.isArray(props.datas.originalDataList)
-        let result = `${params[0].axisValue}<br/>`
-
-        params.forEach(p => {
-            // groupIndex 依舊用 seriesIndex % groups.length
-            const groupIndex = p.seriesIndex % props.datas.groups.length
-
-            // stackIndex 是 Math.floor(seriesIndex / groups.length)
-            const stackIndex = Math.floor(p.seriesIndex / props.datas.groups.length)
-
-            const dateIndex = Math.floor(index / props.datas.groups.length)
-
-            const percent = p.value
-
-            let originalValue = null
-            if (
-                hasOrigin &&
-                props.datas.originalDataList?.[groupIndex] &&
-                props.datas.originalDataList[groupIndex]?.[stackIndex] &&
-                props.datas.originalDataList[groupIndex][stackIndex]?.[dateIndex] != null
-            ) {
-                originalValue = props.datas.originalDataList[groupIndex][stackIndex][dateIndex]
-            }
-
-            if (hasOrigin && originalValue != null) {
-                result += `${p.marker} ${p.seriesName}：${originalValue} (${percent}%)<br/>`
-            } else {
-                result += `${p.marker} ${p.seriesName}：${percent}<br/>`
-            }
-            })
-
-            return result
+        const groupIndex = index % groups.length
+        const dateIndex = Math.floor(index / groups.length)
+        let result = `${params[0].axisValue}`
+        if (groups.length > 1) {
+          result += ` <span style="color:#aaa;">(${groups[groupIndex]})</span>`
         }
+        result += '<br/>'
+        params.forEach((p, i) => {
+          const stackIndex = p.seriesIndex % stacks.length
+          const groupIndexBySeries = Math.floor(p.seriesIndex / stacks.length)
+          if (groupIndexBySeries !== groupIndex) return
+          let originalValue = null
+          if (
+            hasOrigin &&
+            props.datas.originalDataList?.[groupIndex] &&
+            props.datas.originalDataList[groupIndex]?.[stackIndex] &&
+            props.datas.originalDataList[groupIndex][stackIndex]?.[dateIndex] != null
+          ) {
+            originalValue = props.datas.originalDataList[groupIndex][stackIndex][dateIndex]
+          }
+          if (hasOrigin && originalValue != null) {
+            result += `${p.marker} ${stacks[stackIndex]}：${originalValue} (${p.value}%)<br/>`
+          } else {
+            result += `${p.marker} ${stacks[stackIndex]}：${p.value}<br/>`
+          }
+        })
+        return result
+      }
     }
 
 
     groups.forEach((group, groupIndex) => {
-        stacks.forEach((stack, stackIndex) => {
-            const seriesData = []
-
-            xData.forEach((_, dateIndex) => {
-                groups.forEach((g, gIdx) => {
-                    if (gIdx === groupIndex) {
-                    seriesData.push(yDataList[groupIndex][stackIndex][dateIndex])
-                    } else {
-                    seriesData.push(0) // 不屬於此 group 的位置補 0，避免堆疊錯位
-                    }
-                })
-            })
-
-            options.series.push({
-                name: stack,
-                type: 'bar',
-                stack: `group-${groupIndex}`, // 同 group 用相同 stack key
-                data: seriesData,
-                itemStyle: {
-                    color: props.colors[stackIndex % props.colors.length],
-                    borderRadius: stackIndex === stacks.length - 1 ? [5, 5, 0, 0] : [0, 0, 0, 0],
-                    borderColor: '#fff',
-                    borderWidth: 1
-                },
-                barGap: 0,
-                barWidth: props.barWidth
-            })
+      stacks.forEach((stack, stackIndex) => {
+        const seriesData = []
+        xData.forEach((_, dateIndex) => {
+          groups.forEach((g, gIdx) => {
+            if (gIdx === groupIndex) {
+              seriesData.push(yDataList[groupIndex][stackIndex][dateIndex])
+            } else {
+              seriesData.push(0)
+            }
+          })
         })
+        options.series.push({
+          name: stack, // 只用 stack 名稱
+          type: 'bar',
+          stack: 'total',
+          data: seriesData,
+          itemStyle: {
+            color: props.colors[stackIndex % props.colors.length],
+            borderRadius: stackIndex === stacks.length - 1 ? [5, 5, 0, 0] : [0, 0, 0, 0],
+            borderColor: '#fff',
+            borderWidth: 1
+          },
+          barGap: 0,
+          barWidth: props.barWidth
+        })
+      })
     })
 
   },

@@ -1,7 +1,7 @@
 <template>
-    <div class="agv-status border">
+    <div class="agv-status">
         <div class="header-bar">
-            <el-button link @click="router.back" :icon="Back" class="back-btn">
+            <el-button link @click="onBack" :icon="Back" class="back-btn">
                 返回
             </el-button>
             <div class="header-divider"></div>
@@ -12,16 +12,16 @@
             <div class="left-panel ">
                 <div class="panel-section">
                     <BatteryStatus
-                        :percentage="Number(currentEquipment?.BatLevel?.toFixed(2))"
+                        :percentage="Number(currentEquipment?.BatLevel?.toFixed(2)) || 0"
                         :temperature="20"
                         :current="currentEquipment?.BatChargeCurrent"
                         :voltage="currentEquipment?.BatVoltage" />
                 </div>
                 <div class="panel-section">
                     <Mileage
-                        :total-mileage="100000"
-                        :daily-mileage="3500"
-                        :maintenance-mileage="95000"
+                        :total-mileage="currentEquipment?.Mileage || 0"
+                        :daily-mileage="currentEquipment?.currentValue || 0"
+                        :maintenance-mileage="currentEquipment?.maintainValue || 0"
                         :last-maintenance-date="new Date()" />
                 </div>
                 <div class="panel-section  flex-fill">
@@ -44,19 +44,16 @@ import MotorsStatus from './components/MotorsStatus.vue'
 import Mileage from './components/Mileage.vue'
 import TaskStats from './components/TaskStats.vue'
 import { Back } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router'
-import { useRoute } from 'vue-router'
 import { realTimeStore } from '@/stores/realTime'
 
+const props = defineProps<{ id: string }>()
+const emit = defineEmits(['back'])
 
-const route = useRoute()
-const router = useRouter()
 const realTimeData = realTimeStore()
-
-const equipmentId = ref(route.params.id)
+const equipmentId = ref(props.id)
 
 watch(
-  () => route.params.id,
+  () => props.id,
   (newId) => {
     equipmentId.value = newId
   }
@@ -72,7 +69,6 @@ const currentTask = computed(() =>
     (item: any) => item.AGVName === equipmentId.value
   )
 )
-
 
 const motors = computed(() => {
   if (!currentEquipment.value) return []
@@ -110,6 +106,11 @@ const chargingTasks = computed(() => {
     total: currentTask.value.ChargingTotal ?? 0
   }
 })
+
+// Drawer 關閉時 emit back 事件
+function onBack() {
+  emit('back')
+}
 </script>
 <style scoped lang="scss">
 .agv-status {

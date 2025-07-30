@@ -1,7 +1,7 @@
 <template>
-  <div class="rack-status border">
+  <div class="rack-status">
     <div class="header-bar">
-        <el-button link @click="router.back" :icon="Back" class="back-btn">
+        <el-button link @click="onBack" :icon="Back" class="back-btn">
             返回
         </el-button>
         <div class="header-divider"></div>
@@ -14,9 +14,14 @@
         gridTemplateColumns: `repeat(${currentEquipment.col}, 350px)`
       }"
     >
-      <template v-for="(rowIdx) in [...Array(currentEquipment.row).keys()].reverse()" :key="rowIdx">
-        <template v-for="(colIdx) in [...Array(currentEquipment.col).keys()]" :key="colIdx">
-          <div class="rack-cell">
+      <template v-for="rowIdx in Array.from({length: currentEquipment.row}, (_, i) => currentEquipment.row - 1 - i)" :key="rowIdx">
+        <template v-for="colIdx in Array.from({length: currentEquipment.col}, (_, i) => i)" :key="colIdx">
+          <div 
+            class="rack-cell"
+            :class="{
+              'has-warning': cellAt(rowIdx, colIdx)?.isManualItem,
+              'has-alarm': cellAt(rowIdx, colIdx)?.isManualItem && cellAt(rowIdx, colIdx)?.alarm
+          }">
             <div class="cell-header">
               <span class="cell-no">
                 {{
@@ -60,25 +65,18 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Back } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router'
-import { useRoute } from 'vue-router'
 import { realTimeStore } from '@/stores/realTime'
 import { ref, computed, watch } from 'vue'
 
-const route = useRoute()
-const router = useRouter()
+const props = defineProps<{ id: string }>()
+const emit = defineEmits(['back'])
 const realTimeData = realTimeStore()
-
-function cellAt(row, col) {
-  return currentEquipment.value?.items?.find(cell => cell.row === row && cell.col === col)
-}
-
-const equipmentId = ref(route.params.id)
+const equipmentId = ref(props.id)
 
 watch(
-  () => route.params.id,
+  () => props.id,
   (newId) => {
     equipmentId.value = newId
   }
@@ -90,6 +88,13 @@ const currentEquipment = computed(() =>
   )
 )
 
+function cellAt(row, col) {
+  return currentEquipment.value?.items?.find(cell => cell.row === row && cell.col === col)
+}
+
+function onBack() {
+  emit('back')
+}
 </script>
 
 <style scoped>
@@ -158,13 +163,21 @@ const currentEquipment = computed(() =>
   flex-direction: column;
   padding: 10px;
   text-align: center;
-  border-radius: 4px;
+  border-radius: 12px;
   font-size: 1.05rem;
   background-color: #1e1e1e;
   height: 100%;       
   box-sizing: border-box;
+  border: 2px solid #44444400;
 }
-
+.rack-cell.has-alarm {
+  border-color: #ff4d4f !important;
+  box-shadow: 0 0 12px 0 #ff1d21b9;
+}
+.rack-cell.has-warning:not(.has-alarm) {
+  border-color: #fdc84ca4 !important; /* 亮橘色 */
+  box-shadow: 0 0 12px 0 #ffcb5283;
+}
 .cell-header {
   display: flex;
   justify-content: space-between;
