@@ -70,7 +70,10 @@ watch(
     options.xAxis.name = props.xAxisName
     options.xAxis.data = virtualXLabels
     options.yAxis.name = props.yAxisName
+    options.yAxis.min = 0
+    options.yAxis.max = 100
     options.title.text = props.title
+    options.title.left = 'right'
     options.dataZoom = [
       {
         type: 'inside',

@@ -21,31 +21,43 @@
         <el-row class="my-1" :gutter="8">
             <el-col :lg="12" :md="12" :sm="24">
                 <div class="card">
-                    <h3 class="d-flex justify-content-between">AGV稼動率 <div class="d-flex justify-content-end">
-                        <el-radio-group v-model="selectedAgvUtilizationType" size="small">
-                            <el-radio-button value="status" type="primary" @click="selectedAgvUtilizationType = 'status'">依狀態</el-radio-button>
-                            <el-radio-button value="odometer" type="primary" @click="selectedAgvUtilizationType = 'odometer'">依里程</el-radio-button>
-                        </el-radio-group>
-                    </div></h3>
-                    
+                    <h3 class="d-flex justify-content-between">AGV稼動率
+                        <div class="d-flex justify-content-end">
+                            <el-select v-if="selectedAgvUtilizationType === 'status'" v-model="agvUtilizationIndex" size="small" style="width:120px">
+                                <el-option v-for="(g, i) in agvUtilizationGroups" :key="g" :label="g" :value="i" />
+                            </el-select>
+                            <el-radio-group v-model="selectedAgvUtilizationType" size="small" style="margin-left: 8px;">
+                                <el-radio-button value="status" type="primary">依狀態</el-radio-button>
+                                <el-radio-button value="odometer" type="primary">依里程</el-radio-button>
+                            </el-radio-group>
+                        </div>
+                    </h3>
                     <div class="content">
-                        <AgvUtilization :selectedUtilizationType="selectedAgvUtilizationType" class="w-100" :datas="[{ name: 'AGV1', data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }, { name: 'AGV2', data: [111, 112, 113, 114, 115, 116, 117, 118, 119, 120] }]" />
+                        <AgvUtilization :selectedUtilizationType="selectedAgvUtilizationType" class="w-100"
+                            :currentIndex="agvUtilizationIndex"
+                        />
                     </div>
                 </div>
             </el-col>
             <el-col :lg="12" :md="12" :sm="24">
                 <div class="card">
-                    <h3>AGV MTBF MTBI</h3>
+                    <h3 class="d-flex justify-content-between">AGV MTBF
+                        <div class="d-flex justify-content-end">
+                            <span style="margin-right:8px;margin-top: 2.5px;">計算週期:</span>
+                            <el-input-number v-model="mtbfPeriod" :min="1" :max="30" size="small" style="width:80px" />
+                            <span style="margin-left:8px;margin-top: 2.5px;">天</span>
+                        </div>
+                    </h3>
                     <div class="content">
-                        <LineChart  :useGradient="true" :yAxisName="'時間'"
+                        <LineChart :useGradient="true" :yAxisName="'小時'"
                             :datas="[{
-                                name: 'MTBI',
-                                xData: MTBFList.map(item => item.date),
-                                yData: MTBFList.map(item => item.mtbi !== null ? Number(item.mtbi) : null)
+                                name: 'MTBF',
+                                xData: filteredMTBFList.xData,
+                                yData: filteredMTBFList.yData
                             }]"/>
                     </div>
                 </div>
-            </el-col>
+                </el-col>
         </el-row>
         <el-row class="my-1" :gutter="8">
             <el-col :lg="8" :md="12" :sm="24">
@@ -114,21 +126,36 @@ import { realTimeStore } from '@/stores/realTime'
 
 const selectedAgvUtilizationType = ref('status')
 const realTimeData = realTimeStore()
+const mtbfGroupIndex = ref(0)
+const agvUtilizationIndex = ref(0)
+const agvUtilizationType = ref('status')
+const agvUtilizationGroups = computed(() => {
+    const raw = realTimeData.AGVC_Utilization_AGVAvailabilitys || [];
+    if (!raw.length) return ['Total'];
+    const groups = [...new Set(raw.map(r => r.AGVName))];
+    groups.push('Total');
+    return groups;
+})
 
 const MTBFList = computed(() => {
-    return realTimeData.AGVC_Utilization_AGVAvailabilitys.map(item => {
-        const alarm = realTimeData.AGVC_Utilization_NoAGVAlarm.find(w => w.Date === item.Date)
-        const count = Number(alarm?.Count) || 0
-        const runTime = Number(item.RUN_TIME) || 0
-        let mtbi = 0
-        if (runTime > 0) {
-            mtbi = count / runTime
-        }
-        return {
-            date: item.Date,
-            mtbi: mtbi.toFixed(2)
-        }
-    })
+    const raw = realTimeData.AGVC_Utilization_AGVAvailabilitys || [];
+    const alarmRaw = realTimeData.AGVC_Utilization_NoAGVAlarm || [];
+    if (!raw.length) return { xData: [], yData: [] };
+
+    const xData = [...new Set(raw.map(r => r.Date.slice(0, 10)))];
+    const yData = [];
+
+    xData.forEach(date => {
+        const agvRecords = raw.filter(r => r.Date.startsWith(date));
+        const alarmRecords = alarmRaw.filter(r => r.Date.startsWith(date));
+        const runTime = agvRecords.reduce((sum, rec) => sum + (rec.RUN_TIME || 0), 0);
+        const count = alarmRecords.reduce((sum, rec) => sum + (rec.Count || 0), 0);
+        let mtbf = null;
+        if (count > 0) mtbf = +(runTime / count / 3600).toFixed(2); // 秒轉小時
+        yData.push(mtbf);
+    });
+
+    return { xData, yData };
 })
 const MTBIList = computed(() => {
     return realTimeData.AGVC_Utilization_AGVAvailabilitys.map(item => {
@@ -147,11 +174,12 @@ const MTBIList = computed(() => {
 })
 
 const actionMap = {
-    0: '移動', 
-    1: '取貨', 
-    7: '放貨', 
-    8: '充電', 
-    9: '搬運', 
+    0: 'Move', 
+    1: 'Unload', 
+    7: 'Load', 
+    8: 'Charge', 
+    9: 'Carry', 
+    12: 'Park'
 }
 
 const TaskTypeRatioData = computed(() =>
@@ -167,7 +195,30 @@ const TaskAutoRatioData = computed(() =>
         value: item.Count
     }))
 )
-
+const mtbfPeriod = ref(1)
+const filteredMTBFList = computed(() => {
+    const raw = realTimeData.AGVC_Utilization_AGVAvailabilitys || [];
+    const alarmRaw = realTimeData.AGVC_Utilization_NoAGVAlarm || [];
+    if (!raw.length) return { xData: [], yData: [] };
+    const xData = [...new Set(raw.map(r => r.Date.slice(0, 10)))];
+    const resultX = [];
+    const resultY = [];
+    let i = 0;
+    while (i < xData.length) {
+        const periodDates = xData.slice(i, i + mtbfPeriod.value);
+        const agvRecords = raw.filter(r => periodDates.includes(r.Date.slice(0, 10)));
+        const alarmRecords = alarmRaw.filter(r => periodDates.includes(r.Date.slice(0, 10)));
+        const runTime = agvRecords.reduce((sum, rec) => sum + (rec.Run || 0), 0);
+        const count = alarmRecords.reduce((sum, rec) => sum + (rec.Count || 0), 0);
+        let mtbf = null;
+        if (count > 0) mtbf = +(runTime / count / 3600).toFixed(2);
+        else mtbf = 0;
+        resultX.push(periodDates[periodDates.length - 1]);
+        resultY.push(mtbf);
+        i += mtbfPeriod.value;
+    }
+    return { xData: resultX, yData: resultY };
+})
 </script>
 <style lang="scss" scoped>
 .utilization-dashboard {

@@ -45,7 +45,7 @@
                         <span>搬運效能統計</span>
                     </template>
                     <TrafficEfficiencyDashboard v-if="activeTab === 'traffic-efficiency'" class="tab-content-component" 
-                        @selector-change="_Init" :connection="connection"/>
+                        @selector-change="_Init" @loadHistoryTasks="loadHistoryTasks" :connection="connection"/>
                 </el-tab-pane>
                 <el-tab-pane name="utilization" :lazy="true">
                     <template #label>
@@ -97,14 +97,14 @@
             </el-drawer>
 
             <div class="date-select" v-if="activeTab !== 'monitor'">
-                <el-date-picker v-model="realTimeData.DateRange" type="daterange" range-separator="至" start-placeholder="開始日期" end-placeholder="結束日期" />
+                <el-date-picker v-model="localDateRange" type="daterange" range-separator="至" start-placeholder="開始日期" end-placeholder="結束日期" @change="handleDateRangeChange"/>
                 <el-button style="margin: 0px 2px" @click="_Init">查詢</el-button>
             </div>
         </div>
     </content-container>
 </template>
 <script setup lang="ts">
-import { ref, onActivated, onDeactivated, onMounted, watch } from 'vue'
+import { ref, onActivated, onDeactivated, onMounted, watch, computed } from 'vue'
 import { Monitor, List, LocationFilled } from '@element-plus/icons-vue'
 import { ElNotification } from 'element-plus'
 import ContentContainer from '../components/ContentContainer.vue'
@@ -120,6 +120,7 @@ import { getMap } from '@/api/map'
 import AgvStatus from '@/components/EquipmentStatus/AGV/index.vue'
 import RackStatus from '@/components/EquipmentStatus/Rack/index.vue'
 import { useAlarmStore } from '@/stores/alert'
+import dayjs from 'dayjs'
 
 const alarmStore = useAlarmStore()
 const showEquipmentDrawer = ref(false)
@@ -145,6 +146,29 @@ onMounted(async () => {
     const config = await res.json()
     agvcList.value = config.Schemas
 })
+
+async function loadHistoryTasks(resolve: () => void) {
+    const map = ref()
+    try {
+        const mapData = await getMap(realTimeData.selectedAgvc)
+        if (mapData) {
+            map.value = mapData
+            realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', map)
+        }
+    } catch (e) {
+        map.value = null
+        realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
+    }
+    await connection.value?.invoke('InitAGVEfficiency', 
+        realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
+        realTimeData.AGVC_TrafficEfficiency_Selector.source,    
+        realTimeData.AGVC_TrafficEfficiency_Selector.target,
+        realTimeData.DateRange,
+        true // 是否需要撈TaskList
+    );
+    resolve();
+}
+
 async function _Init() {
     loading.value = true
     const map = ref()
@@ -191,7 +215,8 @@ async function _Init() {
                 realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
                 realTimeData.AGVC_TrafficEfficiency_Selector.source,    
                 realTimeData.AGVC_TrafficEfficiency_Selector.target,
-                realTimeData.DateRange
+                realTimeData.DateRange,
+                false // 是否需要撈TaskList
             );
             break;
         case 'utilization':
@@ -297,18 +322,17 @@ function handleReceiveAliveCheck(result: any) {
 
 function handleReceiveTrafficStats(result: any) {
     const stats = result.tagStopStats
-    const min = Math.min(...stats.map((s: any) => s.avgdurationseconds))
-    const max = Math.max(...stats.map((s: any) => s.avgdurationseconds))
     const colorMap: Record<string, { color: string, avgdurationseconds: number }> = {}
     stats.forEach((s: any) => {
-        // 綠到紅的比例
-        const ratio = max === min ? 0 : (s.avgdurationseconds - min) / (max - min)
-        // 綠(0,255,0)→紅(255,0,0)
-        const r = Math.round(0 + ratio * (255 - 0))
-        const g = Math.round(255 - ratio * 255)
-        const b = 0
+        // 0-8, 8-16, 16-24, 24-32, >32
+        let color = ''
+    if (s.avgdurationseconds <= 8) color = 'rgba(0,200,83,0.8)'; // 綠
+    else if (s.avgdurationseconds <= 16) color = 'rgba(255,214,0,0.8)'; // 黃
+    else if (s.avgdurationseconds <= 24) color = 'rgba(255,160,0,0.8)'; // 橘
+    else if (s.avgdurationseconds <= 32) color = 'rgba(255,87,34,0.8)'; // 橘紅
+    else color = 'rgba(229,57,53,0.8)'; // 紅 >32
         colorMap[String(s.tag)] = {
-            color: `rgba(${r},${g},${b},0.8)`,
+            color,
             avgdurationseconds: s.avgdurationseconds
         }
     })
@@ -330,9 +354,20 @@ function handleReceiveTrafficStats(result: any) {
     const pathUseStatsMap: Record<string, { count: number, color: string }> = {}
     pathStats.forEach((s: any) => {
         const ratio = maxCount === minCount ? 0 : (s.count - minCount) / (maxCount - minCount)
-        const r = Math.round(0 + ratio * 255)
-        const g = Math.round(255 - ratio * 255)
-        const color = `rgba(${r},${g},0,0.3)`
+        const colorSteps = [
+            'rgba(0,200,83,0.8)',    // 綠
+            'rgba(255,214,0,0.8)',   // 黃
+            'rgba(255,160,0,0.8)',   // 橘
+            'rgba(255,87,34,0.8)',   // 橘紅
+            'rgba(229,57,53,0.8)'    // 紅
+        ]
+        let colorIdx = 0
+        if (ratio >= 0.8) colorIdx = 4
+        else if (ratio >= 0.6) colorIdx = 3
+        else if (ratio >= 0.4) colorIdx = 2
+        else if (ratio >= 0.2) colorIdx = 1
+        else colorIdx = 0
+        const color = colorSteps[colorIdx]
         pathUseStatsMap[`${s.tagA}-${s.tagB}`] = { count: s.count, color }
     })
     realTimeData.updateRealTimeData('AGVC_TrafficStats_pathUseStats', pathUseStatsMap)
@@ -393,38 +428,65 @@ onDeactivated(async () => {
     }
 })
 
-const errorMessageVisible = ref(false)
+// const errorMessageVisible = ref(false)
 
-watch(
-  () => aliveCheck.value,
-  (val) => {
-    if (val && (!val.isAlive || !val.isVMSAlive)) {
-        if (!errorMessageVisible.value) {
-            errorMessageVisible.value = true
-            let messages: string[] = []
-            if (val.isAlive === false) messages.push('連線異常，請檢查設備連線狀態。')
-            if (val.isVMSAlive === false) messages.push('派車系統異常，請檢查VMS系統狀態。')
-                ElNotification({
-                title: '警告',
-                message: messages.join('<br>'),
-                type: 'warning',
-                showClose: true,
-                duration: 0,
-                position: 'bottom-right',
-                dangerouslyUseHTMLString: true,
-                onClose: () => {
-                    errorMessageVisible.value = false
-                }
-            })
-        }
-        alarmStore.playAlarm()
-    } else {
-      errorMessageVisible.value = false
-      alarmStore.stopAlarm()
+// watch(
+//   () => aliveCheck.value,
+//   (val) => {
+//     if (val && (!val.isAlive || !val.isVMSAlive)) {
+//         if (!errorMessageVisible.value) {
+//             errorMessageVisible.value = true
+//             let messages: string[] = []
+//             if (val.isAlive === false) messages.push('連線異常，請檢查設備連線狀態。')
+//             if (val.isVMSAlive === false) messages.push('派車系統異常，請檢查VMS系統狀態。')
+//                 ElNotification({
+//                 title: '警告',
+//                 message: messages.join('<br>'),
+//                 type: 'warning',
+//                 showClose: true,
+//                 duration: 0,
+//                 position: 'bottom-right',
+//                 dangerouslyUseHTMLString: true,
+//                 onClose: () => {
+//                     errorMessageVisible.value = false
+//                 }
+//             })
+//         }
+//     } else {
+//       errorMessageVisible.value = false
+//     }
+//   },
+//   { immediate: true, deep: true }
+// )
+
+function setUTCDate(targetDate: dayjs.Dayjs, isEnd: boolean): Date {
+    return new Date(Date.UTC(
+        targetDate.year(),
+        targetDate.month(),
+        targetDate.date(),
+        isEnd ? 23 : 0, 
+        isEnd ? 59 : 0, 
+        isEnd ? 59 : 0, 
+        isEnd ? 999 : 0
+    ));
+}
+
+const localDateRange = ref(realTimeData.DateRange.map(d => dayjs(d).toDate()) as [Date, Date]);
+
+// 核心：使用 @change 事件來呼叫您的 Action
+function handleDateRangeChange(newRange: [Date, Date] | null) {
+    if (newRange && newRange.length === 2) {
+        
+        const startDateLocal = dayjs(newRange[0])
+        const endDateLocal = dayjs(newRange[1])
+
+        const newStartDateUTC = setUTCDate(startDateLocal, false)
+        const newEndDateUTC = setUTCDate(endDateLocal, true)
+        
+        // 呼叫 Store Action
+        realTimeData.updateDateRange([newStartDateUTC, newEndDateUTC])
     }
-  },
-  { immediate: true, deep: true }
-)
+}
 
 watch(
   () => realTimeData.AGVC_RealTimeDashboard_SystemAlarms,

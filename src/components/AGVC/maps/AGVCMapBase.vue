@@ -150,7 +150,7 @@ onMounted(() => {
 function initVehicleLayer() {
     vehicleLayer.value = new VectorLayer({
         source: new VectorSource(),
-        zIndex: 100
+        zIndex: 9999 // 提高 zIndex，確保車輛在最上層
     })
     if (map.value) {
         map.value.addLayer(vehicleLayer.value)
@@ -166,23 +166,38 @@ function updateVehicleMarkers() {
     }
     const vehicles = props.mapModel.Vehicles || []
     vehicles.forEach((vehicle: { id: string|number, x: number, y: number }) => {
-        const feature = new Feature({
+        // 白光底層
+        const glowFeature = new Feature({
             geometry: new Point([vehicle.x, vehicle.y])
         })
-        feature.setStyle(new Style({
+        glowFeature.setStyle(new Style({
+            image: new Circle({
+                radius: 22,
+                fill: new Fill({ color: 'rgba(0,255,100,0.35)' }), // 綠色透明光
+                stroke: new Stroke({ color: 'rgba(0,255,100,0.6)', width: 0 })
+            }),
+            zIndex: 2000,
+        }))
+        // icon 圖層
+        const iconFeature = new Feature({
+            geometry: new Point([vehicle.x, vehicle.y])
+        })
+        iconFeature.setStyle(new Style({
             image: new Icon({
                 src: 'public/AGV.png',
-                scale: 0.5
+                scale: 0.9
             }),
             text: new Text({
-                text: String(vehicle.id), // 顯示車輛編號
-                offsetY: -15,             // 文字在 marker 上方
-                font: ' 12px Arial',
-                fill: new Fill({ color: '#333' }),
-                stroke: new Stroke({ color: '#fff', width: 2 })
-            })
+                text: String(vehicle.id),
+                offsetY: -30,
+                font: 'bold 14px Arial',
+                fill: new Fill({ color: 'rgba(0,255,0,0.6)' }), // 透明綠色文字
+                stroke: new Stroke({ color: '#333', width: 2 })
+            }),
+            zIndex: 999999,
         }))
-        source.addFeature(feature)
+        source.addFeature(glowFeature)
+        source.addFeature(iconFeature)
     })
 }
 

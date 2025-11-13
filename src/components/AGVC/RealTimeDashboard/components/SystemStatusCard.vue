@@ -5,10 +5,10 @@
                 <span>系統運轉模式</span>
                 <el-button-group>
                     <el-button class="tag-button"
-                        :type="sysStatus?.RunMode ? 'danger' : 'success'"
+                        :type="sysStatus?.RunMode ? 'success' : 'danger'"
                         size="small"
                         @click="$emit('toggle-maintenance')">
-                        {{ sysStatus?.RunMode ? '維護模式' : '運轉模式' }}
+                        {{ sysStatus?.RunMode ? '運轉模式' : '維護模式' }}
                     </el-button>
                 </el-button-group>
             </div>

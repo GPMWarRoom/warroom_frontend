@@ -23,6 +23,7 @@ const realTimeData = realTimeStore()
 const filteredAlarms = computed(() =>
   realTimeData.AGVC_RealTimeDashboard_SystemAlarms.filter(item => item.Checked === false)
 )
+console.log(filteredAlarms.value)
 const currentAlarm = ref(filteredAlarms.value[0])
 const currentAlarmIndex = ref(0)
 

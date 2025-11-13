@@ -84,7 +84,8 @@ watch(
             borderColor: '#fff',
             borderWidth: 1
           },
-          barWidth: props.barWidth
+          barMinWidth: 7, // 最小寬度
+          barMaxWidth: 40  // 最大寬度
         }
       ]
     }

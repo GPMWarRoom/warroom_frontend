@@ -18,7 +18,7 @@
           }"
           @dblclick="gotoAGVC(devices.Channel)"
         >
-          <template v-if="devices.SystemAlarms?.length > 0 || (!devices.Alive.isAlive || !devices.Alive.isVMSAlive)">
+          <template v-if="devices.SystemAlarms?.length > 0">
             {{ alarmStore.playAlarm() }}
           </template>
           <template v-else>
@@ -59,16 +59,6 @@
               <el-switch :model-value="!!device.HostOperMode" disabled />
               <div class="status-desc">{{ device.HostOperMode ? 'REMOTE' : 'LOCAL' }}</div>
             </div>
-          </div>
-
-          <div v-if="devices.SystemAlarms?.length" class="alarm-area">
-            <el-icon color="#ff4d4f" style="margin-right:2px;"><WarningFilled /></el-icon>
-            <ul class="alarm-list">
-              <li v-for="alarm in devices.SystemAlarms" :key="alarm.AlarmCode">
-                <span class="alarm-time">{{ alarm.FormattedTime }}</span>
-                <span class="alarm-desc">{{ alarm.Description_Zh }}</span>
-              </li>
-            </ul>
           </div>
 
           <div v-if="devices.EQStatus_AGV?.length" class="agv-status">

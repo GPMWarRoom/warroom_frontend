@@ -6,7 +6,26 @@ interface SysStatus {
     HostConnMode: boolean
     HostOperMode: boolean
   }
+function calculateInitialDateRange(): [Date, Date] {
+    const targetStartDate = dayjs().subtract(7, 'day');
+    const targetEndDate = dayjs().subtract(1, 'day');
+    
+    const startDate = new Date(Date.UTC(
+        targetStartDate.year(),
+        targetStartDate.month(),
+        targetStartDate.date(),
+        0, 0, 0, 0
+    ));
 
+    const endDate = new Date(Date.UTC(
+        targetEndDate.year(),
+        targetEndDate.month(),
+        targetEndDate.date(),
+        23, 59, 59, 999
+    ));
+
+    return [startDate, endDate];
+}
 export const realTimeStore = defineStore('realTime', {
     state: () => ({
         loading: false,
@@ -39,17 +58,18 @@ export const realTimeStore = defineStore('realTime', {
         AGVC_UtilizationEQ_deviceData: [] as any[],
         Overview_Data: [] as any[],
         AGVC_TrafficStats_mapModel: defaultMapModel as typeof defaultMapModel,
-        DateRange: [
-            dayjs().subtract(60, 'day').toDate(),
-            dayjs().toDate()
-          ] as [Date, Date],
+        DateRange: calculateInitialDateRange() as [Date, Date],
     }),
 
     actions: {
         updateRealTimeData(key: string, value: any) {
             if (key in this) {
-              (this as any)[key] = value
+                (this as any)[key] = value
             }
+        },
+        // **建議新增一個 action 來更新 dateRange**
+        updateDateRange(newRange: [Date, Date]) {
+            this.DateRange = newRange
         }
     },
     getters: {

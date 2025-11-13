@@ -73,16 +73,42 @@
         <el-row class="w-100 h-100 extra-row" :gutter="10">
             <el-col :lg="24" class="cards-container">
                 <div class="card w-100 history-card">
-                    <h3>歷史任務路線</h3>
-                    <div class="history-content">
-                        <!-- 左：任務表格 -->
+                    <div class="history-header">
+                        <h3>歷史任務路線</h3>
+                        <el-button 
+                            :icon="RefreshRight" 
+                            :loading="isHistoryLoading" 
+                            @click="loadHistoryTasks"
+                            size="small"
+                        >
+                            {{ isTaskListLoaded ? '重新載入任務' : '載入任務資料' }}
+                        </el-button>
+                    </div>
+                    
+                    <div 
+                        v-if="!isTaskListLoaded && !isHistoryLoading" 
+                        class="empty-history-placeholder"
+                        style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 400px; color: #aaa;"
+                    >
+                        點擊上方按鈕載入歷史任務路線資料
+                    </div>
+                    <div 
+                        v-else-if="isHistoryLoading" 
+                        class="loading-history-placeholder"
+                        style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 400px; color: #409eff;"
+                    >
+                        <el-icon class="is-loading" style="margin-right: 8px;"><RefreshRight /></el-icon>
+                        任務資料載入中...
+                    </div>
+                    
+                    <div class="history-content" v-else-if="realTimeData.AGVC_TrafficEfficiency_TaskList.length > 0">
                         <div class="history-tasks">
                         <el-table
                             :data="realTimeData.AGVC_TrafficEfficiency_TaskList"
-                            style="width: 35vw;"
+                            style="width: 35vw; max-height: 80vh; overflow-y: auto;"
                             border
                             size="small"
-                            height="100%"
+                            height="80vh"
                             :row-key="row => row.TaskName"
                             :default-selection="realTimeData.AGVC_TrafficEfficiency_TaskList.filter(row => row.isSelected)"
                         >
@@ -102,8 +128,7 @@
                             <el-table-column prop="TaskName" label="任務名稱" width="auto" />
                         </el-table>
                         </div>
-                        <!-- 右：地圖 -->
-                        <div class="history-map">
+                        <div class="history-map" style="max-height: 80vh; overflow-y: auto;">
                             <div class="content">
                                 <TasksPathMap class="h-100 w-100" v-if="showMap"
                                     mapId="map4" 
@@ -113,6 +138,13 @@
                                 />
                             </div>
                         </div>
+                    </div>
+                    <div 
+                        v-else-if="isTaskListLoaded && realTimeData.AGVC_TrafficEfficiency_TaskList.length === 0" 
+                        class="no-data-history-placeholder"
+                        style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 400px; color: #f56c6c;"
+                    >
+                        無任務歷史資料
                     </div>
                 </div>
             </el-col>
@@ -128,8 +160,12 @@ import BarChart from '../../common/charts/BarChart.vue'
 import BoxPlotChart from '../../common/charts/BoxPlotChart.vue';
 import FromToTransportStas from './components/FromToTransportStas/index.vue'
 import TasksPathMap from '@/components/AGVC/maps/TasksPathMap.vue'
+import { RefreshRight } from '@element-plus/icons-vue'
 
-const emit = defineEmits(['selector-change'])
+const isHistoryLoading = ref(false)
+const isTaskListLoaded = ref(false)
+
+const emit = defineEmits(['selector-change', 'loadHistoryTasks'])
 function handleSelectorChange() {
   emit('selector-change')
 }
@@ -187,6 +223,25 @@ const mergedPathUseStats = computed(() => {
     return result
 })
 
+async function loadHistoryTasks() {
+    if (isHistoryLoading.value) return
+    isHistoryLoading.value = true
+    const loadPromise = new Promise<void>((resolve) => {
+        emit('loadHistoryTasks', resolve)
+    })
+    try {
+        await loadPromise
+
+    } catch (error) {
+        console.error("載入歷史任務失敗:", error)
+    } finally {
+        isHistoryLoading.value = false
+        if (realTimeData.AGVC_TrafficEfficiency_TaskList.length > 0) {
+            isTaskListLoaded.value = true
+        }
+    }
+}
+
 const showMap = ref(false)
 watch(
   () => realTimeData.AGVC_TrafficStats_mapModel,
@@ -199,7 +254,7 @@ watch(
       showMap.value = false
     }
   },
-  { immediate: true } // 不用 deep
+  { immediate: true } 
 )
 </script>
 <style scoped lang="scss">
@@ -237,31 +292,43 @@ watch(
 
 }
 .extra-row {
-  margin-top: 4px;
-  min-height: 550px;
+    margin-top: 4px;
+    min-height: 550px;
 }
 .history-card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(32,40,60,0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0; /* 保持 history-card 的 padding 為 0 */
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(32,40,60,0.08);
 }
 
 .history-header {
-  padding: 24px 32px 0 32px;
-  border-bottom: 1px solid #2c3442;
-  margin-bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+
+    padding: 16px 32px; 
+    border-bottom: 1px solid #2c3442;
+    margin-bottom: 0; 
+}
+
+.history-header h3 {
+    // *** 關鍵調整 ***
+    margin: 0; /* 移除外邊距 */
+    padding: 0; /* 確保內邊距也為 0 */
+    line-height: 1.2; /* 將行高設為一個明確的值，避免高度計算不準確 */
+    text-decoration: none; 
 }
 
 .history-content {
-  flex: 1;
-  display: flex;
-  gap: 32px;
-  padding: 24px 32px;
-  align-items: stretch;
-  height: 100%;
+    flex: 1;
+    display: flex;
+    gap: 32px;
+    padding: 24px 32px;
+    align-items: stretch;
+    height: 100%;
 }
 
 .history-tasks {

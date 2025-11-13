@@ -19,12 +19,16 @@
         </template>
         <el-table :data="filteredTasks" stripe height="250px">
             <el-table-column show-overflow-tooltip prop="DesignatedAGVName" label="AGV" width="auto" align="center"/>
+            <el-table-column show-overflow-tooltip prop="StartTime" label="開始時間" width="auto" align="center" />
+            <el-table-column show-overflow-tooltip prop="FinishTime" label="結束時間" width="auto" align="center" />
             <el-table-column show-overflow-tooltip prop="TaskName" label="任務ID" width="120" align="center" />
-            <el-table-column show-overflow-tooltip prop="Action" label="類型" width="100" align="center">
+            <el-table-column show-overflow-tooltip prop="Action" label="類型" width="auto" align="center">
                 <template #default="{ row }">
                     {{ actionMap[row.Action] }}
                 </template>
             </el-table-column>
+            <el-table-column show-overflow-tooltip prop="FromName" label="起點" width="auto" align="center" />
+            <el-table-column show-overflow-tooltip prop="ToName" label="終點" width="auto" align="center" />
             <el-table-column show-overflow-tooltip prop="State" label="狀態" width="120" align="center">
                 <template #default="{ row }">
                     <el-tag :type="getTaskStatusType(row.State)">{{ stateMap[row.State] }}</el-tag>
