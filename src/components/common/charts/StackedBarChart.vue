@@ -31,7 +31,7 @@ const props = defineProps({
   },
   colors: {
     type: Array,
-    default: () => ['#79FF79', '#FF5151', '#ADADAD', '#FFB700', '#FF79FF']
+    default: () => ['#79FF79', '#FFB700', '#FF5151', '#3498db', '#ADADAD']
   },
   datas: {
     type: Object,
