@@ -61,7 +61,7 @@
                         <el-icon>
                             <List />
                         </el-icon>
-                        <span>週邊設備</span>
+                        <span>周邊設備</span>
                     </template>
                     <UtilizationEQDashboard v-if="activeTab === 'utilizationEQ'" class="tab-content-component" />
                 </el-tab-pane>

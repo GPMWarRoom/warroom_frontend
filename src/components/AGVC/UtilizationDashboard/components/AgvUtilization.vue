@@ -44,7 +44,7 @@ watch(() => props.currentIndex, (val) => {
 const defaultChartData = {
   xData: ['2025-11-01', '2025-11-02', '2025-11-03'],
   groups: ['AGV-A', 'AGV-B'],
-  stacks: ['RUN_TIME', 'IDLE_TIME', 'DOWN_TIME', 'CHARGE_TIME', 'UNKNOWN_TIME'],
+  stacks: ['Run', 'Idle', 'Down', 'Charge','Unknow'],
   yDataList: [
     [[60, 55, 70], [20, 25, 10], [10, 10, 10], [5, 5, 5], [5, 5, 5]],
     [[50, 60, 65], [30, 20, 15], [10, 10, 10], [5, 5, 5], [5, 5, 5]]
@@ -62,7 +62,7 @@ const chartData = computed(() => {
 
   const groups = [...new Set(raw.map(r => r.AGVName))]
   const xData = [...new Set(raw.map(r => r.Date.slice(0, 10)))]
-  const stacks = ['Run', 'Available', 'Down', 'Charge']
+  const stacks = ['Run', 'Idle', 'Down', 'Charge']
 
   const yDataList = []
   const originalDataList = []
