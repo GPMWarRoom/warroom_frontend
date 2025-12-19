@@ -184,7 +184,7 @@ function updateVehicleMarkers() {
         })
         iconFeature.setStyle(new Style({
             image: new Icon({
-                src: 'public/AGV.png',
+                src: '/AGV.png',
                 scale: 0.9
             }),
             text: new Text({

@@ -105,9 +105,10 @@
                         <div class="history-tasks">
                         <el-table
                             :data="realTimeData.AGVC_TrafficEfficiency_TaskList"
-                            style="width: 35vw; max-height: 80vh; overflow-y: auto;"
+                            style="width: 45vw; max-height: 80vh; overflow-y: auto;"
                             border
                             size="small"
+                            width="45vw"
                             height="80vh"
                             :row-key="row => row.TaskName"
                             :default-selection="realTimeData.AGVC_TrafficEfficiency_TaskList.filter(row => row.isSelected)"
@@ -123,9 +124,12 @@
                                 <el-checkbox v-model="scope.row.isSelected" />
                                 </template>
                             </el-table-column>
-                            <el-table-column align="center" prop="StartTime" label="開始時間" width="auto" />
-                            <el-table-column align="center" prop="DesignatedAGVName" label="AGV" width="80" />
-                            <el-table-column prop="TaskName" label="任務名稱" width="auto" />
+                            <el-table-column show-overflow-tooltip align="center" prop="StartTime" label="開始時間" width="120" />
+                            <el-table-column show-overflow-tooltip align="center" prop="FinishTime" label="結束時間" width="120" />
+                            <el-table-column show-overflow-tooltip align="center" prop="DesignatedAGVName" label="AGV" width="80" />
+                            <el-table-column show-overflow-tooltip prop="TaskName" label="任務名稱" width="auto" />
+                            <el-table-column show-overflow-tooltip prop="FromName" label="起點" width="auto" />
+                            <el-table-column show-overflow-tooltip prop="ToName" label="終點" width="auto" />
                         </el-table>
                         </div>
                         <div class="history-map" style="max-height: 80vh; overflow-y: auto;">
@@ -333,7 +337,7 @@ watch(
 
 .history-tasks {
     min-width: 260px;
-    max-width: 550px;
+    max-width: 650px;
     overflow-y: auto;
     background: inherit;
     border-radius: 8px;
