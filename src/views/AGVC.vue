@@ -26,7 +26,8 @@
                         </el-icon>
                         <span>即時監控</span>
                     </template>
-                    <RealTimeDashboard v-if="activeTab === 'monitor'" class="tab-content-component" @show-equipment-status="handleShowEquipmentStatus" />
+                    <RealTimeDashboard v-if="activeTab === 'monitor'" class="tab-content-component" 
+                        @show-equipment-status="handleShowEquipmentStatus" @realtime-action="handleRealtimeAction"/>
                 </el-tab-pane>
                 <el-tab-pane :lazy="true" name="traffic-stats">
                     <template #label>
@@ -61,7 +62,7 @@
                         <el-icon>
                             <List />
                         </el-icon>
-                        <span>周邊設備</span>
+                        <span>週邊設備</span>
                     </template>
                     <UtilizationEQDashboard v-if="activeTab === 'utilizationEQ'" class="tab-content-component" />
                 </el-tab-pane>
@@ -126,11 +127,6 @@ const alarmStore = useAlarmStore()
 const showEquipmentDrawer = ref(false)
 const equipmentType = ref('')
 const selectedEquipmentId = ref(null)
-function handleShowEquipmentStatus({ id, type }) {
-  equipmentType.value = type
-  selectedEquipmentId.value = id
-  showEquipmentDrawer.value = true
-}
 
 const { on, off, connection, isConnected } = useSignalR()
 
@@ -146,6 +142,16 @@ onMounted(async () => {
     const config = await res.json()
     agvcList.value = config.Schemas
 })
+
+function handleShowEquipmentStatus({ id, type }) {
+  equipmentType.value = type
+  selectedEquipmentId.value = id
+  showEquipmentDrawer.value = true
+}
+
+async function handleRealtimeAction({type, target, dateRange, params}) {
+    await connection.value?.invoke('AGVC_Realtime_Action', type, target, dateRange, params);
+}
 
 async function loadHistoryTasks(resolve: () => void) {
     const map = ref()
@@ -235,6 +241,8 @@ async function _Init() {
 async function handleAgvcChange(value: string) {
     await subscribeToSchema(value, activeTab.value)
     await _Init()
+    
+    realTimeData.resetQueryData();
 }
 const handleTabChange = async (tab: string) => {
     uiStats.setAGVCTabSelected(tab)
@@ -373,6 +381,18 @@ function handleReceiveTrafficStats(result: any) {
     realTimeData.updateRealTimeData('AGVC_TrafficStats_pathUseStats', pathUseStatsMap)
 }
 
+function handleReceiveRealtimeAction(result: any) {
+    console.log(result)
+    switch(result.target) {
+        case 'tasks':
+            realTimeData.updateRealTimeData('AGVC_RealTimeDashboard_Query_Tasks', {
+                data: result.data.data,
+                total: result.data.total
+            });
+            break;
+    }
+}
+
 let intervalId: ReturnType<typeof setInterval> | null = null
 let intervalAlive: ReturnType<typeof setInterval> | null = null
 onActivated(async () => {
@@ -383,6 +403,7 @@ onActivated(async () => {
     on('ReceiveTrafficStats', handleReceiveTrafficStats);
     on('ReceiveAliveCheck', handleReceiveAliveCheck);
     on('ReceiveUtilizationEQ', handleAGVUtilizationEQ);
+    on('ReceiveRealtimeAction', handleReceiveRealtimeAction);
     connection.value?.onreconnected(async () => {
         console.log('🔁 SignalR 已重新連線')
         if (currentSubscribedSchema && currentTab) {
@@ -476,15 +497,10 @@ const localDateRange = ref(realTimeData.DateRange.map(d => dayjs(d).toDate()) as
 // 核心：使用 @change 事件來呼叫您的 Action
 function handleDateRangeChange(newRange: [Date, Date] | null) {
     if (newRange && newRange.length === 2) {
+        const startDateLocal = dayjs(newRange[0]).startOf('day').toDate();
+        const endDateLocal = dayjs(newRange[1]).endOf('day').toDate();
         
-        const startDateLocal = dayjs(newRange[0])
-        const endDateLocal = dayjs(newRange[1])
-
-        const newStartDateUTC = setUTCDate(startDateLocal, false)
-        const newEndDateUTC = setUTCDate(endDateLocal, true)
-        
-        // 呼叫 Store Action
-        realTimeData.updateDateRange([newStartDateUTC, newEndDateUTC])
+        realTimeData.updateDateRange([startDateLocal, endDateLocal]);
     }
 }
 

@@ -1,29 +1,21 @@
 import { defineStore } from 'pinia'
 import dayjs from 'dayjs'
 import { defaultMapModel } from '@/models/MapModel'
+import { reset } from 'ol/transform'
 interface SysStatus {
     RunMode: boolean
     HostConnMode: boolean
     HostOperMode: boolean
-  }
+}
+interface Query {
+    data: any[]
+    total: number
+}
 function calculateInitialDateRange(): [Date, Date] {
-    const targetStartDate = dayjs().subtract(7, 'day');
-    const targetEndDate = dayjs().subtract(1, 'day');
+    // 使用 dayjs 直接處理本地時間
+    const startDate = dayjs().subtract(7, 'day').startOf('day').toDate();
+    const endDate = dayjs().subtract(1, 'day').endOf('day').toDate();
     
-    const startDate = new Date(Date.UTC(
-        targetStartDate.year(),
-        targetStartDate.month(),
-        targetStartDate.date(),
-        0, 0, 0, 0
-    ));
-
-    const endDate = new Date(Date.UTC(
-        targetEndDate.year(),
-        targetEndDate.month(),
-        targetEndDate.date(),
-        23, 59, 59, 999
-    ));
-
     return [startDate, endDate];
 }
 export const realTimeStore = defineStore('realTime', {
@@ -36,6 +28,11 @@ export const realTimeStore = defineStore('realTime', {
         AGVC_RealTimeDashboard_EQStatus_MainEQ: [] as any[],
         AGVC_RealTimeDashboard_EQStatus_Rack: [] as any[],
         AGVC_RealTimeDashboard_Tasks: [] as any[],
+        AGVC_RealTimeDashboard_Query_Tasks: {
+            data: [],
+            total: 0
+        } as Query,
+        AGVC_RealTimeDashboard_Query_Alarms: [] as any[],
         AGVC_RealTimeDashboard_SysStatus: [] as SysStatus[],
         AGVC_RealTimeDashboard_SystemAlarms: [] as any[],
         AGVC_RealTimeDashboard_NoRealTimeTasks: [] as any[],
@@ -69,7 +66,23 @@ export const realTimeStore = defineStore('realTime', {
         },
         // **建議新增一個 action 來更新 dateRange**
         updateDateRange(newRange: [Date, Date]) {
-            this.DateRange = newRange
+            if (!newRange || newRange.length < 2) return;
+
+            // 使用 dayjs 強制校正邊界，避免 UI 元件帶入奇怪的分秒或 UTC 偏移
+            const start = dayjs(newRange[0]).startOf('day').toDate();
+            const end = dayjs(newRange[1]).endOf('day').toDate();
+            
+            this.DateRange = [start, end];
+        },
+        resetQueryData() {
+            this.AGVC_RealTimeDashboard_Query_Tasks = {
+                data: [],
+                total: 0
+            }; 
+            this.AGVC_RealTimeDashboard_Query_Alarms = {
+                data: [],
+                total: 0
+            }; 
         }
     },
     getters: {

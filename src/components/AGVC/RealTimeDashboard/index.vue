@@ -6,7 +6,7 @@
                     <el-col :lg="11" class="h-100 pt-2">
                         <div class="agvc-info h-100 d-flex flex-column justify-content-space-between">
                             <SystemStatusCard/>
-                            <TaskListCard />
+                            <TaskListCard @realtime-action="(payload) => $emit('realtime-action', payload)"/>
                             <EquipmentStatusCard @show-equipment-status="(payload) => $emit('show-equipment-status', payload)"/>
                         </div>
                     </el-col>
@@ -38,7 +38,7 @@ import EquipmentStatusCard from './components/EquipmentStatusCard.vue'
 import CurrentAlertCard from './components/CurrentAlertCard.vue'
 import HistoricalAlertCard from './components/HistoricalAlertCard.vue'
 import BirdsEyeViewCard from './components/BirdsEyeViewCard.vue'
-defineEmits(['show-equipment-status'])
+defineEmits(['show-equipment-status', 'realtime-action'])
 
 </script>
 <style scoped>

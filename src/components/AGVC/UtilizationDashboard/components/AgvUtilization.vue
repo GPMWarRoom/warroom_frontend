@@ -3,7 +3,7 @@
     <!-- 狀態堆疊柱狀圖 -->
     <StackedBarChart
         v-if="selectedUtilizationType === 'status'"
-        :yAxisName="'時間(秒)'"
+        :yAxisName="'時間(時)'"
         :datas="currentChartData"
         :barWidth="8"
     />
@@ -42,16 +42,14 @@ watch(() => props.currentIndex, (val) => {
 
 // 預設 chart 資料
 const defaultChartData = {
-  xData: ['2025-11-01', '2025-11-02', '2025-11-03'],
-  groups: ['AGV-A', 'AGV-B'],
-  stacks: ['Run', 'Idle', 'Down', 'Charge','Unknow'],
+  xData: [], // 讓日期也為空
+  groups: ['Loading...'],
+  stacks: ['Run', 'Available', 'Down', 'Charge'],
   yDataList: [
-    [[60, 55, 70], [20, 25, 10], [10, 10, 10], [5, 5, 5], [5, 5, 5]],
-    [[50, 60, 65], [30, 20, 15], [10, 10, 10], [5, 5, 5], [5, 5, 5]]
+    [[], [], [], []] // 空的數值陣列
   ],
   originalDataList: [
-    [[600, 550, 700], [200, 250, 100], [100, 100, 100], [50, 50, 50], [50, 50, 50]],
-    [[500, 600, 650], [300, 200, 150], [100, 100, 100], [50, 50, 50], [50, 50, 50]]
+    [[], [], [], []]
   ]
 }
 
@@ -62,7 +60,7 @@ const chartData = computed(() => {
 
   const groups = [...new Set(raw.map(r => r.AGVName))]
   const xData = [...new Set(raw.map(r => r.Date.slice(0, 10)))]
-  const stacks = ['Run', 'Idle', 'Down', 'Charge']
+  const stacks = ['Run', 'Available', 'Down', 'Charge']
 
   const yDataList = []
   const originalDataList = []

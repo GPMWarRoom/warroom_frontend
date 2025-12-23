@@ -12,7 +12,8 @@
                             { name: '取消', data: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.CanceledCount) }
                         ],
                         lineSeries: [
-                            { name: '執行時間', data: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.AvgExecMinutes) }
+                            { name: '執行時間', data: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.AvgExecMinutes) },
+                            { name: '等待時間', data: realTimeData.AGVC_TrafficEfficiency_CarryStatics.map(item => item.AvgQuMinutes) }
                         ],
                         yAxisBarName: '件數',
                         yAxisLineName: '執行時間(分)'
