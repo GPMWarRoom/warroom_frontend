@@ -1,5 +1,21 @@
 import axios from 'axios';
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { ref } from 'vue'
+
+const config = ref<{ API_URL?: string }>({})
+
+// 載入設定檔的函式
+async function loadConfig() {
+  if (config.value.API_URL) return config.value
+  try {
+    const res = await fetch('/config.json')
+    config.value = await res.json()
+    return config.value
+  } catch (err) {
+    console.error('無法載入 config.json', err)
+    return { API_URL: '/api' } // 備用方案
+  }
+}
 
 // 基礎響應類型
 interface BaseResponse<T = any> {
@@ -10,7 +26,6 @@ interface BaseResponse<T = any> {
 
 // 創建 axios 實例
 const http: AxiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || '/api',
     timeout: 15000,
     headers: {
         'Content-Type': 'application/json',
@@ -19,12 +34,21 @@ const http: AxiosInstance = axios.create({
 
 // 請求攔截器
 http.interceptors.request.use(
-    (config) => {
-        // 可以在這裡統一加入 token
+    async (config: InternalAxiosRequestConfig) => {
+        // 確保 config.json 已載入
+        const cfg = await loadConfig();
+        
+        // 動態設定本次請求的 baseURL
+        if (cfg.API_URL) {
+            config.baseURL = cfg.API_URL;
+        }
+
+        // 統一加入 token
         const token = localStorage.getItem('token');
-        if (token) {
+        if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        
         return config;
     },
     (error) => {

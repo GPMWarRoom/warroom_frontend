@@ -1,139 +1,93 @@
 // utils/request.ts
-
 import axios from "axios";
+import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from "axios";
+import { ref } from 'vue';
 
-//创建一个axios实例
-const request = axios.create({
-    baseURL: import.meta.env.VITE_API_URL ||'',
+const appConfig = ref<{ API_URL?: string }>({});
+
+// 載入設定檔的函式
+async function loadConfig() {
+    if (appConfig.value.API_URL) return appConfig.value;
+    try {
+        const res = await fetch('/config.json');
+        appConfig.value = await res.json();
+        return appConfig.value;
+    } catch (err) {
+        console.error('無法載入 config.json', err);
+        return { API_URL: import.meta.env.VITE_API_URL || '' };
+    }
+}
+
+// 建立一個 axios 實例
+const request: AxiosInstance = axios.create({
     timeout: 20000,
 });
 
 
-// 添加请求拦截器
 request.interceptors.request.use(
-    function (config) {
-        // 请求地址携带时间戳
-        const _t = new Date().getTime()
-        config.url += `?${_t}`
-        
-        // 请求头携带token
-        config.headers['token'] = localStorage.getItem('token') || ''
+    async function (config: InternalAxiosRequestConfig) {
+        // 1. 動態注入 baseURL
+        const cfg = await loadConfig();
+        config.baseURL = cfg.API_URL;
 
-        // 在发送请求之前做些什么
-        // console.log('我要准备请求啦------')
-        // console.log(config, '请求配置')
-        
+        // 2. 請求地址攜帶時間戳 (修正拼接邏輯)
+        const _t = new Date().getTime();
+        if (config.url) {
+            config.url += (config.url.includes('?') ? '&' : '?') + `t=${_t}`;
+        }
+
+        // 3. 請求頭攜帶 token
+        config.headers['token'] = localStorage.getItem('token') || '';
+
         return config;
     },
     function (error) {
-        // 对请求错误做些什么
         return Promise.reject(error);
     }
 );
 
-// 添加响应拦截器
+// 添加響應攔截器
 request.interceptors.response.use(
-    function (response) {
-        // 对响应数据做点什么
-        // console.log('我接收到响应数据啦------')
-        // console.log(response, '响应配置')
+    function (response: AxiosResponse) {
+        // 特別處理：如果是二進位檔案 (Blob)，直接回傳整個 response
+        // 這樣你在 csvExport 才能拿到 headers 裡的檔名
+        if (response.config.responseType === 'blob') {
+            return response;
+        }
+
         if (response.status === 200) {
-            return Promise.resolve(response.data)
+            return response.data; // 正常 JSON 請求回傳 data
         } else {
-            return Promise.reject(response)
+            return Promise.reject(response);
         }
     },
     function (error) {
-        // 对响应错误做点什么
         if (error && error.response) {
             switch (error.response.status) {
-                case 400:
-                    error.message = '错误请求';
-                    break;
-                case 401:
-                    error.message = '未授权，请重新登录';
-                    break;
-                case 403:
-                    error.message = '拒绝访问';
-                    break;
-                case 404:
-                    error.message = '请求错误,未找到该资源';
-                    break;
-                case 405:
-                    error.message = '请求方法未允许';
-                    break;
-                case 408:
-                    error.message = '请求超时';
-                    break;
-                case 500:
-                    error.message = '服务器端出错';
-                    break;
-                case 501:
-                    error.message = '网络未实现';
-                    break;
-                case 502:
-                    error.message = '网络错误';
-                    break;
-                case 503:
-                    error.message = '服务不可用';
-                    break;
-                case 504:
-                    error.message = '网络超时';
-                    break;
-                case 505:
-                    error.message = 'http版本不支持该请求';
-                    break;
-                default:
-                    error.message = `未知错误${error.response.status}`;
+                case 400: error.message = '錯誤請求'; break;
+                case 401: error.message = '未授權，請重新登錄'; break;
+                case 404: error.message = '請求錯誤,未找到該資源'; break;
+                case 500: error.message = '伺服器端出錯'; break;
+                default: error.message = `未知錯誤${error.response.status}`;
             }
         } else {
-            error.message = "连接到服务器失败";
+            error.message = "連接到伺服器失敗";
         }
         return Promise.reject(error);
     }
 );
 
-
-/*
- *  get请求:从服务器端获取数据
- *  url:请求地址
- *  params:参数
- * */
-export function get(url:string, params = {}) {
-    return new Promise((resolve, reject) => {
-        request({
-            url: url,
-            method: 'get',
-            params: params
-        }).then(response => {
-            resolve(response);
-        }).catch(error => {
-            reject(error);
-        });
-    });
+/**
+ * 封裝請求方法
+ */
+export function get<T = any>(url: string, params = {}, config = {}): Promise<T> {
+    return request.get(url, { params, ...config });
 }
 
-/*
- *  post请求:向服务器端提交数据
- *  url:请求地址
- *  params:参数
- * */
-export function post(url:string, params = {}) {
-    return new Promise((resolve, reject) => {
-        request({
-            url: url,
-            method: 'post',
-            data: params
-        }).then(response => {
-            resolve(response);
-        }).catch(error => {
-            reject(error);
-        });
-    });
+export function post<T = any>(url: string, data = {}, config = {}): Promise<T> {
+    return request.post(url, data, config);
 }
 
-// 对外暴露请求方法
-export default {
-    get,
-    post
-}
+
+
+export default { get, post };

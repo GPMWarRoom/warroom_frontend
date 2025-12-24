@@ -54,16 +54,62 @@
           </div>
 
           <el-dialog v-model="showFilterDialog" title="進階查詢條件" width="350px" center>
-            <el-form :model="queryParams.tasks" label-width="80px" size="small">
+            <el-form :model="queryParams.tasks" label-width="80px">
               <el-form-item label="AGV 名稱">
-                <el-input v-model="queryParams.tasks.agvName" placeholder="輸入名稱" clearable />
+                <el-select v-model="queryParams.tasks.agvName" placeholder="請選擇" style="width: 100%" clearable>
+                  <el-option label="全部" value="all" />
+                  
+                  <el-option
+                    v-for="agv in realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV"
+                    :key="agv.Name"
+                    :label="agv.Name"
+                    :value="agv.Name"
+                  />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="任務ID">
+                <el-input 
+                  v-model="queryParams.tasks.taskName" 
+                  placeholder="輸入任務ID" 
+                  clearable 
+                  @keyup.enter="handleQuery" 
+                />
+              </el-form-item>
+              <el-form-item label="類型">
+                <el-select v-model="queryParams.tasks.action" placeholder="請選擇" style="width: 100%" clearable>
+                  <el-option label="全部" value="all" />
+                  <el-option label="移動" value=0 />
+                  <el-option label="取貨" value=1 />
+                  <el-option label="放貨" value=7 />
+                  <el-option label="充電" value=8 />
+                  <el-option label="搬運" value=9 />
+                </el-select>
               </el-form-item>
               <el-form-item label="狀態">
-                <el-select v-model="queryParams.tasks.status" placeholder="請選擇" style="width: 100%">
+                <el-select v-model="queryParams.tasks.state" placeholder="請選擇" style="width: 100%" clearable>
                   <el-option label="全部" value="all" />
-                  <el-option label="運行中" value="run" />
-                  <el-option label="故障" value="down" />
+                  <el-option label="processing" value=1 />
+                  <el-option label="completed" value=4 />
+                  <el-option label="waiting" value=5 />
+                  <el-option label="failed" value=6 />
+                  <el-option label="canceled" value=7 />
                 </el-select>
+              </el-form-item>
+              <el-form-item label="起點">
+                <el-input 
+                  v-model="queryParams.tasks.taskName" 
+                  placeholder="輸入起點tag" 
+                  clearable 
+                  @keyup.enter="handleQuery" 
+                />
+              </el-form-item>
+              <el-form-item label="終點">
+                <el-input 
+                  v-model="queryParams.tasks.taskName" 
+                  placeholder="輸入終點tag" 
+                  clearable 
+                  @keyup.enter="handleQuery" 
+                />
               </el-form-item>
               <el-form-item>
                 <el-button type="primary" @click="applyFilters" style="width: 100%">套用過濾條件</el-button>
@@ -97,11 +143,17 @@
         <div v-if="currentTab === 'query'" class="pagination-container">
           <el-pagination
             v-model:current-page="currentPage"
-            @current-change="handleQuery"  :page-size="pageSize"
-            :total="realTimeData.AGVC_RealTimeDashboard_Query_Tasks.total" layout="total, prev, pager, next"
+            @current-change="handleQuery"
+            :page-size="pageSize"
+            :total="realTimeData.AGVC_RealTimeDashboard_Query_Tasks.total"
+            layout="slot, prev, pager, next" 
             background
             size="small"
-          />
+          >
+            <span class="el-pagination__total">
+              總筆數: {{ realTimeData.AGVC_RealTimeDashboard_Query_Tasks.total }}
+            </span>
+          </el-pagination>
         </div>
     </el-card>
 </template>
@@ -170,8 +222,12 @@ const queryParams = reactive({
     dayjs().endOf('day').format('YYYY-MM-DD HH:mm:ss')
   ],
   tasks: {
-    agvName: '',
-    status: 'all'
+    agvName: 'all',
+    taskName: '',
+    action: 'all',
+    state: 'all',
+    fromStation: '',
+    toStation: ''
   }
 })
 
@@ -202,6 +258,7 @@ const handleExport = () => {
 // 套用進階過濾
 const applyFilters = () => {
   showFilterDialog.value = false
+  handleQuery();
 }
 
 </script>

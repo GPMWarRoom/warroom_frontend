@@ -107,7 +107,7 @@
 <script setup lang="ts">
 import { ref, onActivated, onDeactivated, onMounted, watch, computed } from 'vue'
 import { Monitor, List, LocationFilled } from '@element-plus/icons-vue'
-import { ElNotification } from 'element-plus'
+import { ElNotification, ElMessage } from 'element-plus'
 import ContentContainer from '../components/ContentContainer.vue'
 import RealTimeDashboard from '../components/AGVC/RealTimeDashboard/index.vue'
 import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard/index.vue'
@@ -122,6 +122,7 @@ import AgvStatus from '@/components/EquipmentStatus/AGV/index.vue'
 import RackStatus from '@/components/EquipmentStatus/Rack/index.vue'
 import { useAlarmStore } from '@/stores/alert'
 import dayjs from 'dayjs'
+import { csvExportAPI } from '@/api/csvExport';
 
 const alarmStore = useAlarmStore()
 const showEquipmentDrawer = ref(false)
@@ -150,7 +151,71 @@ function handleShowEquipmentStatus({ id, type }) {
 }
 
 async function handleRealtimeAction({type, target, dateRange, params}) {
-    await connection.value?.invoke('AGVC_Realtime_Action', type, target, dateRange, params);
+    if(type=='query')
+        await connection.value?.invoke('AGVC_Realtime_Action', type, target, dateRange, params);
+    else {
+        try {
+            // 1. 呼叫 API
+            const res = await csvExportAPI.exportToCsv(
+                'tasks', 
+                realTimeData.selectedAgvc, 
+                dateRange, 
+                params // 這裡傳入的是過濾條件物件，對應後端 req.Filters
+            );
+
+            // 2. 檢查狀態碼 (204 無資料)
+            if (res.status === 204) {
+                ElMessage.warning('目前查詢範圍內沒有可匯出的資料');
+                return;
+            }
+
+            // 3. 獲取檔名 (優化解析邏輯)
+            const disposition = res.headers['content-disposition'];
+            let fileName = `Tasks_Export_${new Date().getTime()}.csv`; // 預設檔名
+
+            if (disposition) {
+                // 使用更精準的正則表達式，排除掉 attachment; 等字眼
+                const fileNameMatch = disposition.match(/filename\*?=['"]?(?:UTF-8'')?([^'";\n]+)['"]?/i);
+                if (fileNameMatch && fileNameMatch[1]) {
+                    // 解碼並移除可能的引號
+                    fileName = decodeURIComponent(fileNameMatch[1]);
+                }
+            }
+
+            // 4. 處理 Blob 資料
+            // 確保 res.data 是 Blob (這取決於你 request.ts 的攔截器邏輯)
+            const blobData = res.data instanceof Blob ? res.data : new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
+            
+            const url = window.URL.createObjectURL(blobData);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', fileName); // 設定下載檔名
+            
+            document.body.appendChild(link);
+            link.click();
+
+            // 5. 資源清理
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            ElMessage.success('檔案準備就緒，開始下載');
+
+        } catch (error: any) {
+            console.error('匯出失敗詳情:', error);
+            
+            // 如果後端回傳錯誤 (如 500)，且 responseType 是 blob，錯誤訊息會被包在 blob 裡
+            if (error.response?.data instanceof Blob) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const message = JSON.parse(reader.result as string)?.detail || '伺服器產生檔案失敗';
+                    ElMessage.error(message);
+                };
+                reader.readAsText(error.response.data);
+            } else {
+                ElMessage.error(error.message || '連線伺服器失敗，請檢查網路');
+            }
+        }
+    }
 }
 
 async function loadHistoryTasks(resolve: () => void) {

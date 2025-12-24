@@ -98,7 +98,7 @@
     </el-card>
 </template>
 <script setup lang="ts">
-import { ref, onActivated, onDeactivated, defineEmits } from 'vue'
+import { ref, onActivated, onDeactivated } from 'vue'
 import { realTimeStore } from '@/stores/realTime'
 
 const tableRowClassName = ({ row }) => {
