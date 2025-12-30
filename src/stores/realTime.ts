@@ -32,7 +32,10 @@ export const realTimeStore = defineStore('realTime', {
             data: [],
             total: 0
         } as Query,
-        AGVC_RealTimeDashboard_Query_Alarms: [] as any[],
+        AGVC_RealTimeDashboard_Query_Alarms: {
+            data: [],
+            total: 0
+        } as Query,
         AGVC_RealTimeDashboard_SysStatus: [] as SysStatus[],
         AGVC_RealTimeDashboard_SystemAlarms: [] as any[],
         AGVC_RealTimeDashboard_NoRealTimeTasks: [] as any[],

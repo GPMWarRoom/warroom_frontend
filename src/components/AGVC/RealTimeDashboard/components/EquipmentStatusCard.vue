@@ -51,7 +51,7 @@
         </div>
         <div v-if="currentTab==='mainEq' "style="max-height: 300px; overflow-y: auto;">
             <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_MainEQ" stripe :style="{ height: tableHeight }">
-                <el-table-column align="center" prop="Name" label="ID" width="110" />
+                <el-table-column align="center" prop="Name" label="ID" width="160" />
                 <el-table-column align="center" prop="MainStatus" label="狀態" width="110">
                     <template #default="{ row }">
                         <el-tag :type="StatusMap[row.StatusText]">{{ row.StatusText }}</el-tag>

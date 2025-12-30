@@ -177,7 +177,7 @@ const login = () => {
 
 .app-container {
     display: flex;
-    height: calc(100vh - 40px);
+    min-height: calc(100vh - 40px);
     margin-top: 40px;
 }
 

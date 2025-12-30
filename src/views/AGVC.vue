@@ -157,7 +157,7 @@ async function handleRealtimeAction({type, target, dateRange, params}) {
         try {
             // 1. 呼叫 API
             const res = await csvExportAPI.exportToCsv(
-                'tasks', 
+                target, 
                 realTimeData.selectedAgvc, 
                 dateRange, 
                 params // 這裡傳入的是過濾條件物件，對應後端 req.Filters
@@ -447,14 +447,22 @@ function handleReceiveTrafficStats(result: any) {
 }
 
 function handleReceiveRealtimeAction(result: any) {
-    console.log(result)
-    switch(result.target) {
-        case 'tasks':
-            realTimeData.updateRealTimeData('AGVC_RealTimeDashboard_Query_Tasks', {
-                data: result.data.data,
-                total: result.data.total
-            });
-            break;
+    const newData = {
+        data: Array.isArray(result.data.data) ? [...result.data.data] : [],
+        total: result.data.total || 0
+    };
+    if (result.target === 'tasks') {
+        // 更新 Tasks 專屬的 State
+        realTimeData.AGVC_RealTimeDashboard_Query_Tasks = {
+            data: result.data.data,
+            total: result.data.total
+        };
+    } else if (result.target === 'alarms') {
+        // 更新 Alarms 專屬的 State
+        realTimeData.AGVC_RealTimeDashboard_Query_Alarms = {
+            data: result.data.data,
+            total: result.data.total
+        };
     }
 }
 
