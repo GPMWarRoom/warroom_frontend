@@ -64,7 +64,7 @@
                         </el-icon>
                         <span>週邊設備</span>
                     </template>
-                    <UtilizationEQDashboard v-if="activeTab === 'utilizationEQ'" class="tab-content-component" />
+                    <UtilizationEQDashboard v-if="activeTab === 'utilizationEQ'" class="tab-content-component" @realtime-action="handleUtilizationEQRealtimeAction"/>
                 </el-tab-pane>
                 <!-- <el-tab-pane label="任務管理" name="tasks">
                     <template #label>
@@ -97,7 +97,7 @@
                 <RackStatus v-else-if="equipmentType === 'rack'" :id="selectedEquipmentId" @back="showEquipmentDrawer = false"/>
             </el-drawer>
 
-            <div class="date-select" v-if="activeTab !== 'monitor'">
+            <div class="date-select" v-if="!['monitor', 'utilizationEQ'].includes(activeTab)">
                 <el-date-picker v-model="localDateRange" type="daterange" range-separator="至" start-placeholder="開始日期" end-placeholder="結束日期" @change="handleDateRangeChange"/>
                 <el-button style="margin: 0px 2px" @click="_Init">查詢</el-button>
             </div>
@@ -148,6 +148,74 @@ function handleShowEquipmentStatus({ id, type }) {
   equipmentType.value = type
   selectedEquipmentId.value = id
   showEquipmentDrawer.value = true
+}
+
+async function handleUtilizationEQRealtimeAction({type, target, dateRange, params}) {
+    if(type=='query')
+        await connection.value?.invoke('InitUtilizationEQ', type, target, dateRange, params);
+    else {
+        try {
+            // 1. 呼叫 API
+            const res = await csvExportAPI.exportToCsv(
+                target, 
+                realTimeData.selectedAgvc, 
+                dateRange, 
+                params // 這裡傳入的是過濾條件物件，對應後端 req.Filters
+            );
+
+            // 2. 檢查狀態碼 (204 無資料)
+            if (res.status === 204) {
+                ElMessage.warning('目前查詢範圍內沒有可匯出的資料');
+                return;
+            }
+
+            // 3. 獲取檔名 (優化解析邏輯)
+            const disposition = res.headers['content-disposition'];
+            let fileName = `Tasks_Export_${new Date().getTime()}.csv`; // 預設檔名
+
+            if (disposition) {
+                // 使用更精準的正則表達式，排除掉 attachment; 等字眼
+                const fileNameMatch = disposition.match(/filename\*?=['"]?(?:UTF-8'')?([^'";\n]+)['"]?/i);
+                if (fileNameMatch && fileNameMatch[1]) {
+                    // 解碼並移除可能的引號
+                    fileName = decodeURIComponent(fileNameMatch[1]);
+                }
+            }
+
+            // 4. 處理 Blob 資料
+            // 確保 res.data 是 Blob (這取決於你 request.ts 的攔截器邏輯)
+            const blobData = res.data instanceof Blob ? res.data : new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
+            
+            const url = window.URL.createObjectURL(blobData);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', fileName); // 設定下載檔名
+            
+            document.body.appendChild(link);
+            link.click();
+
+            // 5. 資源清理
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            ElMessage.success('檔案準備就緒，開始下載');
+
+        } catch (error: any) {
+            console.error('匯出失敗詳情:', error);
+            
+            // 如果後端回傳錯誤 (如 500)，且 responseType 是 blob，錯誤訊息會被包在 blob 裡
+            if (error.response?.data instanceof Blob) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const message = JSON.parse(reader.result as string)?.detail || '伺服器產生檔案失敗';
+                    ElMessage.error(message);
+                };
+                reader.readAsText(error.response.data);
+            } else {
+                ElMessage.error(error.message || '連線伺服器失敗，請檢查網路');
+            }
+        }
+    }
 }
 
 async function handleRealtimeAction({type, target, dateRange, params}) {
@@ -295,11 +363,11 @@ async function _Init() {
                 realTimeData.DateRange
             );
             break;
-        case 'utilizationEQ':
-            await connection.value?.invoke('InitUtilizationEQ', 
-                realTimeData.DateRange
-            );
-            break;
+        // case 'utilizationEQ':
+        //     await connection.value?.invoke('InitUtilizationEQ', 
+        //         realTimeData.DateRange
+        //     );
+        //     break;
     }
     loading.value = false
 }
@@ -323,6 +391,7 @@ const tabStoreMap: Record<string, Record<string, string>> = {
         SysStatus: "AGVC_RealTimeDashboard_SysStatus",
         SystemAlarms: "AGVC_RealTimeDashboard_SystemAlarms",
         NoRealTimeTask: "AGVC_RealTimeDashboard_NoRealTimeTasks",
+        StationStatus: "AGVC_RealTimeDashboard_EQStatus_Rack",
     },
 };
 
@@ -385,8 +454,10 @@ function handleAGVUtilization(result: any) {
     realTimeData.updateRealTimeData('AGVC_Utilization_TaskAutoRatio', result.TaskAutoRatio)
 }
 
-function handleAGVUtilizationEQ(result: any) {
-    realTimeData.updateRealTimeData('AGVC_UtilizationEQ_deviceData', result.deviceData)
+function handleUtilizationEQ(result: any) {
+    console.log(result)
+    if(result.target == 'utilization')
+        realTimeData.updateRealTimeData('AGVC_UtilizationEQ_deviceData', result.data.deviceData)
 }
 
 function handleReceiveAliveCheck(result: any) {
@@ -475,7 +546,7 @@ onActivated(async () => {
     on('ReceiveAGVUtilization', handleAGVUtilization);
     on('ReceiveTrafficStats', handleReceiveTrafficStats);
     on('ReceiveAliveCheck', handleReceiveAliveCheck);
-    on('ReceiveUtilizationEQ', handleAGVUtilizationEQ);
+    on('ReceiveUtilizationEQ', handleUtilizationEQ);
     on('ReceiveRealtimeAction', handleReceiveRealtimeAction);
     connection.value?.onreconnected(async () => {
         console.log('🔁 SignalR 已重新連線')
@@ -514,7 +585,7 @@ onDeactivated(async () => {
     off('ReceiveAGVUtilization', handleAGVUtilization)
     off('ReceiveTrafficStats', handleReceiveTrafficStats)
     off('ReceiveAliveCheck', handleReceiveAliveCheck)
-    off('ReceiveUtilizationEQ', handleAGVUtilizationEQ)
+    off('ReceiveUtilizationEQ', handleUtilizationEQ)
 
     if (currentSubscribedSchema && currentTab) {
     await connection.value.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)

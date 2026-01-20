@@ -56,6 +56,7 @@ export const realTimeStore = defineStore('realTime', {
         AGVC_TrafficStats_tagStopStats: [] as any[],
         AGVC_TrafficStats_pathUseStats: [] as any[],
         AGVC_UtilizationEQ_deviceData: [] as any[],
+        AGVC_UtilizationEQ_alarmData: [] as any[],
         Overview_Data: [] as any[],
         AGVC_TrafficStats_mapModel: defaultMapModel as typeof defaultMapModel,
         DateRange: calculateInitialDateRange() as [Date, Date],

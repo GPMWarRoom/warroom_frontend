@@ -1,7 +1,7 @@
 <template>
     <div style="width: 100%; height: 100%;">
-        <AgvStatus v-if="type === 'agv'" :id="Array.isArray(route.params.id) ? route.params.id[0] : route.params.id" />
-        <RackStatus v-else-if="type === 'rack'" :id="Array.isArray(route.params.id) ? route.params.id[0] : route.params.id" />
+        <AgvStatus v-if="type === 'agv'" :id="Array.isArray(route.params.id) ? route.params.id[0] : route.params.id" :key="Date.now()"/>
+        <RackStatus v-else-if="type === 'rack'" :id="Array.isArray(route.params.id) ? route.params.id[0] : route.params.id" :key="Date.now()+1"/>
     </div>
 </template>
 <script setup lang="ts">
