@@ -41,7 +41,12 @@
                         />
                     </div>
                     <div class="divider"></div>
-                    <el-button @click="showFilterDialog = true" icon="Filter" size="small">
+                    <el-button 
+                        @click="showFilterDialog = true" 
+                        size="small"
+                        icon="Filter"
+                        :class="{ 'filter-active': isFiltered }"
+                    >
                         其他條件
                     </el-button>
                     <div class="divider"></div>
@@ -134,7 +139,10 @@
                     <el-input v-model="queryParams.tasks.toStation" placeholder="輸入終點tag" clearable />
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" @click="applyFilters" style="width: 100%">套用過濾條件</el-button>
+                    <div style="display: flex; gap: 10px; width: 100%;">
+                        <el-button @click="resetFilters" style="flex: 1">重置</el-button>
+                        <el-button type="primary" @click="applyFilters" style="flex: 2">套用過濾條件</el-button>
+                    </div>
                 </el-form-item>
             </el-form>
         </el-dialog>
@@ -151,6 +159,30 @@ const realTimeData = realTimeStore()
 const currentTab = ref<'current' | 'completed' | 'query'>('current')
 const currentPage = ref(1)
 const pageSize = ref(20)
+
+const isFiltered = computed(() => {
+    const t = queryParams.tasks;
+    // 檢查各個欄位是否不等於初始值
+    return t.agvName !== 'all' || 
+           t.taskName !== '' || 
+           t.action !== 'all' || 
+           t.state !== 'all' || 
+           t.fromStation !== '' || 
+           t.toStation !== '';
+});
+
+const resetFilters = () => {
+    queryParams.tasks = {
+        agvName: 'all',
+        taskName: '',
+        action: 'all',
+        state: 'all',
+        fromStation: '',
+        toStation: ''
+    };
+    handleQuery(); // 重置後自動查一次
+    showFilterDialog.value = false;
+};
 
 const filteredTasks = computed(() => {
     switch (currentTab.value) {
@@ -318,5 +350,17 @@ const applyFilters = () => {
 :deep(.el-pager li) {
     margin: 0 2px;
     border-radius: 4px;
+}
+
+.filter-active {
+    background-color: rgba(0, 150, 255, 0.15) !important; /* 很淡的科技藍 */
+    border-color: #0096ff !important;                     /* 明亮的邊框線 */
+    color: #80caff !important;                             /* 淺藍色文字 */
+    box-shadow: 0 0 8px rgba(0, 150, 255, 0.3);            /* 淡淡的外發光 */
+}
+
+.filter-active:hover {
+    background-color: rgba(64, 158, 255, 0.3) !important;
+    box-shadow: 0 0 10px rgba(64, 158, 255, 0.5);
 }
 </style>

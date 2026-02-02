@@ -5,8 +5,8 @@
         <div class="query-item">
           <span class="label">數據類別:</span>
           <el-select v-model="dataType" size="small" style="width: 110px">
-            <el-option label="稼動率" value="utilization" />
-            <el-option label="警報" value="alarm" />
+            <el-option label="稼動率" value="EQUtilization" />
+            <el-option label="警報" value="EQAlarms" />
           </el-select>
         </div>
 
@@ -30,14 +30,14 @@
         <div class="divider"></div>
 
         <el-button 
-          v-if="dataType === 'alarm'" 
+          v-if="dataType === 'EQAlarms'" 
           @click="showFilterDialog = true" 
           icon="Filter" 
           size="small"
         >
           其他條件
         </el-button>
-        <div v-if="dataType === 'alarm'" class="divider"></div>
+        <div v-if="dataType === 'EQAlarms'" class="divider"></div>
 
         <div class="action-group">
           <el-button @click="handleQuery" icon="Search" size="small">查詢</el-button>
@@ -47,7 +47,7 @@
     </div>
 
     <div class="content-body">
-      <template v-if="dataType === 'utilization'">
+      <template v-if="dataType === 'EQUtilization'">
         <div 
           v-if="realTimeData.AGVC_UtilizationEQ_deviceData && Object.keys(realTimeData.AGVC_UtilizationEQ_deviceData).length > 0" 
           class="dashboard-grid"
@@ -76,13 +76,20 @@
 
       <div v-else class="table-container">
         <el-table 
-          :data="realTimeData.AGVC_RealTimeDashboard_Query_Alarms.data" 
+          :data="realTimeData.AGVC_UtilizationEQ_alarmData.data" 
           stripe 
           height="100%"
         >
-          <el-table-column prop="Time" label="時間" width="180" align="center" />
+          <el-table-column 
+            type="index" 
+            :index="indexMethod" 
+            label="No." 
+            width="65" 
+            align="center" 
+          />
+          <el-table-column prop="FormattedTime" label="時間" width="180" align="center" />
           <el-table-column prop="Level" label="等級" width="100" align="center" />
-          <el-table-column prop="Equipment_Name" label="設備" width="150" align="center" />
+          <el-table-column prop="Name" label="設備" width="150" align="center" />
           <el-table-column prop="AlarmCode" label="異常碼" width="100" align="center" />
           <el-table-column prop="Description_Zh" label="描述" align="left" />
           
@@ -91,27 +98,45 @@
           </template>
         </el-table>
       </div>
+
+      <div v-if="dataType === 'EQAlarms'" class="pagination-container">
+        <el-pagination
+          v-model:current-page="currentPage"
+          @current-change="handleQuery"
+          :page-size="pageSize"
+          :total="realTimeData.AGVC_UtilizationEQ_alarmData.total"
+          layout="slot, prev, pager, next"
+          background
+          size="small"
+        >
+          <span class="el-pagination__total">
+            總筆數: {{ realTimeData.AGVC_UtilizationEQ_alarmData.total }}
+          </span>
+        </el-pagination>
+      </div>
     </div>
 
     <el-dialog v-model="showFilterDialog" title="進階查詢條件" width="350px" center>
       <el-form :model="queryParams.alarms" label-width="80px">
-        <el-form-item label="等級">
+        <!-- <el-form-item label="等級">
           <el-select v-model="queryParams.alarms.level" placeholder="全部" style="width: 100%" clearable>
             <el-option label="ALARM (1)" :value="1" />
             <el-option label="WARNING (2)" :value="2" />
           </el-select>
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="設備名稱">
           <el-input v-model="queryParams.alarms.eqName" placeholder="輸入設備名稱" clearable />
         </el-form-item>
         <el-form-item label="異常代碼">
           <el-input v-model="queryParams.alarms.alarmCode" placeholder="輸入代碼" clearable />
         </el-form-item>
-        <el-form-item label="描述關鍵字">
+        <el-form-item label="描述">
           <el-input v-model="queryParams.alarms.description" placeholder="輸入描述關鍵字" clearable />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="applyFilters" style="width: 100%">套用過濾條件</el-button>
+        </el-form-item><el-form-item>
+          <div style="display: flex; gap: 10px; width: 100%;">
+            <el-button @click="resetFilters" style="flex: 1">重置</el-button>
+            <el-button type="primary" @click="applyFilters" style="flex: 2">套用過濾條件</el-button>
+          </div>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -127,7 +152,7 @@ import dayjs from 'dayjs'
 const realTimeData = realTimeStore()
 const emit = defineEmits(['realtime-action'])
 
-const dataType = ref('utilization')
+const dataType = ref('EQUtilization')
 const showFilterDialog = ref(false)
 
 const currentPage = ref(1)
@@ -141,12 +166,24 @@ const queryParams = reactive({
     dayjs().subtract(1, 'day').endOf('day').format('YYYY-MM-DD HH:mm:ss')   // 昨天 23:59:59
   ],
   alarms: {
-    level: null,
+    level: 'all',
     eqName: '',
     alarmCode: '',
     description: ''
   }
 })
+
+const resetFilters = () => {
+  queryParams.alarms = {
+    eqName: '',
+    level: 'all',
+    alarmCode: '',
+    description: ''
+  };
+  currentPage.value = 1;
+  handleQuery(); // 重置後自動重新查詢
+  showFilterDialog.value = false;
+};
 
 function getDevicePieData(statusList: any[]) {
   const total = statusList.reduce((sum, item) => sum + item.Count, 0)
@@ -162,7 +199,11 @@ const handleQuery = () => {
     type: 'query',
     target: dataType.value,
     dateRange: queryParams.dateRange,
-    filters: dataType.value === 'alarm' ? queryParams.alarms : {}
+    params: dataType.value === 'EQAlarms' ? {
+      ...queryParams.alarms,
+      page: currentPage.value,
+      pageSize: pageSize.value
+    } : {}
   })
 }
 
@@ -172,7 +213,12 @@ const handleExport = () => {
     type: 'export',
     target: dataType.value,
     dateRange: queryParams.dateRange,
-    filters: dataType.value === 'alarm' ? queryParams.alarms : {}
+    params: dataType.value === 'EQAlarms' ? {
+      ...queryParams.alarms,
+      page: currentPage.value,
+      pageSize: pageSize.value
+    } : {}
+    
   })
 }
 
@@ -184,6 +230,11 @@ const applyFilters = () => {
 onMounted(() => {
   handleQuery()
 })
+
+const indexMethod = (index: number) => {
+  // (當前頁面 - 1) * 每頁筆數 + 目前索引 + 1
+  return (currentPage.value - 1) * pageSize.value + index + 1
+}
 </script>
 
 <style lang="scss" scoped>
@@ -238,10 +289,17 @@ onMounted(() => {
 
 .content-body {
   flex: 1;
-  overflow-y: auto;
-  padding: 10px 0;
-  display: flex;       /* 讓內部容器可以撐開 */
+  display: flex;
   flex-direction: column;
+  overflow: hidden; /* 隱藏外層捲軸，捲軸要交給內層的 Grid 或 Table */
+  padding: 10px 0;
+  min-height: 0;    /* 關鍵：允許 Flex 子項目縮小，不撐開父層 */
+}
+
+.table-container {
+  flex: 1;          /* 佔滿 content-body 的剩餘空間 */
+  min-height: 0;    /* 確保表格能在此容器內縮放 */
+  border: 1px solid #333;
 }
 
 .dashboard-grid {
@@ -288,5 +346,13 @@ onMounted(() => {
     background: transparent;
     color: #fff;
   }
+}
+
+/* 分頁容器固定在底部 */
+.pagination-container {
+  padding: 10px 5px;
+  flex-shrink: 0;    /* 確保分頁不會被壓縮 */
+  background-color: transparent; /* 或者與背景同色 */
+  border-top: 1px solid #222;    /* 可選：增加一點視覺區隔 */
 }
 </style>

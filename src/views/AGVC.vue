@@ -363,11 +363,11 @@ async function _Init() {
                 realTimeData.DateRange
             );
             break;
-        // case 'utilizationEQ':
-        //     await connection.value?.invoke('InitUtilizationEQ', 
-        //         realTimeData.DateRange
-        //     );
-        //     break;
+        case 'utilizationEQ':
+            realTimeData.AGVC_UtilizationEQ_deviceData = []
+            realTimeData.AGVC_UtilizationEQ_alarmData.data = []
+            realTimeData.AGVC_UtilizationEQ_alarmData.total = 0
+            break;
     }
     loading.value = false
 }
@@ -455,9 +455,14 @@ function handleAGVUtilization(result: any) {
 }
 
 function handleUtilizationEQ(result: any) {
-    console.log(result)
-    if(result.target == 'utilization')
+    if(result.target == 'EQUtilization')
         realTimeData.updateRealTimeData('AGVC_UtilizationEQ_deviceData', result.data.deviceData)
+    if(result.target == 'EQAlarms')
+        realTimeData.AGVC_UtilizationEQ_alarmData = {
+            data: result.data.data,
+            total: result.data.total
+        };
+        console.log(realTimeData.AGVC_UtilizationEQ_alarmData.data, realTimeData.AGVC_UtilizationEQ_alarmData.total)
 }
 
 function handleReceiveAliveCheck(result: any) {

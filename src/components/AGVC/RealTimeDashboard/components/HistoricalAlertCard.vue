@@ -36,7 +36,12 @@
             />
           </div>
           <div class="divider"></div>
-          <el-button @click="showFilterDialog = true" icon="Filter" size="small">
+          <el-button 
+            @click="showFilterDialog = true" 
+            icon="Filter" 
+            size="small"
+            :class="{ 'filter-active': isFiltered }"
+          >
             進階條件
           </el-button>
           <div class="divider"></div>
@@ -104,7 +109,10 @@
           <el-input v-model="queryParams.alarms.description" placeholder="輸入警報訊息" clearable />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="applyFilters" style="width: 100%">套用過濾條件</el-button>
+          <div style="display: flex; gap: 10px; width: 100%;">
+            <el-button @click="resetFilters" style="flex: 1">重置</el-button>
+            <el-button type="primary" @click="applyFilters" style="flex: 2">套用過濾條件</el-button>
+          </div>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -123,6 +131,28 @@ const currentTab = ref<'list' | 'query'>('list')
 const currentPage = ref(1)
 const pageSize = ref(20)
 const showFilterDialog = ref(false)
+
+
+const isFiltered = computed(() => {
+  const a = queryParams.alarms;
+  return a.eqName !== '' || 
+         a.level !== 'all' || 
+         a.alarmCode !== '' || 
+         a.description !== '';
+});
+
+// 重置過濾條件
+const resetFilters = () => {
+  queryParams.alarms = {
+    eqName: '',
+    level: 'all',
+    alarmCode: '',
+    description: ''
+  };
+  currentPage.value = 1;
+  handleQuery(); // 重置後自動重新查詢
+  showFilterDialog.value = false;
+};
 
 const displayData = computed(() => {
   if (currentTab.value === 'list') {
@@ -267,5 +297,17 @@ const applyFilters = () => {
 
 :deep(.el-range-editor.el-input__inner) {
   padding: 0 10px;
+}
+
+.filter-active {
+    background-color: rgba(0, 150, 255, 0.15) !important; /* 很淡的科技藍 */
+    border-color: #0096ff !important;                     /* 明亮的邊框線 */
+    color: #80caff !important;                             /* 淺藍色文字 */
+    box-shadow: 0 0 8px rgba(0, 150, 255, 0.3);            /* 淡淡的外發光 */
+}
+
+.filter-active:hover {
+    background-color: rgba(64, 158, 255, 0.3) !important;
+    box-shadow: 0 0 10px rgba(64, 158, 255, 0.5);
 }
 </style>
