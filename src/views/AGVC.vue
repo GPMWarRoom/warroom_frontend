@@ -89,7 +89,7 @@
             <el-drawer
                 v-model="showEquipmentDrawer"
                 :with-header="false"
-                size="55%"
+                size="70%"
                 direction="rtl"
                 :close-on-click-modal="true"
             >
