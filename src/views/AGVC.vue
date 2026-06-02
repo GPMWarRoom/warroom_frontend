@@ -57,6 +57,15 @@
                     </template>
                     <UtilizationDashboard v-if="activeTab === 'utilization'" class="tab-content-component" />
                 </el-tab-pane>
+                <el-tab-pane name="RackHistory" :lazy="true">
+                    <template #label>
+                        <el-icon>
+                            <List />
+                        </el-icon>
+                        <span>水位紀錄</span>
+                    </template>
+                    <RackHistory v-if="activeTab === 'RackHistory'" class="tab-content-component" />
+                </el-tab-pane>
                 <el-tab-pane name="utilizationEQ" :lazy="true">
                     <template #label>
                         <el-icon>
@@ -66,6 +75,7 @@
                     </template>
                     <UtilizationEQDashboard v-if="activeTab === 'utilizationEQ'" class="tab-content-component" @realtime-action="handleUtilizationEQRealtimeAction"/>
                 </el-tab-pane>
+                
                 <!-- <el-tab-pane label="任務管理" name="tasks">
                     <template #label>
                         <el-icon>
@@ -114,6 +124,7 @@ import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard/inde
 import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDashboard/index.vue'
 import UtilizationDashboard from '../components/AGVC/UtilizationDashboard/index.vue'
 import UtilizationEQDashboard from '../components/AGVC/UtilizationEQDashboard/index.vue'
+import RackHistory from '@/components/EquipmentStatus/Rack/RackHistory.vue'
 import { uiStatsStore } from '../stores/UiStats'
 import { realTimeStore } from '../stores/realTime'
 import { useSignalR } from '@/composables/useSignalR'
@@ -368,6 +379,9 @@ async function _Init() {
             realTimeData.AGVC_UtilizationEQ_alarmData.data = []
             realTimeData.AGVC_UtilizationEQ_alarmData.total = 0
             break;
+        case 'RackHistory':
+            await connection.value?.invoke('InitDataByTab');
+            break;
     }
     loading.value = false
 }
@@ -393,6 +407,9 @@ const tabStoreMap: Record<string, Record<string, string>> = {
         NoRealTimeTask: "AGVC_RealTimeDashboard_NoRealTimeTasks",
         StationStatus: "AGVC_RealTimeDashboard_EQStatus_Rack",
     },
+    "RackHistory": {
+        RackHistory: "RackHistory" 
+    }
 };
 
 let currentSubscribedSchema: string | null = null
@@ -416,7 +433,7 @@ function handleNotification(result: any) {
 
     if (!storeMap) return;
 
-    if (currentTab ==='monitor') {
+    if (currentTab === 'monitor' || currentTab === 'RackHistory') {
         if (result.type === 'init') {
             for (const [key, value] of Object.entries(result.data)) {
             const storeKey = storeMap[key];
@@ -542,6 +559,10 @@ function handleReceiveRealtimeAction(result: any) {
     }
 }
 
+function handleReceiveRackHistory(result: any) {
+    realTimeData.updateRealTimeData('RackHistory', result)
+}
+
 let intervalId: ReturnType<typeof setInterval> | null = null
 let intervalAlive: ReturnType<typeof setInterval> | null = null
 onActivated(async () => {
@@ -553,6 +574,7 @@ onActivated(async () => {
     on('ReceiveAliveCheck', handleReceiveAliveCheck);
     on('ReceiveUtilizationEQ', handleUtilizationEQ);
     on('ReceiveRealtimeAction', handleReceiveRealtimeAction);
+    on('ReceiveRackHistory', handleReceiveRackHistory);
     connection.value?.onreconnected(async () => {
         console.log('🔁 SignalR 已重新連線')
         if (currentSubscribedSchema && currentTab) {
@@ -591,6 +613,7 @@ onDeactivated(async () => {
     off('ReceiveTrafficStats', handleReceiveTrafficStats)
     off('ReceiveAliveCheck', handleReceiveAliveCheck)
     off('ReceiveUtilizationEQ', handleUtilizationEQ)
+    off('ReceiveRackHistory', handleReceiveRackHistory)
 
     if (currentSubscribedSchema && currentTab) {
     await connection.value.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)
