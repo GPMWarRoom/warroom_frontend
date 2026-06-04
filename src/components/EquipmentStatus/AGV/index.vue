@@ -61,12 +61,12 @@ watch(
 
 const currentEquipment = computed(() =>
   realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV.find(
-    (item: any) => item.Name === equipmentId.value
+    (item: any) => String(item.Name) === String(equipmentId.value)
   )
 )
 const currentTask = computed(() =>
-  realTimeData.AGVC_RealTimeDashboard_NoRealTimeTasks.find(
-    (item: any) => item.AGVName === equipmentId.value
+  realTimeData.AGVC_RealTimeDashboard_NoRealTimeTask.find(
+    (item: any) => String(item.AGVName) === String(equipmentId.value)
   )
 )
 
@@ -115,8 +115,9 @@ function onBack() {
 <style scoped lang="scss">
 .agv-status {
     width: 100%;
-    height: var(--base-view-height);
-    padding: var(--base-view-padding);
+    height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
     overflow-y: auto;
 }
 

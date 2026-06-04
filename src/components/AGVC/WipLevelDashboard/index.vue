@@ -38,8 +38,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import LineChart from '@/components/common/charts/LineChart.vue'
-
-+/ 模擱畻斛，未羆可接真實 API 或 SignalR
 const chartData = ref([
     {
         name: 'WIP-A',

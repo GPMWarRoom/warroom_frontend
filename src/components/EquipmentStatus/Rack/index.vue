@@ -108,8 +108,9 @@ function onBack() {
 
 .rack-status {
   width: 100%;
-  height: var(--base-view-height);
-  padding: var(--base-view-padding);
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
   overflow-y: auto;
 }
 

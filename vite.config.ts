@@ -22,5 +22,9 @@ export default defineConfig({
       '@views': path.resolve(__dirname, './src/views'),
     }
   },
-  base:  '/'
+  base:  '/',
+  build: {
+    outDir: path.resolve(__dirname, '../dashboardServer/dashboardServer/wwwroot'),
+    emptyOutDir: true
+  }
 })

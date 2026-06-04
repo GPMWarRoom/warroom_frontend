@@ -14,7 +14,7 @@
                             </el-icon>
                             <span class="select-agvc-label">場域</span>
                             <el-select v-model="realTimeData.selectedAgvc" @change="handleAgvcChange">
-                                <el-option v-for="item in agvcList" :key="item.id" :label="item.name" :value="item.value" />
+                                <el-option v-for="item in agvcList" :key="item.value" :label="item.name" :value="item.value" />
                             </el-select>
                         </div>
                     </template>
@@ -149,11 +149,32 @@ const activeTab = ref('monitor')
 const uiStats = uiStatsStore()
 const agvcList = ref([])
 const aliveCheck = ref({ isAlive: true, isVMSAlive: true })
-onMounted(async () => {
-    const res = await fetch('/config.json')
-    const config = await res.json()
-    agvcList.value = config.Schemas
-})
+function handleReceiveChannels(schemas: any) {
+    if (!schemas || schemas.length === 0) return;
+
+    // 自動判斷並轉換格式：如果後端傳的是純字串 ["Area1", "Area2"]，自動轉成 { name, value }
+    const formattedSchemas = schemas.map((item: any) => {
+        if (typeof item === 'string') {
+            return { name: item, value: item };
+        }
+        return item; // 如果已經是 { name: '..', value: '..' } 就直接用
+    });
+
+    agvcList.value = formattedSchemas;
+    
+    // 嘗試從 localStorage 取得上次儲存的場域
+    const savedAgvc = localStorage.getItem('agvc_selected_field');
+    if (savedAgvc && formattedSchemas.some((item: any) => item.value === savedAgvc)) {
+        if (!realTimeData.selectedAgvc || realTimeData.selectedAgvc !== savedAgvc) {
+            realTimeData.selectedAgvc = savedAgvc;
+            handleAgvcChange(savedAgvc);
+        }
+    } else if (!realTimeData.selectedAgvc) {
+        // 如果沒有儲存紀錄或儲存的場域已不存在，預設選擇第一筆並觸發初始化
+        realTimeData.selectedAgvc = formattedSchemas[0].value;
+        handleAgvcChange(formattedSchemas[0].value);
+    }
+}
 
 function handleShowEquipmentStatus({ id, type }) {
   equipmentType.value = type
@@ -161,10 +182,11 @@ function handleShowEquipmentStatus({ id, type }) {
   showEquipmentDrawer.value = true
 }
 
-async function handleUtilizationEQRealtimeAction({type, target, dateRange, params}) {
-    if(type=='query')
-        await connection.value?.invoke('InitUtilizationEQ', type, target, dateRange, params);
-    else {
+async function handleExportAction(actionName: string, {type, target, dateRange, params}: any) {
+    if (type === 'query') {
+        // 動態決定要呼叫哪個 SignalR 方法
+        await connection.value?.invoke(actionName, type, target, dateRange, params);
+    } else {
         try {
             // 1. 呼叫 API
             const res = await csvExportAPI.exportToCsv(
@@ -229,73 +251,15 @@ async function handleUtilizationEQRealtimeAction({type, target, dateRange, param
     }
 }
 
-async function handleRealtimeAction({type, target, dateRange, params}) {
-    if(type=='query')
-        await connection.value?.invoke('AGVC_Realtime_Action', type, target, dateRange, params);
-    else {
-        try {
-            // 1. 呼叫 API
-            const res = await csvExportAPI.exportToCsv(
-                target, 
-                realTimeData.selectedAgvc, 
-                dateRange, 
-                params // 這裡傳入的是過濾條件物件，對應後端 req.Filters
-            );
-
-            // 2. 檢查狀態碼 (204 無資料)
-            if (res.status === 204) {
-                ElMessage.warning('目前查詢範圍內沒有可匯出的資料');
-                return;
-            }
-
-            // 3. 獲取檔名 (優化解析邏輯)
-            const disposition = res.headers['content-disposition'];
-            let fileName = `Tasks_Export_${new Date().getTime()}.csv`; // 預設檔名
-
-            if (disposition) {
-                // 使用更精準的正則表達式，排除掉 attachment; 等字眼
-                const fileNameMatch = disposition.match(/filename\*?=['"]?(?:UTF-8'')?([^'";\n]+)['"]?/i);
-                if (fileNameMatch && fileNameMatch[1]) {
-                    // 解碼並移除可能的引號
-                    fileName = decodeURIComponent(fileNameMatch[1]);
-                }
-            }
-
-            // 4. 處理 Blob 資料
-            // 確保 res.data 是 Blob (這取決於你 request.ts 的攔截器邏輯)
-            const blobData = res.data instanceof Blob ? res.data : new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
-            
-            const url = window.URL.createObjectURL(blobData);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', fileName); // 設定下載檔名
-            
-            document.body.appendChild(link);
-            link.click();
-
-            // 5. 資源清理
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-            
-            ElMessage.success('檔案準備就緒，開始下載');
-
-        } catch (error: any) {
-            console.error('匯出失敗詳情:', error);
-            
-            // 如果後端回傳錯誤 (如 500)，且 responseType 是 blob，錯誤訊息會被包在 blob 裡
-            if (error.response?.data instanceof Blob) {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const message = JSON.parse(reader.result as string)?.detail || '伺服器產生檔案失敗';
-                    ElMessage.error(message);
-                };
-                reader.readAsText(error.response.data);
-            } else {
-                ElMessage.error(error.message || '連線伺服器失敗，請檢查網路');
-            }
-        }
-    }
+// 這樣原本的兩個函式就可以簡化成這樣：
+async function handleUtilizationEQRealtimeAction(payload: any) {
+    await handleExportAction('InitUtilizationEQ', payload);
 }
+
+async function handleRealtimeAction(payload: any) {
+    await handleExportAction('AGVC_Realtime_Action', payload);
+}
+
 
 async function loadHistoryTasks(resolve: () => void) {
     const map = ref()
@@ -386,6 +350,7 @@ async function _Init() {
     loading.value = false
 }
 async function handleAgvcChange(value: string) {
+    localStorage.setItem('agvc_selected_field', value);
     await subscribeToSchema(value, activeTab.value)
     await _Init()
     
@@ -404,7 +369,7 @@ const tabStoreMap: Record<string, Record<string, string>> = {
         Tasks: "AGVC_RealTimeDashboard_Tasks",
         SysStatus: "AGVC_RealTimeDashboard_SysStatus",
         SystemAlarms: "AGVC_RealTimeDashboard_SystemAlarms",
-        NoRealTimeTask: "AGVC_RealTimeDashboard_NoRealTimeTasks",
+        NoRealTimeTask: "AGVC_RealTimeDashboard_NoRealTimeTask",
         StationStatus: "AGVC_RealTimeDashboard_EQStatus_Rack",
     },
     "RackHistory": {
@@ -429,17 +394,17 @@ async function subscribeToSchema(schema: string, tab: string) {
 }
 
 function handleNotification(result: any) {
-    const storeMap = tabStoreMap[currentTab];
+    const storeMap = tabStoreMap[activeTab.value];
 
     if (!storeMap) return;
 
-    if (currentTab === 'monitor' || currentTab === 'RackHistory') {
+    if (activeTab.value === 'monitor' || activeTab.value === 'RackHistory') {
         if (result.type === 'init') {
             for (const [key, value] of Object.entries(result.data)) {
-            const storeKey = storeMap[key];
-            if (storeKey) {
-                realTimeData.updateRealTimeData(storeKey, value);
-            }
+                const storeKey = storeMap[key];
+                if (storeKey) {
+                    realTimeData.updateRealTimeData(storeKey, value);
+                }
             }
         } else if (result.type === 'update') {
             const storeKey = storeMap[result.table];
@@ -567,6 +532,7 @@ let intervalId: ReturnType<typeof setInterval> | null = null
 let intervalAlive: ReturnType<typeof setInterval> | null = null
 onActivated(async () => {
     // 接收後端推播通知
+    on('ReceiveChannels', handleReceiveChannels);
     on('ReceiveNotification', handleNotification);
     on('ReceiveAGVEfficiency', handleAGVEfficiency);
     on('ReceiveAGVUtilization', handleAGVUtilization);
@@ -585,8 +551,15 @@ onActivated(async () => {
     })
 
     try {
-        await subscribeToSchema(realTimeData.selectedAgvc, activeTab.value)
-        await _Init()
+        if (isConnected.value) {
+            await connection.value?.invoke('GetChannels');
+        }
+        
+        // 如果 selectedAgvc 已經有值才去訂閱，避免沒選單資料就去打 Init 報錯
+        if (realTimeData.selectedAgvc) {
+            await subscribeToSchema(realTimeData.selectedAgvc, activeTab.value)
+            await _Init()
+        }
     } catch (err) {
         console.error('❌ SignalR 錯誤：', err)
     }
@@ -606,7 +579,11 @@ onDeactivated(async () => {
         clearInterval(intervalId)
         intervalId = null
     }
-    
+    if (intervalAlive) {
+        clearInterval(intervalAlive)
+        intervalAlive = null
+    }
+    off('ReceiveChannels', handleReceiveChannels);
     off('ReceiveNotification', handleNotification)
     off('ReceiveAGVEfficiency', handleAGVEfficiency)
     off('ReceiveAGVUtilization', handleAGVUtilization)
@@ -664,6 +641,23 @@ function setUTCDate(targetDate: dayjs.Dayjs, isEnd: boolean): Date {
     ));
 }
 
+// 初始化時，嘗試從 localStorage 取得上次儲存的日期範圍
+const savedDateRangeStr = localStorage.getItem('agvc_date_range');
+if (savedDateRangeStr) {
+    try {
+        const parsed = JSON.parse(savedDateRangeStr);
+        if (Array.isArray(parsed) && parsed.length === 2) {
+            const start = new Date(parsed[0]);
+            const end = new Date(parsed[1]);
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                realTimeData.updateDateRange([start, end]);
+            }
+        }
+    } catch (e) {
+        console.error('解析儲存的日期失敗', e);
+    }
+}
+
 const localDateRange = ref(realTimeData.DateRange.map(d => dayjs(d).toDate()) as [Date, Date]);
 
 // 核心：使用 @change 事件來呼叫您的 Action
@@ -673,6 +667,7 @@ function handleDateRangeChange(newRange: [Date, Date] | null) {
         const endDateLocal = dayjs(newRange[1]).endOf('day').toDate();
         
         realTimeData.updateDateRange([startDateLocal, endDateLocal]);
+        localStorage.setItem('agvc_date_range', JSON.stringify([startDateLocal, endDateLocal]));
     }
 }
 

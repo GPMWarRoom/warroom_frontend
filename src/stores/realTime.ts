@@ -38,7 +38,7 @@ export const realTimeStore = defineStore('realTime', {
         } as Query,
         AGVC_RealTimeDashboard_SysStatus: [] as SysStatus[],
         AGVC_RealTimeDashboard_SystemAlarms: [] as any[],
-        AGVC_RealTimeDashboard_NoRealTimeTasks: [] as any[],
+        AGVC_RealTimeDashboard_NoRealTimeTask: [] as any[],
         AGVC_TrafficEfficiency_TaskSuccess: [] as any[],
         AGVC_TrafficEfficiency_UnloadWaitTime: [] as any[],
         AGVC_TrafficEfficiency_CarryStatics: [] as any[],

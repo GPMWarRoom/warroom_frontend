@@ -38,6 +38,13 @@
                             <el-table :data="paginatedData" height="100%" stripe style="width: 100%">
                                 <el-table-column prop="wipName" label="Rack 名稱" />
                                 <el-table-column prop="level" label="水位%" />
+                                <el-table-column label="異動CSTID">
+                                    <template #default="scope">
+                                        <div v-for="(id, index) in String(scope.row.cstId).split(',')" :key="index">
+                                            {{ id.trim() }}
+                                        </div>
+                                    </template>
+                                </el-table-column>
                                 <el-table-column prop="updateTime" label="更新時間" />
                             </el-table>
                         </div>
@@ -74,6 +81,7 @@ const allData = computed(() => {
     return rawHistory.map((item: any) => ({
         wipName: item.RackName,
         level: item.Level,
+        cstId: item.CSTID || '-',
         updateTime: dayjs(item.UpdateTime).format('YYYY-MM-DD HH:mm:ss'),
         timestamp: dayjs(item.UpdateTime).valueOf()
     })).sort((a, b) => b.timestamp - a.timestamp); // 最新在最上面
@@ -92,22 +100,31 @@ watch(availableWips, (newWips) => {
     }
 })
 
-// 1. 過濾出所選 WIP 的紀錄 (預設保留原本的 1 天過濾，或者可以直接顯示所有所選 WIP 資料。這裡改為顯示所選 WIP 且最近 1 天)
-const oneDayAgo = dayjs().subtract(1, 'day').valueOf()
-const filteredData = computed(() => {
-    if (!selectedWip.value) return []
-    return allData.value.filter(item => item.wipName === selectedWip.value && item.timestamp >= oneDayAgo)
+// 時間過濾：按照主頁篩選的時間顯示資料
+const timeFilteredData = computed(() => {
+    if (realTimeData.DateRange && realTimeData.DateRange.length === 2) {
+        const start = dayjs(realTimeData.DateRange[0]).valueOf()
+        const end = dayjs(realTimeData.DateRange[1]).valueOf()
+        return allData.value.filter(item => item.timestamp >= start && item.timestamp <= end)
+    }
+    return allData.value
 })
 
-// 2. 分頁邏輯 (每頁 10 筆)
+// 1. 過濾出所選 WIP 的紀錄供圖表使用
+const filteredData = computed(() => {
+    if (!selectedWip.value) return []
+    return timeFilteredData.value.filter(item => item.wipName === selectedWip.value)
+})
+
+// 2. 分頁邏輯
 const currentPage = ref(1)
 const pageSize = ref(15)
-const total = computed(() => filteredData.value.length)
+const total = computed(() => timeFilteredData.value.length)
 
 const paginatedData = computed(() => {
     const start = (currentPage.value - 1) * pageSize.value
     const end = start + pageSize.value
-    return filteredData.value.slice(start, end)
+    return timeFilteredData.value.slice(start, end)
 })
 
 const handleCurrentChange = (val: number) => {
@@ -135,10 +152,13 @@ const downloadCsv = (data: any[], filename: string) => {
         ElMessage.warning('無資料可匯出')
         return
     }
-    const headers = ['WIP 名稱', '水位%', '更新時間']
+    const headers = ['WIP 名稱', '水位%', '異動CSTID', '更新時間']
     const csvRows = [
         headers.join(','),
-        ...data.map(row => `${row.wipName},${row.level},${row.updateTime}`)
+        ...data.map(row => {
+            const formattedCstId = `"${String(row.cstId).replace(/,/g, '\n')}"`
+            return `${row.wipName},${row.level},${formattedCstId},${row.updateTime}`
+        })
     ]
     const csvContent = "\uFEFF" + csvRows.join('\n') // 加入 BOM 讓 Excel 正常顯示中文
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })

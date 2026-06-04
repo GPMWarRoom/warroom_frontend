@@ -104,14 +104,13 @@
                     <div class="history-content" v-else-if="realTimeData.AGVC_TrafficEfficiency_TaskList.length > 0">
                         <div class="history-tasks">
                         <el-table
-                            :data="realTimeData.AGVC_TrafficEfficiency_TaskList"
-                            style="width: 45vw; max-height: 80vh; overflow-y: auto;"
+                            :data="paginatedTaskList"
+                            style="width: 45vw; flex: 1;"
                             border
                             size="small"
                             width="45vw"
-                            height="80vh"
+                            height="100%"
                             :row-key="row => row.TaskName"
-                            :default-selection="realTimeData.AGVC_TrafficEfficiency_TaskList.filter(row => row.isSelected)"
                         >
                             <el-table-column align="center" width="50">
                                 <template #header>
@@ -131,6 +130,16 @@
                             <el-table-column show-overflow-tooltip prop="FromName" label="起點" width="auto" />
                             <el-table-column show-overflow-tooltip prop="ToName" label="終點" width="auto" />
                         </el-table>
+                        <div class="pagination-container">
+                            <el-pagination
+                                v-model:current-page="currentPage"
+                                v-model:page-size="pageSize"
+                                :total="realTimeData.AGVC_TrafficEfficiency_TaskList.length"
+                                layout="total, prev, pager, next"
+                                size="small"
+                                background
+                            />
+                        </div>
                         </div>
                         <div class="history-map" style="max-height: 80vh; overflow-y: auto;">
                             <div class="content">
@@ -174,13 +183,22 @@ function handleSelectorChange() {
   emit('selector-change')
 }
 
+const currentPage = ref(1)
+const pageSize = ref(15)
+
+const paginatedTaskList = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value
+    const end = start + pageSize.value
+    return realTimeData.AGVC_TrafficEfficiency_TaskList.slice(start, end)
+})
+
 const allSelected = computed(() =>
-  realTimeData.AGVC_TrafficEfficiency_TaskList.length > 0 &&
-  realTimeData.AGVC_TrafficEfficiency_TaskList.every(row => row.isSelected)
+  paginatedTaskList.value.length > 0 &&
+  paginatedTaskList.value.every(row => row.isSelected)
 )
 
 const toggleAll = (val: boolean) => {
-  realTimeData.AGVC_TrafficEfficiency_TaskList.forEach(row => {
+  paginatedTaskList.value.forEach(row => {
     row.isSelected = val
   })
 }
@@ -242,6 +260,7 @@ async function loadHistoryTasks() {
         isHistoryLoading.value = false
         if (realTimeData.AGVC_TrafficEfficiency_TaskList.length > 0) {
             isTaskListLoaded.value = true
+            currentPage.value = 1
         }
     }
 }
@@ -338,12 +357,21 @@ watch(
 .history-tasks {
     min-width: 260px;
     max-width: 650px;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     background: inherit;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(32,40,60,0.04);
     border: 1px solid #2c3442;
     transition: box-shadow 0.2s;
+}
+.pagination-container {
+    padding: 12px;
+    display: flex;
+    justify-content: center;
+    background: #23272f;
+    border-top: 1px solid #2c3442;
+    border-radius: 0 0 8px 8px;
 }
 .history-tasks :deep(.el-table__header th) {
   background: #23272f !important; // header 深灰
