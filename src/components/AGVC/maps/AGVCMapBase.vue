@@ -136,11 +136,34 @@ onMounted(() => {
         updateVehicleMarkers()
 
         if (map.value) {
+            const savedView = localStorage.getItem(`mapView_${props.mapId}`)
+            if (savedView) {
+                try {
+                    const { center, zoom } = JSON.parse(savedView)
+                    if (center && zoom !== undefined) {
+                        map.value.getView().setCenter(center)
+                        map.value.getView().setZoom(zoom)
+                    }
+                } catch (e) {
+                    console.error('Failed to parse saved map view', e)
+                }
+            }
+
             map.value.on('singleclick', handleSingleClick);
             map.value.on('pointermove', handlePointerMoveForTooltip);
             map.value.getViewport().addEventListener('pointerleave', () => {
                 tooltip.style.display = 'none';
                 tooltipVisible = false;
+            });
+
+            map.value.on('moveend', () => {
+                if (!map.value) return;
+                const view = map.value.getView();
+                if (view) {
+                    const center = view.getCenter();
+                    const zoom = view.getZoom();
+                    localStorage.setItem(`mapView_${props.mapId}`, JSON.stringify({ center, zoom }));
+                }
             });
         }
     }, 10)
