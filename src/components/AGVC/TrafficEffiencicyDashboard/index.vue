@@ -57,14 +57,8 @@
                     <div class="h-100">
                         <BoxPlotChart :useGradient="true" :datas="{
                             name: '執行時間(分)', 
-                            xData: realTimeData.AGVC_TrafficEfficiency_CarryStaticsByPath.map(item => item.Path), 
-                            yDataList: realTimeData.AGVC_TrafficEfficiency_CarryStaticsByPath.map(item => [
-                            item.MinExecMinutes, 
-                            item.Q1, 
-                            item.Median, 
-                            item.Q3, 
-                            item.MaxExecMinutes
-                            ])
+                            xData: carryStaticsBoxPlotData.xData, 
+                            yDataList: carryStaticsBoxPlotData.yDataList
                         }"/>
                     </div>
                 </div>
@@ -206,6 +200,112 @@ const toggleAll = (val: boolean) => {
 const realTimeData = realTimeStore()
 
 const mapModelKey = ref(Date.now())
+
+const carryStaticsBoxPlotData = computed(() => {
+    const source = realTimeData.AGVC_TrafficEfficiency_Selector.source;
+    const target = realTimeData.AGVC_TrafficEfficiency_Selector.target;
+    
+    let filtered = realTimeData.AGVC_TrafficEfficiency_CarryStaticsByPath || [];
+    
+    filtered = filtered.filter(item => {
+        let fromName = item.FromName;
+        let toName = item.ToName;
+        
+        if (!fromName && !toName && item.Path) {
+            if (item.Path.includes('->')) {
+                const parts = item.Path.split('->');
+                fromName = parts[0].trim();
+                toName = parts[1].trim();
+            } else if (item.Path.includes('-')) {
+                const parts = item.Path.split('-');
+                if (parts.length === 2) {
+                    fromName = parts[0].trim();
+                    toName = parts[1].trim();
+                }
+            }
+        }
+        
+        if (!fromName || !toName) return true;
+        
+        const checkIsRack = (name: string) => {
+            if (!name) return false;
+            if (name.includes('轉換站')) return false;
+            return /^WIP[\d\-_]*/i.test(name) || name.toUpperCase().includes('RACK');
+        };
+
+        const checkIsAGV = (name: string) => {
+            if (!name) return false;
+            return name.toUpperCase().includes('AGV');
+        };
+        
+        let matchSource = true;
+        let matchTarget = true;
+        
+        if (source === 'AGV') {
+            matchSource = item.FromType === 'AGV' || checkIsAGV(fromName);
+        } else if (source === 'Rack') {
+            matchSource = item.FromType === 'Rack' || checkIsRack(fromName);
+        }
+        
+        if (target === 'MainEQ') {
+            matchTarget = item.ToType === 'MainEQ' || (!checkIsRack(toName) && !checkIsAGV(toName)) || toName.includes('轉換站');
+        } else if (target === 'Rack') {
+            matchTarget = item.ToType === 'Rack' || checkIsRack(toName);
+        }
+        
+        return matchSource && matchTarget;
+    });
+
+    const grouped = new Map();
+
+    filtered.forEach(item => {
+        let xLabel = item.ToName;
+        if (!xLabel && item.Path) {
+            if (item.Path.includes('->')) {
+                xLabel = item.Path.split('->').pop()?.trim() || item.Path;
+            } else if (item.Path.includes('-')) {
+                const parts = item.Path.split('-');
+                if (parts.length === 2) {
+                    xLabel = parts[1].trim();
+                }
+            }
+        }
+        if (!xLabel) xLabel = item.Path;
+
+        if (!grouped.has(xLabel)) {
+            grouped.set(xLabel, []);
+        }
+        grouped.get(xLabel).push(item);
+    });
+
+    const xData: string[] = [];
+    const yDataList: number[][] = [];
+
+    grouped.forEach((items, label) => {
+        xData.push(label);
+        
+        if (items.length === 1) {
+            const item = items[0];
+            yDataList.push([
+                item.MinExecMinutes, 
+                item.Q1, 
+                item.Median, 
+                item.Q3, 
+                item.MaxExecMinutes
+            ]);
+        } else {
+            const min = Math.min(...items.map((i: any) => i.MinExecMinutes));
+            const max = Math.max(...items.map((i: any) => i.MaxExecMinutes));
+            const q1 = Number((items.reduce((sum: number, i: any) => sum + i.Q1, 0) / items.length).toFixed(2));
+            const median = Number((items.reduce((sum: number, i: any) => sum + i.Median, 0) / items.length).toFixed(2));
+            const q3 = Number((items.reduce((sum: number, i: any) => sum + i.Q3, 0) / items.length).toFixed(2));
+            
+            yDataList.push([min, q1, median, q3, max]);
+        }
+    });
+
+    return { xData, yDataList };
+});
 
 const selectedTasks = computed(() =>
   realTimeData.AGVC_TrafficEfficiency_TaskList.filter(row => row.isSelected)

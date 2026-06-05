@@ -76,6 +76,17 @@ watch(
 
     options.title.text = props.title || name
     options.xAxis.data = xData
+    
+    // 強制顯示所有 X 軸標籤 (避免 ECharts 自動隱藏)
+    if (!options.xAxis.axisLabel) {
+        options.xAxis.axisLabel = {}
+    }
+    options.xAxis.axisLabel.interval = 0
+    if (xData.length > 5) {
+        options.xAxis.axisLabel.rotate = 0
+    } else {
+        options.xAxis.axisLabel.rotate = 0
+    }
 
     options.series = [
         {
