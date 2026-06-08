@@ -207,6 +207,17 @@ const carryStaticsBoxPlotData = computed(() => {
     
     let filtered = realTimeData.AGVC_TrafficEfficiency_CarryStaticsByPath || [];
     
+    const checkIsRack = (name: string) => {
+        if (!name) return false;
+        if (name.includes('轉換站')) return false;
+        return /^WIP[\d\-_]*/i.test(name) || name.toUpperCase().includes('RACK');
+    };
+
+    const checkIsAGV = (name: string) => {
+        if (!name) return false;
+        return name.toUpperCase().includes('AGV');
+    };
+    
     filtered = filtered.filter(item => {
         let fromName = item.FromName;
         let toName = item.ToName;
@@ -227,17 +238,6 @@ const carryStaticsBoxPlotData = computed(() => {
         
         if (!fromName || !toName) return true;
         
-        const checkIsRack = (name: string) => {
-            if (!name) return false;
-            if (name.includes('轉換站')) return false;
-            return /^WIP[\d\-_]*/i.test(name) || name.toUpperCase().includes('RACK');
-        };
-
-        const checkIsAGV = (name: string) => {
-            if (!name) return false;
-            return name.toUpperCase().includes('AGV');
-        };
-        
         let matchSource = true;
         let matchTarget = true;
         
@@ -245,12 +245,14 @@ const carryStaticsBoxPlotData = computed(() => {
             matchSource = item.FromType === 'AGV' || checkIsAGV(fromName);
         } else if (source === 'Rack') {
             matchSource = item.FromType === 'Rack' || checkIsRack(fromName);
+        } else if (source) {
+            matchSource = fromName && (fromName === source || fromName.startsWith(source));
         }
         
-        if (target === 'MainEQ') {
-            matchTarget = item.ToType === 'MainEQ' || (!checkIsRack(toName) && !checkIsAGV(toName)) || toName.includes('轉換站');
-        } else if (target === 'Rack') {
+        if (target === 'Rack') {
             matchTarget = item.ToType === 'Rack' || checkIsRack(toName);
+        } else if (target) {
+            matchTarget = toName && (toName === target || toName.startsWith(target));
         }
         
         return matchSource && matchTarget;
@@ -271,6 +273,18 @@ const carryStaticsBoxPlotData = computed(() => {
             }
         }
         if (!xLabel) xLabel = item.Path;
+
+        if (checkIsRack(xLabel)) {
+            const match = xLabel.match(/^(?:WIP|RACK)[\-_]?(\d+)/i);
+            if (match) {
+                const prefixMatch = xLabel.match(/^(WIP[\-_]?\d+)/i);
+                if (prefixMatch) {
+                    xLabel = prefixMatch[1].toUpperCase();
+                } else {
+                    xLabel = `WIP-${match[1]}`;
+                }
+            }
+        }
 
         if (!grouped.has(xLabel)) {
             grouped.set(xLabel, []);

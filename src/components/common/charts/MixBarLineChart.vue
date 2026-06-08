@@ -1,7 +1,6 @@
 <template>
   <BaseChart
     ref="chartRef"
-    v-show="options.series.length > 0"
     :options="options"
   />
 </template>
@@ -40,7 +39,10 @@ const options = reactive(new globalChartOptions())
 watch(
   () => props.datas,
   (data) => {
-    if (!data) return
+    if (!data || !data.xData || data.xData.length === 0) {
+      options.series = []
+      return
+    }
     options.xAxis.data = data.xData
     options.xAxis.name = data.xAxisName || ''
     

@@ -1,7 +1,7 @@
 <template>
     <div class="from-to-transport-stats h-100 d-flex flex-column">
         <FromToSelector @selector-change="handleSelectorChange" />
-        <div class="flex-fill d-flex flex-column justify-content-between">
+        <div class="flex-fill d-flex flex-column justify-content-between position-relative">
             <h3>搬運結果</h3>
             <div class="h-100">
                 <MixBarLineChart :datas="{
@@ -34,6 +34,12 @@
                     item.MaxExecMinutes
                     ])
                 }"/>
+            </div>
+            
+            <div class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center" 
+                 style="background: var(--el-bg-color, #141414); top: 0; left: 0; z-index: 10;" 
+                 v-if="!realTimeData.AGVC_TrafficEfficiency_CarryStatics || realTimeData.AGVC_TrafficEfficiency_CarryStatics.length === 0">
+                <el-empty description="查無資料" />
             </div>
         </div>
     </div>

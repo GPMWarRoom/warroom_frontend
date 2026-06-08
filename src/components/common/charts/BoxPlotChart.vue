@@ -1,7 +1,6 @@
 <template>
     <BaseChart
         ref="chartRef"
-        v-show="options.series.length > 0"
         :options="options"
     />
 </template>
@@ -125,7 +124,9 @@ watch(
         }
         }
     ]
-    } 
+    } else {
+        options.series = []
+    }
     },
     { immediate: true, deep: true }
 )

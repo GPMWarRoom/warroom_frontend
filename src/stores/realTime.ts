@@ -23,7 +23,7 @@ export const realTimeStore = defineStore('realTime', {
         loading: false,
         selectedAgvc: 'UMTC_YM_3F_ABF',
         MainEQList: [] as any[],
-        AGVC_TrafficEfficiency_Selector: { unloadEQ:"all", source:"Rack", target:"MainEQ" },
+        AGVC_TrafficEfficiency_Selector: { unloadEQ:"all", source:"Rack", target:"" },
         AGVC_RealTimeDashboard_EQStatus_AGV: [] as any[],
         AGVC_RealTimeDashboard_EQStatus_MainEQ: [] as any[],
         AGVC_RealTimeDashboard_EQStatus_Rack: [] as any[],
