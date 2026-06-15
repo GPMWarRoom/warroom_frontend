@@ -46,7 +46,7 @@
                         <span>搬運效能統計</span>
                     </template>
                     <TrafficEfficiencyDashboard v-if="activeTab === 'traffic-efficiency'" class="tab-content-component" 
-                        @selector-change="_Init" @loadHistoryTasks="loadHistoryTasks" :connection="connection"/>
+                        @selector-change="() => _Init()" @loadHistoryTasks="loadHistoryTasks" :connection="connection"/>
                 </el-tab-pane>
                 <el-tab-pane name="utilization" :lazy="true">
                     <template #label>
@@ -109,13 +109,13 @@
 
             <div class="date-select" v-if="!['monitor', 'utilizationEQ'].includes(activeTab)">
                 <el-date-picker v-model="localDateRange" type="daterange" range-separator="至" start-placeholder="開始日期" end-placeholder="結束日期" @change="handleDateRangeChange"/>
-                <el-button style="margin: 0px 2px" @click="_Init">查詢</el-button>
+                <el-button style="margin: 0px 2px" @click="() => _Init()">查詢</el-button>
             </div>
         </div>
     </content-container>
 </template>
 <script setup lang="ts">
-import { ref, onActivated, onDeactivated, onMounted, watch, computed } from 'vue'
+import { ref, onActivated, onDeactivated, watch, markRaw } from 'vue'
 import { Monitor, List, LocationFilled } from '@element-plus/icons-vue'
 import { ElNotification, ElMessage } from 'element-plus'
 import ContentContainer from '../components/ContentContainer.vue'
@@ -134,6 +134,7 @@ import RackStatus from '@/components/EquipmentStatus/Rack/index.vue'
 import { useAlarmStore } from '@/stores/alert'
 import dayjs from 'dayjs'
 import { csvExportAPI } from '@/api/csvExport';
+import { getTrafficAvailabilitys, getTransferAvailabilitys, getEqpAvailabilitys, getWipHistory,queryUtilizationEQ, queryHistoryAction } from '@/api/agvc' // 請確認此引入路徑是否符合您的專案結構
 
 const alarmStore = useAlarmStore()
 const showEquipmentDrawer = ref(false)
@@ -164,15 +165,15 @@ function handleReceiveChannels(schemas: any) {
     
     // 嘗試從 localStorage 取得上次儲存的場域
     const savedAgvc = localStorage.getItem('agvc_selected_field');
+    let targetAgvc = formattedSchemas[0].value;
     if (savedAgvc && formattedSchemas.some((item: any) => item.value === savedAgvc)) {
-        if (!realTimeData.selectedAgvc || realTimeData.selectedAgvc !== savedAgvc) {
-            realTimeData.selectedAgvc = savedAgvc;
-            handleAgvcChange(savedAgvc);
-        }
-    } else if (!realTimeData.selectedAgvc) {
-        // 如果沒有儲存紀錄或儲存的場域已不存在，預設選擇第一筆並觸發初始化
-        realTimeData.selectedAgvc = formattedSchemas[0].value;
-        handleAgvcChange(formattedSchemas[0].value);
+        targetAgvc = savedAgvc;
+    }
+
+    // 避免重複觸發：僅在沒有選擇或選擇有變動時才觸發更新
+    if (!realTimeData.selectedAgvc || realTimeData.selectedAgvc !== targetAgvc) {
+        realTimeData.selectedAgvc = targetAgvc;
+        handleAgvcChange(targetAgvc);
     }
 }
 
@@ -181,11 +182,36 @@ function handleShowEquipmentStatus({ id, type }) {
   selectedEquipmentId.value = id
   showEquipmentDrawer.value = true
 }
-
 async function handleExportAction(actionName: string, {type, target, dateRange, params}: any) {
     if (type === 'query') {
         // 動態決定要呼叫哪個 SignalR 方法
-        await connection.value?.invoke(actionName, type, target, dateRange, params);
+        try {
+            // 將 Date 轉為後端看得懂的字串
+            const formattedDateRange = dateRange && dateRange.length >= 2 ? [
+                dayjs(dateRange[0]).format('YYYY-MM-DD HH:mm:ss'),
+                dayjs(dateRange[1]).format('YYYY-MM-DD HH:mm:ss')
+            ] : [];
+
+            if (actionName === 'InitUtilizationEQ') {
+                const res = await queryUtilizationEQ(realTimeData.selectedAgvc, target, formattedDateRange, params);
+                const data = res?.data || res;
+                if (data) {
+                    data.target = data.target || target; // 確保 target 不會因為 HTTP 傳輸而遺失
+                    handleUtilizationEQ(data);
+                }
+            } 
+            else if (actionName === 'AGVC_Realtime_Action') {
+                const res = await queryHistoryAction(realTimeData.selectedAgvc, target, formattedDateRange, params);
+                const data = res?.data || res;
+                if (data) {
+                    data.target = data.target || target;
+                    handleReceiveRealtimeAction(data);
+                }
+            }
+        } catch (err) {
+            ElMessage.error('查詢資料失敗');
+            console.error(err);
+            }
     } else {
         try {
             // 1. 呼叫 API
@@ -262,91 +288,130 @@ async function handleRealtimeAction(payload: any) {
 
 
 async function loadHistoryTasks(resolve: () => void) {
-    const map = ref()
     try {
         const mapData = await getMap(realTimeData.selectedAgvc)
         if (mapData) {
-            map.value = mapData
-            realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', map)
+            realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData))
         }
     } catch (e) {
-        map.value = null
         realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
     }
-    await connection.value?.invoke('InitAGVEfficiency', 
-        realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
-        realTimeData.AGVC_TrafficEfficiency_Selector.source,    
-        realTimeData.AGVC_TrafficEfficiency_Selector.target,
-        realTimeData.DateRange,
-        true // 是否需要撈TaskList
-    );
+    try {
+        const sel = realTimeData.AGVC_TrafficEfficiency_Selector;
+        const formattedDateRange = realTimeData.DateRange && realTimeData.DateRange.length >= 2 ? [
+            dayjs(realTimeData.DateRange[0]).format('YYYY-MM-DD HH:mm:ss'),
+            dayjs(realTimeData.DateRange[1]).format('YYYY-MM-DD HH:mm:ss')
+        ] : [];
+        const res = await getTransferAvailabilitys(
+            realTimeData.selectedAgvc, 
+            formattedDateRange,
+            sel?.unloadEQ, 
+            sel?.source,    
+            sel?.target,
+            true // needTaskList
+        );
+        const data = res?.data || res;
+        if (data) handleAGVEfficiency(data);
+    } catch(e) {
+        console.error('API Error:', e);
+    }
     resolve();
 }
 
 async function _Init() {
     loading.value = true
-    const map = ref()
-    switch (activeTab.value) {
-        case 'monitor':
-            await connection.value?.invoke('InitDataByTab');
-            try {
-                const mapData = await getMap(realTimeData.selectedAgvc)
-                if (mapData) {
-                    map.value = mapData
-                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', map)
+    const currentTab = activeTab.value;
+    const currentRange = realTimeData.DateRange && realTimeData.DateRange.length >= 2 ? [
+        dayjs(realTimeData.DateRange[0]).format('YYYY-MM-DD HH:mm:ss'),
+        dayjs(realTimeData.DateRange[1]).format('YYYY-MM-DD HH:mm:ss')
+    ] : [];
+    const currentAgvc = realTimeData.selectedAgvc;
+    const sel = realTimeData.AGVC_TrafficEfficiency_Selector;
+
+    try {
+        switch (currentTab) {
+            case 'monitor':
+                await connection.value?.invoke('InitDataByTab');
+                try {
+                    const mapData = await getMap(currentAgvc)
+                    if (mapData) {
+                        realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData))
+                    }
+                } catch (e) {
+                    // 地圖抓不到就不更新
+                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
                 }
-            } catch (e) {
-                // 地圖抓不到就不更新
-                map.value = null
-                realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
-            }
-            break;
-        case 'traffic-stats':
-            try {
-                const mapData = await getMap(realTimeData.selectedAgvc)
-                if (mapData) {
-                    map.value = mapData
-                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', map)
+                break;
+            case 'traffic-stats':
+                try {
+                    const mapData = await getMap(currentAgvc)
+                    if (mapData) {
+                        realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData))
+                    }
+                } catch (e) {
+                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
                 }
-            } catch (e) {
-                map.value = null
-                realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
-            }
-            await connection.value?.invoke('InitTrafficStats', realTimeData.DateRange)
-            break;
-        case 'traffic-efficiency':
-            try {
-                const mapData = await getMap(realTimeData.selectedAgvc)
-                if (mapData) {
-                    map.value = mapData
-                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', map)
+                try {
+                    const res = await getTrafficAvailabilitys(currentAgvc, currentRange);
+                    const data = res?.data || res;
+                    if (data) handleReceiveTrafficStats(data);
+                } catch(e) {
+                    console.error('API Error:', e);
                 }
-            } catch (e) {
-                map.value = null
-                realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
-            }
-            await connection.value?.invoke('InitAGVEfficiency', 
-                realTimeData.AGVC_TrafficEfficiency_Selector.unloadEQ, 
-                realTimeData.AGVC_TrafficEfficiency_Selector.source,    
-                realTimeData.AGVC_TrafficEfficiency_Selector.target,
-                realTimeData.DateRange,
-                false // 是否需要撈TaskList
-            );
-            break;
-        case 'utilization':
-            await connection.value?.invoke('InitAGVUtilization', 
-                realTimeData.DateRange
-            );
-            break;
-        case 'utilizationEQ':
-            realTimeData.AGVC_UtilizationEQ_deviceData = []
-            realTimeData.AGVC_UtilizationEQ_alarmData.data = []
-            realTimeData.AGVC_UtilizationEQ_alarmData.total = 0
-            break;
-        case 'RackHistory':
-            await connection.value?.invoke('InitDataByTab');
-            break;
+                break;
+            case 'traffic-efficiency':
+                try {
+                    const mapData = await getMap(currentAgvc)
+                    if (mapData) {
+                        realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData))
+                    }
+                } catch (e) {
+                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
+                }
+                try {
+                    const res = await getTransferAvailabilitys(
+                        currentAgvc, 
+                        currentRange,
+                        sel?.unloadEQ, 
+                        sel?.source,    
+                        sel?.target,
+                        false // 是否需要撈TaskList
+                    );
+                    const data = res?.data || res;
+                    if (data) handleAGVEfficiency(data);
+                } catch(e) {
+                    console.error('API Error:', e);
+                }
+                break;
+            case 'utilization':
+                try {
+                    const res = await getEqpAvailabilitys(currentAgvc, currentRange);
+                    const data = res?.data || res;
+                    if (data) handleAGVUtilization(data);
+                } catch(e) {
+                    console.error('API Error:', e);
+                }
+                break;
+            case 'utilizationEQ':
+                realTimeData.AGVC_UtilizationEQ_deviceData = []
+                realTimeData.AGVC_UtilizationEQ_alarmData.data = []
+                realTimeData.AGVC_UtilizationEQ_alarmData.total = 0
+                break;
+            case 'RackHistory':
+                try {
+                    const res = await getWipHistory(currentAgvc, currentRange);
+                    const data = res?.data || res;
+                    if (data) handleReceiveRackHistory(data);
+                } catch(e) {
+                    console.error('API Error:', e);
+                }
+                break;
+        }
+
+    } catch (err) {
+        console.error(err);
     }
+
     loading.value = false
 }
 async function handleAgvcChange(value: string) {
@@ -384,10 +449,10 @@ async function subscribeToSchema(schema: string, tab: string) {
     if (!isConnected.value) return
 
     if (currentSubscribedSchema && currentTab) {
-    await connection.value.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)
+    await connection.value?.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)
     console.log(`🔄 取消訂閱: ${currentSubscribedSchema}-${currentTab}`)
     }
-    await connection.value.invoke('AGVCSubscribe', schema, tab)
+    await connection.value?.invoke('AGVCSubscribe', schema, tab)
     currentSubscribedSchema = schema
     currentTab = tab
     console.log(`✅ 已訂閱 schema: ${schema}-${tab}`)
@@ -416,35 +481,43 @@ function handleNotification(result: any) {
 }
 
 function handleAGVEfficiency(result: any) {
-    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_TaskSuccess', result.TaskSuccess)
-    realTimeData.updateRealTimeData('MainEQList', result.MainEQList)
-    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_UnloadWaitTime', result.UnloadWaitTime)
-    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStatics', result.CarryStatics)
-    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_TaskList', result.TaskList)
-    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStaticsByPath', result.CarryStaticsByPath)
+    if (!result) return;
+    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_TaskSuccess', result.TaskSuccess || result.taskSuccess || 0)
+    realTimeData.updateRealTimeData('MainEQList', result.MainEQList || result.mainEQList || [])
+    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_UnloadWaitTime', result.UnloadWaitTime || result.unloadWaitTime || [])
+    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStatics', result.CarryStatics || result.carryStatics || [])
+    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_TaskList', result.TaskList || result.taskList || [])
+    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStaticsByPath', result.CarryStaticsByPath || result.carryStaticsByPath || [])
 }
 
 function handleAGVUtilization(result: any) {
-    realTimeData.updateRealTimeData('AGVC_Utilization_AGVAvailabilitys', result.AGVAvailabilitys)
-    realTimeData.updateRealTimeData('AGVC_Utilization_NoAGVTasks', result.NoAGVTasks.NoTasks)
-    realTimeData.updateRealTimeData('AGVC_Utilization_RemoteRate', result.NoAGVTasks.RemoteRate)
-    realTimeData.updateRealTimeData('AGVC_Utilization_NoReject', result.NoAGVTasks.NoReject)
-    realTimeData.updateRealTimeData('AGVC_Utilization_NoAGVAlarm', result.NoAGVAlarm)
-    realTimeData.updateRealTimeData('AGVC_Utilization_TotalMileage', result.NoAGVTasks.TotalMileage)
-    realTimeData.updateRealTimeData('AGVC_Utilization_ExchangeCount', result.NoAGVTasks.ExchangeCount)
-    realTimeData.updateRealTimeData('AGVC_Utilization_TaskTypeRatio', result.TaskTypeRatio)
-    realTimeData.updateRealTimeData('AGVC_Utilization_TaskAutoRatio', result.TaskAutoRatio)
+    if (!result) return;
+    const noTasks = result.NoAGVTasks || result.noAGVTasks || {};
+    realTimeData.updateRealTimeData('AGVC_Utilization_AGVAvailabilitys', result.AGVAvailabilitys || result.agvAvailabilitys || [])
+    realTimeData.updateRealTimeData('AGVC_Utilization_NoAGVTasks', noTasks.NoTasks || noTasks.noTasks || 0)
+    realTimeData.updateRealTimeData('AGVC_Utilization_RemoteRate', noTasks.RemoteRate || noTasks.remoteRate || 0)
+    realTimeData.updateRealTimeData('AGVC_Utilization_NoReject', noTasks.NoReject || noTasks.noReject || 0)
+    realTimeData.updateRealTimeData('AGVC_Utilization_NoAGVAlarm', result.NoAGVAlarm || result.noAGVAlarm || 0)
+    realTimeData.updateRealTimeData('AGVC_Utilization_TotalMileage', noTasks.TotalMileage || noTasks.totalMileage || 0)
+    realTimeData.updateRealTimeData('AGVC_Utilization_ExchangeCount', noTasks.ExchangeCount || noTasks.exchangeCount || 0)
+    realTimeData.updateRealTimeData('AGVC_Utilization_TaskTypeRatio', result.TaskTypeRatio || result.taskTypeRatio || [])
+    realTimeData.updateRealTimeData('AGVC_Utilization_TaskAutoRatio', result.TaskAutoRatio || result.taskAutoRatio || [])
 }
 
 function handleUtilizationEQ(result: any) {
-    if(result.target == 'EQUtilization')
-        realTimeData.updateRealTimeData('AGVC_UtilizationEQ_deviceData', result.data.deviceData)
-    if(result.target == 'EQAlarms')
+    if (!result) return;
+    const target = result.target || result.Target;
+    const payload = result.data || result.Data || result;
+
+    if(target === 'EQUtilization') {
+        realTimeData.updateRealTimeData('AGVC_UtilizationEQ_deviceData', payload.deviceData || payload.DeviceData || payload || [])
+    }
+    if(target === 'EQAlarms') {
         realTimeData.AGVC_UtilizationEQ_alarmData = {
-            data: result.data.data,
-            total: result.data.total
+            data: payload.data || payload.Data || (Array.isArray(payload) ? payload : []),
+            total: payload.total || payload.Total || 0
         };
-        console.log(realTimeData.AGVC_UtilizationEQ_alarmData.data, realTimeData.AGVC_UtilizationEQ_alarmData.total)
+    }
 }
 
 function handleReceiveAliveCheck(result: any) {
@@ -452,22 +525,27 @@ function handleReceiveAliveCheck(result: any) {
 }
 
 function handleReceiveTrafficStats(result: any) {
-    const stats = result.tagStopStats
+    if (!result) return;
+    const stats = result.tagStopStats || result.TagStopStats || []
+     realTimeData.updateRealTimeData('AGVC_TrafficStats_tagStopStats', stats)
     const colorMap: Record<string, { color: string, avgdurationseconds: number }> = {}
     stats.forEach((s: any) => {
+        const tag = s.tag || s.Tag;
+        if (tag === undefined || tag === null) return;
         // 0-8, 8-16, 16-24, 24-32, >32
         let color = ''
-    if (s.avgdurationseconds <= 8) color = 'rgba(0,200,83,0.8)'; // 綠
-    else if (s.avgdurationseconds <= 16) color = 'rgba(255,214,0,0.8)'; // 黃
-    else if (s.avgdurationseconds <= 24) color = 'rgba(255,160,0,0.8)'; // 橘
-    else if (s.avgdurationseconds <= 32) color = 'rgba(255,87,34,0.8)'; // 橘紅
-    else color = 'rgba(229,57,53,0.8)'; // 紅 >32
-        colorMap[String(s.tag)] = {
+        const duration = s.avgdurationseconds || s.AvgDurationSeconds || 0;
+        if (duration <= 8) color = 'rgba(0,200,83,0.8)'; // 綠
+        else if (duration <= 16) color = 'rgba(255,214,0,0.8)'; // 黃
+        else if (duration <= 24) color = 'rgba(255,160,0,0.8)'; // 橘
+        else if (duration <= 32) color = 'rgba(255,87,34,0.8)'; // 橘紅
+        else color = 'rgba(229,57,53,0.8)'; // 紅 >32
+        colorMap[String(tag)] = {
             color,
-            avgdurationseconds: s.avgdurationseconds
+            avgdurationseconds: duration
         }
     })
-    const points = realTimeData.AGVC_TrafficStats_mapModel.Map.Points
+    const points = realTimeData.AGVC_TrafficStats_mapModel?.Map?.Points || {}
     Object.values(points).forEach((point: any) => {
         const info = colorMap[String(point.TagNumber)]
         if (info) {
@@ -478,13 +556,17 @@ function handleReceiveTrafficStats(result: any) {
             point.TagStopInfo = null
         }
     })
-    const pathStats = result.pathUseStats || []
-    const counts = pathStats.map((s: any) => s.count)
-    const minCount = Math.min(...counts)
-    const maxCount = Math.max(...counts)
+    if (realTimeData.AGVC_TrafficStats_mapModel) {
+        realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', { ...realTimeData.AGVC_TrafficStats_mapModel });
+    }
+    const pathStats = result.pathUseStats || result.PathUseStats || []
+    const counts = pathStats.map((s: any) => s.count || s.Count || 0)
+    const minCount = counts.length ? Math.min(...counts) : 0
+    const maxCount = counts.length ? Math.max(...counts) : 0
     const pathUseStatsMap: Record<string, { count: number, color: string }> = {}
     pathStats.forEach((s: any) => {
-        const ratio = maxCount === minCount ? 0 : (s.count - minCount) / (maxCount - minCount)
+        const countVal = s.count || s.Count || 0;
+        const ratio = maxCount === minCount ? 0 : (countVal - minCount) / (maxCount - minCount)
         const colorSteps = [
             'rgba(0,200,83,0.8)',    // 綠
             'rgba(255,214,0,0.8)',   // 黃
@@ -499,28 +581,29 @@ function handleReceiveTrafficStats(result: any) {
         else if (ratio >= 0.2) colorIdx = 1
         else colorIdx = 0
         const color = colorSteps[colorIdx]
-        pathUseStatsMap[`${s.tagA}-${s.tagB}`] = { count: s.count, color }
+        pathUseStatsMap[`${s.tagA || s.TagA}-${s.tagB || s.TagB}`] = { count: countVal, color }
     })
     realTimeData.updateRealTimeData('AGVC_TrafficStats_pathUseStats', pathUseStatsMap)
 }
 
 function handleReceiveRealtimeAction(result: any) {
+    if (!result) return;
+    const target = result.target || result.Target;
+    const payload = result.data || result.Data || result;
+    
+    const dataArr = Array.isArray(payload.data || payload.Data) 
+        ? (payload.data || payload.Data) 
+        : (Array.isArray(payload) ? payload : []);
+
     const newData = {
-        data: Array.isArray(result.data.data) ? [...result.data.data] : [],
-        total: result.data.total || 0
+        data: [...dataArr],
+        total: payload.total || payload.Total || dataArr.length || 0
     };
-    if (result.target === 'tasks') {
-        // 更新 Tasks 專屬的 State
-        realTimeData.AGVC_RealTimeDashboard_Query_Tasks = {
-            data: result.data.data,
-            total: result.data.total
-        };
-    } else if (result.target === 'alarms') {
-        // 更新 Alarms 專屬的 State
-        realTimeData.AGVC_RealTimeDashboard_Query_Alarms = {
-            data: result.data.data,
-            total: result.data.total
-        };
+    
+    if (target === 'tasks') {
+        realTimeData.AGVC_RealTimeDashboard_Query_Tasks = newData;
+    } else if (target === 'alarms') {
+        realTimeData.AGVC_RealTimeDashboard_Query_Alarms = newData;
     }
 }
 
@@ -534,20 +617,34 @@ onActivated(async () => {
     // 接收後端推播通知
     on('ReceiveChannels', handleReceiveChannels);
     on('ReceiveNotification', handleNotification);
-    on('ReceiveAGVEfficiency', handleAGVEfficiency);
-    on('ReceiveAGVUtilization', handleAGVUtilization);
-    on('ReceiveTrafficStats', handleReceiveTrafficStats);
     on('ReceiveAliveCheck', handleReceiveAliveCheck);
-    on('ReceiveUtilizationEQ', handleUtilizationEQ);
-    on('ReceiveRealtimeAction', handleReceiveRealtimeAction);
-    on('ReceiveRackHistory', handleReceiveRackHistory);
     connection.value?.onreconnected(async () => {
         console.log('🔁 SignalR 已重新連線')
         if (currentSubscribedSchema && currentTab) {
-            await subscribeToSchema(currentSubscribedSchema, currentTab)
+            const schema = currentSubscribedSchema;
+            const tab = currentTab;
+            currentSubscribedSchema = null;
+            currentTab = null;
+            await subscribeToSchema(schema, tab)
             await _Init()
-            console.log(`✅ 已重新初始化 Init_${currentTab}`)
+            loading.value = false
+            ElMessage.success('伺服器重新連線成功')
+            console.log(`✅ 已重新初始化 Init_${tab}`)
         }
+    })
+
+    connection.value?.onreconnecting((error: any) => {
+        console.warn('⚠️ SignalR 正在嘗試重新連線...', error)
+        ElMessage.warning('與伺服器連線中斷，正在嘗試重新連線...')
+        loading.value = true // 正在重連時顯示 Loading
+    })
+
+    connection.value?.onclose((error: any) => {
+        console.error('❌ SignalR 連線已完全關閉', error)
+        // 重連失敗或被手動關閉，解除卡住的畫面
+        loading.value = false
+        ElMessage.error('與伺服器連線已中斷，請重整頁面。')
+        aliveCheck.value = { isAlive: false, isVMSAlive: false }
     })
 
     try {
@@ -555,7 +652,7 @@ onActivated(async () => {
             await connection.value?.invoke('GetChannels');
         }
         
-        // 如果 selectedAgvc 已經有值才去訂閱，避免沒選單資料就去打 Init 報錯
+        // 頁面開啟時立刻查詢：若已經有選擇的場域，確保資料保持最新狀態
         if (realTimeData.selectedAgvc) {
             await subscribeToSchema(realTimeData.selectedAgvc, activeTab.value)
             await _Init()
@@ -584,18 +681,15 @@ onDeactivated(async () => {
         intervalAlive = null
     }
     off('ReceiveChannels', handleReceiveChannels);
-    off('ReceiveNotification', handleNotification)
-    off('ReceiveAGVEfficiency', handleAGVEfficiency)
-    off('ReceiveAGVUtilization', handleAGVUtilization)
-    off('ReceiveTrafficStats', handleReceiveTrafficStats)
-    off('ReceiveAliveCheck', handleReceiveAliveCheck)
-    off('ReceiveUtilizationEQ', handleUtilizationEQ)
-    off('ReceiveRackHistory', handleReceiveRackHistory)
+    off('ReceiveNotification', handleNotification);
+    off('ReceiveAliveCheck', handleReceiveAliveCheck);
 
     if (currentSubscribedSchema && currentTab) {
-    await connection.value.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)
+    await connection.value?.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)
     console.log(`🔄 取消訂閱: ${currentSubscribedSchema}-${currentTab}`)
     }
+    
+    loading.value = false
 })
 
 // const errorMessageVisible = ref(false)
@@ -628,18 +722,6 @@ onDeactivated(async () => {
 //   },
 //   { immediate: true, deep: true }
 // )
-
-function setUTCDate(targetDate: dayjs.Dayjs, isEnd: boolean): Date {
-    return new Date(Date.UTC(
-        targetDate.year(),
-        targetDate.month(),
-        targetDate.date(),
-        isEnd ? 23 : 0, 
-        isEnd ? 59 : 0, 
-        isEnd ? 59 : 0, 
-        isEnd ? 999 : 0
-    ));
-}
 
 // 初始化時，嘗試從 localStorage 取得上次儲存的日期範圍
 const savedDateRangeStr = localStorage.getItem('agvc_date_range');
