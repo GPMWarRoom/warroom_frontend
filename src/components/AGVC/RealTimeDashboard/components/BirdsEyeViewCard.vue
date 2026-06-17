@@ -4,6 +4,9 @@
             <template #header>
                 <div class="d-flex justify-content-between align-items-center">
                     <span>Bird's Eye View</span>
+                    <el-tooltip content="放大檢視" placement="top">
+                        <el-icon style="cursor: pointer;" @click="isExpanded = true"><FullScreen /></el-icon>
+                    </el-tooltip>
                 </div>
             </template>
             
@@ -20,6 +23,26 @@
                 </div>
             </div>
         </el-card>
+
+        <el-dialog
+            v-model="isExpanded"
+            title="Bird's Eye View"
+            width="90%"
+            top="5vh"
+            custom-class="bird-view-dialog"
+            :destroy-on-close="true"
+            append-to-body
+        >
+            <div class="expanded-map-container">
+                <BirdViewMap 
+                    v-if="isExpanded"
+                    class="h-100 w-100" 
+                    mapId="map-expanded" 
+                    :map-model="mapModelWithVehicles"
+                    :key="mapModelKey + '_expanded'" 
+                />
+            </div>
+        </el-dialog>
     </div>
 </template>
 
@@ -28,7 +51,9 @@ import BirdViewMap from '../../maps/BirdViewMap.vue'
 import { realTimeStore } from '@/stores/realTime'
 import { ref, watch, computed } from 'vue'
 import agvImg from '@/AGV.png'
+import { FullScreen } from '@element-plus/icons-vue'
 
+const isExpanded = ref(false)
 const realTimeData = realTimeStore()
 const mapModelKey = ref(Date.now())
 
@@ -213,6 +238,22 @@ watch(
         align-items: center;
         justify-content: center;
         color: #666;
+    }
+}
+.expanded-map-container {
+    height: 80vh;
+}
+</style>
+
+<style lang="scss">
+.bird-view-dialog {
+    .el-dialog__header {
+        padding-bottom: 10px;
+        margin-right: 0;
+    }
+    .el-dialog__body {
+        padding: 10px;
+        overflow: hidden;
     }
 }
 </style>
