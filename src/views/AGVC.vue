@@ -115,7 +115,7 @@
     </content-container>
 </template>
 <script setup lang="ts">
-import { ref, onActivated, onDeactivated, watch, markRaw } from 'vue'
+import { ref, onMounted, onUnmounted, watch, markRaw } from 'vue'
 import { Monitor, List, LocationFilled } from '@element-plus/icons-vue'
 import { ElNotification, ElMessage } from 'element-plus'
 import ContentContainer from '../components/ContentContainer.vue'
@@ -150,6 +150,14 @@ const activeTab = ref('monitor')
 const uiStats = uiStatsStore()
 const agvcList = ref([])
 const aliveCheck = ref({ isAlive: true, isVMSAlive: true })
+watch(isConnected, async (newVal) => {
+    if (newVal && realTimeData.selectedAgvc) {
+        console.log('🔗 SignalR 已連線，開始自動訂閱場域...');
+        // 確保重新連線後，能自動訂閱並拿取最新資料
+        await subscribeToSchema(realTimeData.selectedAgvc, activeTab.value);
+        await _Init();
+    }
+});
 function handleReceiveChannels(schemas: any) {
     if (!schemas || schemas.length === 0) return;
 
@@ -446,11 +454,14 @@ let currentSubscribedSchema: string | null = null
 let currentTab: string | null = null
 
 async function subscribeToSchema(schema: string, tab: string) {
-    if (!isConnected.value) return
+    if (!connection.value || !isConnected.value) {
+        console.warn(`⚠️ SignalR 尚未連線，無法訂閱 ${schema}-${tab}，將等待連線恢復`);
+        return;
+    }
 
     if (currentSubscribedSchema && currentTab) {
-    await connection.value?.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)
-    console.log(`🔄 取消訂閱: ${currentSubscribedSchema}-${currentTab}`)
+        await connection.value?.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)
+        console.log(`🔄 取消訂閱: ${currentSubscribedSchema}-${currentTab}`)
     }
     await connection.value?.invoke('AGVCSubscribe', schema, tab)
     currentSubscribedSchema = schema
@@ -464,17 +475,21 @@ function handleNotification(result: any) {
     if (!storeMap) return;
 
     if (activeTab.value === 'monitor' || activeTab.value === 'RackHistory') {
-        if (result.type === 'init') {
-            for (const [key, value] of Object.entries(result.data)) {
-                const storeKey = storeMap[key];
-                if (storeKey) {
-                    realTimeData.updateRealTimeData(storeKey, value);
+        const type = (result.type || result.Type || '').toLowerCase();
+        if (type === 'init') {
+            const data = result.data || result.Data || {};
+            for (const [key, value] of Object.entries(data)) {
+                const mapKey = Object.keys(storeMap).find(k => k.toLowerCase() === key.toLowerCase());
+                if (mapKey) {
+                    realTimeData.updateRealTimeData(storeMap[mapKey], value);
                 }
             }
-        } else if (result.type === 'update') {
-            const storeKey = storeMap[result.table];
-            if (storeKey) {
-                realTimeData.updateRealTimeData(storeKey, result.data);
+        } else if (type === 'update') {
+            const table = result.table || result.Table || result.target || result.Target;
+            const data = result.data !== undefined ? result.data : result.Data;
+            const mapKey = Object.keys(storeMap).find(k => k.toLowerCase() === (table || '').toLowerCase());
+            if (mapKey) {
+                realTimeData.updateRealTimeData(storeMap[mapKey], data);
             }
         }
     }
@@ -613,7 +628,7 @@ function handleReceiveRackHistory(result: any) {
 
 let intervalId: ReturnType<typeof setInterval> | null = null
 let intervalAlive: ReturnType<typeof setInterval> | null = null
-onActivated(async () => {
+onMounted(async () => {
     // 接收後端推播通知
     on('ReceiveChannels', handleReceiveChannels);
     on('ReceiveNotification', handleNotification);
@@ -671,7 +686,7 @@ onActivated(async () => {
     }, 2 * 1000) 
 })
 
-onDeactivated(async () => {
+onUnmounted(async () => {
     if (intervalId) {
         clearInterval(intervalId)
         intervalId = null

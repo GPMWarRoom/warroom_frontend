@@ -140,7 +140,7 @@ const chartData = computed(() => {
     return [
         {
             name: 'WIP 水位%',
-            xData: sorted.map(item => dayjs(item.timestamp).format('HH:mm')),
+            xData: sorted.map(item => dayjs(item.timestamp).format('YYYY-MM-DD HH:mm')),
             yData: sorted.map(item => item.level)
         }
     ]

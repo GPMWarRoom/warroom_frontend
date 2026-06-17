@@ -4,7 +4,7 @@
             <el-card class="box-card" shadow="never">
                 <template #header>
                     <div class="card-header">
-                        <span>WIP 水位袎化</span>
+                        <span>WIP 水位變化</span>
                     </div>
                 </template>
                 <div class="chart-wrapper">
@@ -22,13 +22,13 @@
             <el-card class="box-card" shadow="never">
                 <template #header>
                     <div class="card-header">
-                        <span>WIP 水位紀錏</span>
+                        <span>WIP 水位紀錄</span>
                     </div>
                 </template>
                 <el-table :data="tableData" style="width: 100%" height="calc(100vh - 280px)">
                     <el-table-column prop="name" label="WIP 名稱" width="180" />
                     <el-table-column prop="level" label="水位" />
-                    <el-table-column prop="updateTime" label="更新晆間" />
+                    <el-table-column prop="updateTime" label="更新時間" />
                 </el-table>
             </el-card>
         </el-col>
@@ -41,12 +41,12 @@ import LineChart from '@/components/common/charts/LineChart.vue'
 const chartData = ref([
     {
         name: 'WIP-A',
-        xData: ['10:00', '10:10', '10:20', '10:30', '10:40', '10:50'],
+        xData: ['2026-06-02 10:00', '2026-06-02 11:00', '2026-06-02 12:00', '2026-06-02 13:00', '2026-06-02 14:00', '2026-06-02 15:00'],
         yData: [12, 15, 14, 18, 20, 19]
     },
     {
         name: 'WIP-B',
-        xData: ['10:00', '10:10', '10:20', '10:30', '10:40', '10:50'],
+        xData: ['2026-06-02 10:00', '2026-06-02 11:00', '2026-06-02 12:00', '2026-06-02 13:00', '2026-06-02 14:00', '2026-06-02 15:00'],
         yData: [8, 9, 11, 10, 12, 14]
     }
 ])
