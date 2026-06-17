@@ -351,6 +351,7 @@ async function _Init() {
                 }
                 break;
             case 'traffic-stats':
+                await connection.value?.invoke('InitDataByTab');
                 try {
                     const mapData = await getMap(currentAgvc)
                     if (mapData) {
@@ -437,6 +438,7 @@ const handleTabChange = async (tab: string) => {
 const tabStoreMap: Record<string, Record<string, string>> = {
     "monitor": {
         EQStatus_AGV: "AGVC_RealTimeDashboard_EQStatus_AGV",
+        AgvStates: "AGVC_RealTimeDashboard_AgvStates",
         EQStatus_MainEQ: "AGVC_RealTimeDashboard_EQStatus_MainEQ",
         EQStatus_Rack: "AGVC_RealTimeDashboard_EQStatus_Rack",
         Tasks: "AGVC_RealTimeDashboard_Tasks",
@@ -444,6 +446,11 @@ const tabStoreMap: Record<string, Record<string, string>> = {
         SystemAlarms: "AGVC_RealTimeDashboard_SystemAlarms",
         NoRealTimeTask: "AGVC_RealTimeDashboard_NoRealTimeTask",
         StationStatus: "AGVC_RealTimeDashboard_EQStatus_Rack",
+    },
+    "traffic-stats": {
+        EQStatus_AGV: "AGVC_RealTimeDashboard_EQStatus_AGV",
+        AgvStates: "AGVC_RealTimeDashboard_AgvStates",
+        SysStatus: "AGVC_RealTimeDashboard_SysStatus"
     },
     "RackHistory": {
         RackHistory: "RackHistory" 
@@ -474,7 +481,7 @@ function handleNotification(result: any) {
 
     if (!storeMap) return;
 
-    if (activeTab.value === 'monitor' || activeTab.value === 'RackHistory') {
+    if (['monitor', 'RackHistory', 'traffic-stats'].includes(activeTab.value)) {
         const type = (result.type || result.Type || '').toLowerCase();
         if (type === 'init') {
             const data = result.data || result.Data || {};

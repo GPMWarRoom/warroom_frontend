@@ -1,6 +1,7 @@
 <template>
     <div class="" :id="mapId"></div>
 </template>
+
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { Map, Feature } from 'ol'
@@ -10,7 +11,8 @@ import { createCustomMap, createLayerWithFeatures, addLayerToMap } from '@/utils
 import type { MapModel } from '@/models/MapModel'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
-const map = ref<Map >()
+
+const map = ref<Map>()
 const vehicleLayer = ref<VectorLayer<VectorSource>>()
 const props = defineProps<{
     mapId: string
@@ -18,60 +20,18 @@ const props = defineProps<{
     showMode?: string
     pathUseStats?: any[]
 }>()
+
 const tooltip = document.createElement('div');
 tooltip.style.position = 'fixed';
 tooltip.style.pointerEvents = 'none';
 tooltip.style.background = 'rgba(40,40,40,5)'; // 深灰色透明
-tooltip.style.border = '1px solid #aaa';          // 灰色邊框
+tooltip.style.border = '1px solid #aaa';      // 灰色邊框
 tooltip.style.color = '#fff';
 tooltip.style.padding = '2px 8px';
 tooltip.style.borderRadius = '4px';
 tooltip.style.fontSize = '12px';
 tooltip.style.display = 'none';
 document.body.appendChild(tooltip);
-
-// function throttle(fn: (...args: any[]) => void, delay: number) {
-//     let last = 0
-//     return function (...args: any[]) {
-//         const now = Date.now()
-//         if (now - last > delay) {
-//             last = now
-//             fn(...args)
-//         }
-//     }
-// }
-
-// const handlePointerMove = throttle((evt: any) => {
-//     let found = false;
-//     if (props.showMode === 'tagStopStats') {
-//         map.value.forEachFeatureAtPixel(evt.pixel, (feature) => {
-//             const info = feature.get('TagStopInfo');
-//             if (info && info.avgdurationseconds != null) {
-//                 tooltip.innerText = `停等時間: ${info.avgdurationseconds.toFixed(2)} 秒`;
-//                 tooltip.style.fontSize = '16px';
-//                 tooltip.style.left = evt.originalEvent.clientX + 10 + 'px';
-//                 tooltip.style.top = evt.originalEvent.clientY + 10 + 'px';
-//                 tooltip.style.display = 'block';
-//                 found = true;
-//             }
-//         });
-//     } else if (props.showMode === 'pathUseStats') {
-//         map.value.forEachFeatureAtPixel(evt.pixel, (feature) => {
-//             const info = feature.get('PathUseInfo');
-//             if (info && info.count != null) {
-//                 tooltip.innerText = `走行次數: ${info.count}`;
-//                 tooltip.style.fontSize = '16px';
-//                 tooltip.style.left = evt.originalEvent.clientX + 10 + 'px';
-//                 tooltip.style.top = evt.originalEvent.clientY + 10 + 'px';
-//                 tooltip.style.display = 'block';
-//                 found = true;
-//             }
-//         });
-//     }
-//     if (!found) {
-//         tooltip.style.display = 'none';
-//     }
-// }, 30); // 30ms 可依效能調整
 
 let lastClickPos = { x: 0, y: 0 }
 let tooltipVisible = false
@@ -83,7 +43,7 @@ const handleSingleClick = (evt: any) => {
         y: evt.originalEvent.clientY
     }
     if (props.showMode === 'tagStopStats') {
-        map.value.forEachFeatureAtPixel(evt.pixel, (feature) => {
+        map.value?.forEachFeatureAtPixel(evt.pixel, (feature) => {
             const info = feature.get('TagStopInfo');
             if (info && info.avgdurationseconds != null) {
                 tooltip.innerText = `停等時間: ${info.avgdurationseconds.toFixed(2)} 秒`;
@@ -96,7 +56,7 @@ const handleSingleClick = (evt: any) => {
             }
         });
     } else if (props.showMode === 'pathUseStats') {
-        map.value.forEachFeatureAtPixel(evt.pixel, (feature) => {
+        map.value?.forEachFeatureAtPixel(evt.pixel, (feature) => {
             const info = feature.get('PathUseInfo');
             if (info && info.count != null) {
                 tooltip.innerText = `走行次數: ${info.count}`;
@@ -180,6 +140,34 @@ function initVehicleLayer() {
     }
 }
 
+// 工具：將 Hex 色碼轉換為帶有透明度的 RGBA (以渲染半透明的外圍光圈)
+// 工具：將 Hex 色碼轉換為帶有透明度的 RGBA (修正長度判斷 Bug)
+const hexToRgba = (hex: any, alpha: number) => {
+    if (!hex) return `rgba(144, 147, 153, ${alpha})`; 
+    let colorStr = String(hex); 
+    if (colorStr.startsWith('rgba') || colorStr.startsWith('rgb')) {
+        return colorStr;
+    }
+    
+    // 移除 # 號，此時 colorStr 長度變成 6 (例如 F56C6C)
+    colorStr = colorStr.replace('#', '');
+    let r = 0, g = 0, b = 0;
+    
+    // ✅ 這裡必須用 colorStr.length 來判斷
+    if (colorStr.length === 3) {
+        r = parseInt(colorStr[0] + colorStr[0], 16);
+        g = parseInt(colorStr[1] + colorStr[1], 16);
+        b = parseInt(colorStr[2] + colorStr[2], 16);
+    } else if (colorStr.length === 6) {
+        r = parseInt(colorStr.substring(0, 2), 16);
+        g = parseInt(colorStr.substring(2, 4), 16);
+        b = parseInt(colorStr.substring(4, 6), 16);
+    } else {
+        return `rgba(144, 147, 153, ${alpha})`; // 解析失敗才給灰色
+    }
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 // 動態更新車輛 marker
 function updateVehicleMarkers() {
     if (!vehicleLayer.value) return
@@ -188,33 +176,38 @@ function updateVehicleMarkers() {
         source.clear()
     }
     const vehicles = props.mapModel.Vehicles || []
-    vehicles.forEach((vehicle: { id: string|number, x: number, y: number }) => {
-        // 白光底層
+    
+    vehicles.forEach((vehicle: any) => {
+        // 抓取外層給的 color 屬性，若無則給灰色預設值
+        const vehicleColor = vehicle.color || vehicle.Color || '#909399';
+        
+        // 白光底層 (外圍光圈)
         const glowFeature = new Feature({
             geometry: new Point([vehicle.x, vehicle.y])
         })
         glowFeature.setStyle(new Style({
             image: new Circle({
                 radius: 22,
-                fill: new Fill({ color: 'rgba(0,255,100,0.35)' }), // 綠色透明光
-                stroke: new Stroke({ color: 'rgba(0,255,100,0.6)', width: 0 })
+                fill: new Fill({ color: hexToRgba(vehicleColor, 0.35) }), 
+                stroke: new Stroke({ color: hexToRgba(vehicleColor, 0.6), width: 0 })
             }),
             zIndex: 2000,
         }))
+        
         // icon 圖層
         const iconFeature = new Feature({
             geometry: new Point([vehicle.x, vehicle.y])
         })
         iconFeature.setStyle(new Style({
             image: new Icon({
-                src: '/AGV.png',
+                src: vehicle.image || vehicle.img || '/AGV.png',
                 scale: 0.9
             }),
             text: new Text({
                 text: String(vehicle.id),
                 offsetY: -30,
                 font: 'bold 14px Arial',
-                fill: new Fill({ color: 'rgba(0,255,0,0.6)' }), // 透明綠色文字
+                fill: new Fill({ color: vehicleColor }), // 頭頂文字顏色同步
                 stroke: new Stroke({ color: '#333', width: 2 })
             }),
             zIndex: 999999,
@@ -232,13 +225,13 @@ watch(
     },
     { deep: true }
 )
+
 // 監聽 pathUseStats 變動，動態重繪路線
 watch(
   () => props.pathUseStats,
   () => {
     if (map.value) {
       // 清除舊路線圖層
-      // 你可以用 getLayers().clear() 或只移除路線圖層
       map.value.getLayers().clear()
       addPathLines()
       addPoints()
@@ -248,6 +241,7 @@ watch(
   },
   { deep: true }
 )
+
 const addPoints = () => {
     const features = createMapPointFeatures(props.mapModel)
     const layer = createLayerWithFeatures(features)
@@ -435,6 +429,6 @@ const createMapPathLineFeatures = (mapModel: MapModel) => {
         return feature;
     });
 };
+</script>
 
-</script> ,
 <style scoped></style>
