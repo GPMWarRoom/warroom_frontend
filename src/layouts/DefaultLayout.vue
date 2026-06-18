@@ -47,7 +47,7 @@
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
-                <el-dropdown>
+                <el-dropdown v-if="false">
                     <span class="user-profile"> {{ userName }} <el-icon>
                             <ArrowDown />
                         </el-icon>
@@ -84,7 +84,7 @@
                         </keep-alive>
                     </router-view>
                 </ContentContainer>
-                <feedbackForm></feedbackForm>
+                <feedbackForm v-if="false"></feedbackForm>
             </main>
         </div>
     </div>
