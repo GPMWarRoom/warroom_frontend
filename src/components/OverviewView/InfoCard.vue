@@ -14,7 +14,7 @@
           class="device-card"
           :class="{
             'has-alarm': devices.SystemAlarms?.length,
-            'not-alive': !devices.Alive.isAlive || !devices.Alive.isVMSAlive,
+            'not-alive': !devices.Alive.isVMSAlive,
           }"
           @dblclick="gotoAGVC(devices.Channel)"
         >
@@ -29,9 +29,6 @@
             <div class="error-tag">
               <template v-if="devices.SystemAlarms && devices.SystemAlarms.length">
                 <el-tag type="danger" effect="plain" size="small">警報</el-tag>
-              </template>
-              <template v-if="!devices.Alive.isAlive">
-                <el-tag type="warning" effect="plain" size="small">通訊異常</el-tag>
               </template>
               <template v-if="!devices.Alive.isVMSAlive">
                 <el-tag type="warning" effect="plain" size="small">派車系統異常</el-tag>
