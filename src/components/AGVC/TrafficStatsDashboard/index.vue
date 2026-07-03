@@ -5,10 +5,9 @@
                 <div class="card">
                     <h3>停等狀態統計</h3>
                     <div class="content">
-                        <TagStopStatsMap class="h-100 w-100" v-if="showMap"
+                        <TagStopStatsMap class="h-100 w-100"
                             mapId="map1" 
-                            :map-model="realTimeData.AGVC_TrafficStats_mapModel"
-                            :key="mapModelKey" />
+                            :map-model="realTimeData.AGVC_TrafficStats_mapModel" />
                     </div>
                 </div>
             </div>
@@ -16,10 +15,9 @@
                 <div class="card">
                     <h3>路線使用統計</h3>
                     <div class="content">
-                        <PathUseStatsMap class="h-100 w-100" v-if="showMap"
+                        <PathUseStatsMap class="h-100 w-100"
                             mapId="map2" 
-                            :map-model="realTimeData.AGVC_TrafficStats_mapModel"
-                            :key="mapModelKey" />
+                            :map-model="realTimeData.AGVC_TrafficStats_mapModel" />
                     </div>
                 </div>
             </div>
@@ -30,23 +28,8 @@
 import PathUseStatsMap from '../maps/PathUseStatsMap.vue'
 import TagStopStatsMap from '../maps/TagStopStatsMap.vue'
 import { realTimeStore } from '@/stores/realTime'
-import { ref, watch } from 'vue'
 
 const realTimeData = realTimeStore()
-const mapModelKey = ref(Date.now())
-
-const showMap = ref(false)
-watch(
-  () => realTimeData.AGVC_TrafficStats_mapModel,
-  (val) => {
-    if (val && val.Map) {
-      showMap.value = false
-      setTimeout(() => { showMap.value = true }, 0)
-    }
-  },
-  { deep: true }
-)
-
 </script>
 <style scoped lang="scss">
 .traffic-stats-dashboard {

@@ -383,7 +383,9 @@ const showMap = ref(false)
 watch(
   () => realTimeData.AGVC_TrafficStats_mapModel,
   (val) => {
-    if (val && val.Map) {
+    // 偵測地圖資料，無論是直接的 Map 物件或是包在 .Map 屬性中
+    // 使用 'in' 運算子來安全地檢查屬性是否存在，避免 TypeScript 編譯錯誤
+    if (val && ('Points' in val || 'Map' in val)) {
       showMap.value = false
       mapModelKey.value = Date.now()
       setTimeout(() => { showMap.value = true }, 0)

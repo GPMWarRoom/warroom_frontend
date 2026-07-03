@@ -124,6 +124,7 @@ const realTimeData = realTimeStore()
 
 function gotoAGVC(agvc: string) {
   realTimeData.selectedAgvc = agvc
+  localStorage.setItem('agvc_selected_field', agvc) // 新增這行：同步更新 localStorage
   router.push('/AGVC')
 }
 function getBatteryColor(level: number) {

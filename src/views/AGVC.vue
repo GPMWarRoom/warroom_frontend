@@ -13,7 +13,7 @@
                                 <LocationFilled />
                             </el-icon>
                             <span class="select-agvc-label">場域</span>
-                            <el-select v-model="realTimeData.selectedAgvc" @change="handleAgvcChange">
+                            <el-select v-model="realTimeData.selectedAgvc">
                                 <el-option v-for="item in agvcList" :key="item.value" :label="item.name" :value="item.value" />
                             </el-select>
                         </div>
@@ -26,7 +26,7 @@
                         </el-icon>
                         <span>即時監控</span>
                     </template>
-                    <RealTimeDashboard v-if="activeTab === 'monitor'" class="tab-content-component" 
+                    <RealTimeDashboard class="tab-content-component" 
                         @show-equipment-status="handleShowEquipmentStatus" @realtime-action="handleRealtimeAction"/>
                 </el-tab-pane>
                 <el-tab-pane :lazy="true" name="traffic-stats">
@@ -36,7 +36,7 @@
                         </el-icon>
                         <span>交管狀態</span>
                     </template>
-                    <TrafficStatsDashboard v-if="activeTab === 'traffic-stats' && realTimeData.AGVC_TrafficStats_mapModel" class="tab-content-component" ref="TrafficStatsRef"/>
+                    <TrafficStatsDashboard class="tab-content-component" ref="TrafficStatsRef"/>
                 </el-tab-pane>
                 <el-tab-pane :lazy="true" name="traffic-efficiency">
                     <template #label>
@@ -45,7 +45,7 @@
                         </el-icon>
                         <span>搬運效能統計</span>
                     </template>
-                    <TrafficEfficiencyDashboard v-if="activeTab === 'traffic-efficiency'" class="tab-content-component" 
+                    <TrafficEfficiencyDashboard class="tab-content-component" 
                         @selector-change="() => _Init()" @loadHistoryTasks="loadHistoryTasks" :connection="connection"/>
                 </el-tab-pane>
                 <el-tab-pane name="utilization" :lazy="true">
@@ -55,7 +55,7 @@
                         </el-icon>
                         <span>設備稼動</span>
                     </template>
-                    <UtilizationDashboard v-if="activeTab === 'utilization'" class="tab-content-component" />
+                    <UtilizationDashboard class="tab-content-component" />
                 </el-tab-pane>
                 <el-tab-pane name="RackHistory" :lazy="true">
                     <template #label>
@@ -64,7 +64,7 @@
                         </el-icon>
                         <span>水位紀錄</span>
                     </template>
-                    <RackHistory v-if="activeTab === 'RackHistory'" class="tab-content-component" />
+                    <RackHistory class="tab-content-component" />
                 </el-tab-pane>
                 <el-tab-pane name="utilizationEQ" :lazy="true">
                     <template #label>
@@ -73,7 +73,7 @@
                         </el-icon>
                         <span>週邊設備</span>
                     </template>
-                    <UtilizationEQDashboard v-if="activeTab === 'utilizationEQ'" class="tab-content-component" @realtime-action="handleUtilizationEQRealtimeAction"/>
+                    <UtilizationEQDashboard class="tab-content-component" @realtime-action="handleUtilizationEQRealtimeAction"/>
                 </el-tab-pane>
                 
                 <!-- <el-tab-pane label="任務管理" name="tasks">
@@ -158,31 +158,44 @@ watch(isConnected, async (newVal) => {
         await _Init();
     }
 });
+// 新增監聽 Store 中 selectedAgvc 的變化
+watch(
+  () => realTimeData.selectedAgvc,
+  async (newVal, oldVal) => {
+    // 確保有新值，且新舊值不同時才觸發 (避免初始載入重複觸發)
+    if (newVal && oldVal && newVal !== oldVal) {
+      await handleAgvcChange(newVal);
+    }
+  }
+);
 function handleReceiveChannels(schemas: any) {
     if (!schemas || schemas.length === 0) return;
 
-    // 自動判斷並轉換格式：如果後端傳的是純字串 ["Area1", "Area2"]，自動轉成 { name, value }
+    // 自動判斷並轉換格式
     const formattedSchemas = schemas.map((item: any) => {
         if (typeof item === 'string') {
             return { name: item, value: item };
         }
-        return item; // 如果已經是 { name: '..', value: '..' } 就直接用
+        return item; 
     });
 
     agvcList.value = formattedSchemas;
     
-    // 嘗試從 localStorage 取得上次儲存的場域
-    const savedAgvc = localStorage.getItem('agvc_selected_field');
-    let targetAgvc = formattedSchemas[0].value;
-    if (savedAgvc && formattedSchemas.some((item: any) => item.value === savedAgvc)) {
-        targetAgvc = savedAgvc;
+    // 1. 優先使用目前 Store 中的場域 (從 InfoCard 點擊帶過來的)
+    let targetAgvc = realTimeData.selectedAgvc;
+
+    // 2. 如果 Store 沒有值，或是不在授權清單內，才嘗試從 localStorage 取得
+    if (!targetAgvc || !formattedSchemas.some((item: any) => item.value === targetAgvc)) {
+        const savedAgvc = localStorage.getItem('agvc_selected_field');
+        targetAgvc = formattedSchemas[0].value;
+        if (savedAgvc && formattedSchemas.some((item: any) => item.value === savedAgvc)) {
+            targetAgvc = savedAgvc;
+        }
     }
 
-    // 避免重複觸發：僅在沒有選擇或選擇有變動時才觸發更新
-    if (!realTimeData.selectedAgvc || realTimeData.selectedAgvc !== targetAgvc) {
-        realTimeData.selectedAgvc = targetAgvc;
-        handleAgvcChange(targetAgvc);
-    }
+    // 核心修正：確保狀態正確賦值並強制重新抓取地圖與資料
+    realTimeData.selectedAgvc = targetAgvc;
+    handleAgvcChange(targetAgvc);
 }
 
 function handleShowEquipmentStatus({ id, type }) {
@@ -297,21 +310,29 @@ async function handleRealtimeAction(payload: any) {
 
 async function loadHistoryTasks(resolve: () => void) {
     try {
-        const mapData = await getMap(realTimeData.selectedAgvc)
-        if (mapData) {
-            realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData))
-        }
-    } catch (e) {
-        realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
-    }
-    try {
         const sel = realTimeData.AGVC_TrafficEfficiency_Selector;
+        const currentAgvc = realTimeData.selectedAgvc;
         const formattedDateRange = realTimeData.DateRange && realTimeData.DateRange.length >= 2 ? [
             dayjs(realTimeData.DateRange[0]).format('YYYY-MM-DD HH:mm:ss'),
             dayjs(realTimeData.DateRange[1]).format('YYYY-MM-DD HH:mm:ss')
         ] : [];
+        
+        // ★★★ 核心修正：載入歷史任務時，同步確保地圖已經被抓取
+        // 如果 Vuex 中沒有地圖資料，就在這裡主動 call API
+        if (!realTimeData.AGVC_TrafficStats_mapModel && currentAgvc) {
+            try {
+                const mapData = await getMap(currentAgvc);
+                if (mapData) {
+                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData));
+                }
+            } catch (e) {
+                console.error("載入歷史任務時，地圖獲取失敗", e);
+            }
+        }
+
+        // 繼續獲取歷史任務資料
         const res = await getTransferAvailabilitys(
-            realTimeData.selectedAgvc, 
+            currentAgvc, 
             formattedDateRange,
             sel?.unloadEQ, 
             sel?.source,    
@@ -337,46 +358,36 @@ async function _Init() {
     const sel = realTimeData.AGVC_TrafficEfficiency_Selector;
 
     try {
+        // ★★★ 核心修正：統一在這裡詢問地圖 API，只要 Vuex 裡沒地圖才去抓，所有頁籤共用 ★★★
+        if (!realTimeData.AGVC_TrafficStats_mapModel) {
+            try {
+                const mapData = await getMap(currentAgvc);
+                if (mapData) {
+                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData));
+                }
+            } catch (e) {
+                console.error("地圖獲取失敗", e);
+                realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null);
+            }
+        }
+
         switch (currentTab) {
             case 'monitor':
                 await connection.value?.invoke('InitDataByTab');
-                try {
-                    const mapData = await getMap(currentAgvc)
-                    if (mapData) {
-                        realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData))
-                    }
-                } catch (e) {
-                    // 地圖抓不到就不更新
-                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
-                }
+                // 這裡不用再 getMap 了！
                 break;
             case 'traffic-stats':
-                await connection.value?.invoke('InitDataByTab');
                 try {
-                    const mapData = await getMap(currentAgvc)
-                    if (mapData) {
-                        realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData))
-                    }
+                    await connection.value?.invoke('InitDataByTab');
+                    // 這裡不用再 Promise.all 去 getMap 了！只抓交管數據
+                    const trafficRes = await getTrafficAvailabilitys(currentAgvc, currentRange);
+                    const trafficData = trafficRes?.data || trafficRes;
+                    if (trafficData) handleReceiveTrafficStats(trafficData);
                 } catch (e) {
-                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
-                }
-                try {
-                    const res = await getTrafficAvailabilitys(currentAgvc, currentRange);
-                    const data = res?.data || res;
-                    if (data) handleReceiveTrafficStats(data);
-                } catch(e) {
-                    console.error('API Error:', e);
+                    console.error('API Error in traffic-stats:', e);
                 }
                 break;
             case 'traffic-efficiency':
-                try {
-                    const mapData = await getMap(currentAgvc)
-                    if (mapData) {
-                        realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData))
-                    }
-                } catch (e) {
-                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
-                }
                 try {
                     const res = await getTransferAvailabilitys(
                         currentAgvc, 
@@ -384,7 +395,7 @@ async function _Init() {
                         sel?.unloadEQ, 
                         sel?.source,    
                         sel?.target,
-                        false // 是否需要撈TaskList
+                        false 
                     );
                     const data = res?.data || res;
                     if (data) handleAGVEfficiency(data);
@@ -425,6 +436,10 @@ async function _Init() {
 }
 async function handleAgvcChange(value: string) {
     localStorage.setItem('agvc_selected_field', value);
+    
+    // ★★★ 核心修正：切換場域時，強制清空舊地圖快取，讓 _Init() 可以重新抓取新場域的地圖 ★★★
+    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null);
+    
     await subscribeToSchema(value, activeTab.value)
     await _Init()
     
@@ -549,38 +564,46 @@ function handleReceiveAliveCheck(result: any) {
 function handleReceiveTrafficStats(result: any) {
     if (!result) return;
     const stats = result.tagStopStats || result.TagStopStats || []
-     realTimeData.updateRealTimeData('AGVC_TrafficStats_tagStopStats', stats)
+    realTimeData.updateRealTimeData('AGVC_TrafficStats_tagStopStats', stats)
+    
     const colorMap: Record<string, { color: string, avgdurationseconds: number }> = {}
     stats.forEach((s: any) => {
         const tag = s.tag || s.Tag;
         if (tag === undefined || tag === null) return;
-        // 0-8, 8-16, 16-24, 24-32, >32
         let color = ''
         const duration = s.avgdurationseconds || s.AvgDurationSeconds || 0;
-        if (duration <= 8) color = 'rgba(0,200,83,0.8)'; // 綠
-        else if (duration <= 16) color = 'rgba(255,214,0,0.8)'; // 黃
-        else if (duration <= 24) color = 'rgba(255,160,0,0.8)'; // 橘
-        else if (duration <= 32) color = 'rgba(255,87,34,0.8)'; // 橘紅
-        else color = 'rgba(229,57,53,0.8)'; // 紅 >32
-        colorMap[String(tag)] = {
-            color,
-            avgdurationseconds: duration
-        }
+        if (duration <= 8) color = 'rgba(0,200,83,0.8)'; 
+        else if (duration <= 16) color = 'rgba(255,214,0,0.8)'; 
+        else if (duration <= 24) color = 'rgba(255,160,0,0.8)'; 
+        else if (duration <= 32) color = 'rgba(255,87,34,0.8)'; 
+        else color = 'rgba(229,57,53,0.8)'; 
+        colorMap[String(tag)] = { color, avgdurationseconds: duration }
     })
-    const points = realTimeData.AGVC_TrafficStats_mapModel?.Map?.Points || {}
+
+    const mapModel: any = realTimeData.AGVC_TrafficStats_mapModel || {};
+    const mapData = mapModel?.Points ? mapModel : (mapModel?.Map || {});
+    const points = mapData?.Points || {};
+    
     Object.values(points).forEach((point: any) => {
         const info = colorMap[String(point.TagNumber)]
         if (info) {
             point.TagStopColor = info.color
-            point.TagStopInfo = info // 這裡存整個物件，hover 可用
+            point.TagStopInfo = info 
         } else {
             point.TagStopColor = 'rgba(255,255,255,.2)'
             point.TagStopInfo = null
         }
     })
+    
+    // ★ 核心修正：將解構後的新物件重新用 markRaw 包裹，再更新至 Store ★
+    // 這樣做既能改變物件引用（Reference）觸發地圖元件的 watch 繪製，又能防止 Vue 進去深度監聽導致卡死
     if (realTimeData.AGVC_TrafficStats_mapModel) {
-        realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', { ...realTimeData.AGVC_TrafficStats_mapModel });
+        realTimeData.updateRealTimeData(
+            'AGVC_TrafficStats_mapModel', 
+            markRaw({ ...realTimeData.AGVC_TrafficStats_mapModel })
+        );
     }
+    
     const pathStats = result.pathUseStats || result.PathUseStats || []
     const counts = pathStats.map((s: any) => s.count || s.Count || 0)
     const minCount = counts.length ? Math.min(...counts) : 0
@@ -590,20 +613,11 @@ function handleReceiveTrafficStats(result: any) {
         const countVal = s.count || s.Count || 0;
         const ratio = maxCount === minCount ? 0 : (countVal - minCount) / (maxCount - minCount)
         const colorSteps = [
-            'rgba(0,200,83,0.8)',    // 綠
-            'rgba(255,214,0,0.8)',   // 黃
-            'rgba(255,160,0,0.8)',   // 橘
-            'rgba(255,87,34,0.8)',   // 橘紅
-            'rgba(229,57,53,0.8)'    // 紅
+            'rgba(0,200,83,0.8)', 'rgba(255,214,0,0.8)', 'rgba(255,160,0,0.8)', 
+            'rgba(255,87,34,0.8)', 'rgba(229,57,53,0.8)'
         ]
-        let colorIdx = 0
-        if (ratio >= 0.8) colorIdx = 4
-        else if (ratio >= 0.6) colorIdx = 3
-        else if (ratio >= 0.4) colorIdx = 2
-        else if (ratio >= 0.2) colorIdx = 1
-        else colorIdx = 0
-        const color = colorSteps[colorIdx]
-        pathUseStatsMap[`${s.tagA || s.TagA}-${s.tagB || s.TagB}`] = { count: countVal, color }
+        let colorIdx = ratio >= 0.8 ? 4 : ratio >= 0.6 ? 3 : ratio >= 0.4 ? 2 : ratio >= 0.2 ? 1 : 0;
+        pathUseStatsMap[`${s.tagA || s.TagA}-${s.tagB || s.TagB}`] = { count: countVal, color: colorSteps[colorIdx] }
     })
     realTimeData.updateRealTimeData('AGVC_TrafficStats_pathUseStats', pathUseStatsMap)
 }
@@ -672,12 +686,6 @@ onMounted(async () => {
     try {
         if (isConnected.value) {
             await connection.value?.invoke('GetChannels');
-        }
-        
-        // 頁面開啟時立刻查詢：若已經有選擇的場域，確保資料保持最新狀態
-        if (realTimeData.selectedAgvc) {
-            await subscribeToSchema(realTimeData.selectedAgvc, activeTab.value)
-            await _Init()
         }
     } catch (err) {
         console.error('❌ SignalR 錯誤：', err)
