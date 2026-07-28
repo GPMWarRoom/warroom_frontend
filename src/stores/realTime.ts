@@ -62,6 +62,14 @@ export const realTimeStore = defineStore('realTime', {
         } as Query,
         Overview_Data: [] as any[],
         RackHistory: [] as any[],
+        BatteryRecords: {
+            agvList: [] as string[],
+            selectedAgv: '',
+            date: '',
+            points: [] as any[],
+            statusPeriods: [] as any[],
+            statusSummary: {} as Record<string, number>
+        },
         AGVC_TrafficStats_mapModel: defaultMapModel as typeof defaultMapModel,
         DateRange: calculateInitialDateRange() as [Date, Date],
     }),

@@ -67,11 +67,12 @@ const getAgvColor = (status: any) => {
 
     const s = String(status).toUpperCase();
 
-    // 🚨 修正核心：完全對齊後端 EQService.cs 的數字定義 🚨
-    if (s === '0') return '#E6A23C'; // 0 => idle (黃色待命)
-    if (s === '1') return '#67C23A'; // 1 => run (綠色運行)
-    if (s === '2') return '#F56C6C'; // 2 => down (紅色異常)
-    if (s === '3') return '#409EFF'; // 3 => charging (藍色充電)
+    // EQStatus_AGV.Status（與 RealTimeAvailabilitys MAIN_STATUS 不同）:
+    // 0 idle, 1 run, 2 down, 3 charging
+    if (s === '0') return '#E6A23C'; // idle
+    if (s === '1') return '#67C23A'; // run
+    if (s === '2') return '#F56C6C'; // down
+    if (s === '3') return '#409EFF'; // charging
 
     // 備用防呆：字串比對
     if (['DOWN', 'ALARM', 'ERROR', 'FAULT', 'WARN'].some(k => s.includes(k))) return '#F56C6C'; 
@@ -92,7 +93,7 @@ const getAgvStateNumber = (status: any) => {
 
     const s = String(status).toUpperCase();
     
-    // 對齊後端數字
+    // EQStatus_AGV 數字
     if (s === '0') return 0; // idle
     if (s === '1') return 1; // run
     if (s === '2') return 2; // down

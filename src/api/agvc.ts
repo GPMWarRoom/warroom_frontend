@@ -40,6 +40,14 @@ export function getWipHistory(schema: string, dateRange: any[]): Promise<any> {
     });
 }
 
+export function getBatteryRecords(schema: string, agvName?: string, date?: string): Promise<any> {
+    return post('/api/AGVC/BatteryRecords', {
+        schema,
+        agvName: agvName || '',
+        date: date || ''
+    }, { timeout: 60000 });
+}
+
 export function queryUtilizationEQ(schema: string, target: string, dateRange: any[], params: any): Promise<any> {
     return post('/api/AGVC/UtilizationEQ', {
         schema,

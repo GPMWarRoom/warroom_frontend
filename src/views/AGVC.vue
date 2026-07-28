@@ -66,6 +66,15 @@
                     </template>
                     <RackHistory class="tab-content-component" />
                 </el-tab-pane>
+                <el-tab-pane name="battery-records" :lazy="true">
+                    <template #label>
+                        <el-icon>
+                            <List />
+                        </el-icon>
+                        <span>電池紀錄</span>
+                    </template>
+                    <BatteryRecords class="tab-content-component" ref="BatteryRecordsRef" />
+                </el-tab-pane>
                 <el-tab-pane name="utilizationEQ" :lazy="true">
                     <template #label>
                         <el-icon>
@@ -107,7 +116,7 @@
                 <RackStatus v-else-if="equipmentType === 'rack'" :id="selectedEquipmentId" @back="showEquipmentDrawer = false"/>
             </el-drawer>
 
-            <div class="date-select" v-if="!['monitor', 'utilizationEQ'].includes(activeTab)">
+            <div class="date-select" v-if="!['monitor', 'utilizationEQ', 'battery-records'].includes(activeTab)">
                 <el-date-picker v-model="localDateRange" type="daterange" range-separator="至" start-placeholder="開始日期" end-placeholder="結束日期" @change="handleDateRangeChange"/>
                 <el-button style="margin: 0px 2px" @click="() => _Init()">查詢</el-button>
             </div>
@@ -115,7 +124,7 @@
     </content-container>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, markRaw } from 'vue'
+import { ref, onMounted, onUnmounted, watch, markRaw, nextTick } from 'vue'
 import { Monitor, List, LocationFilled } from '@element-plus/icons-vue'
 import { ElNotification, ElMessage } from 'element-plus'
 import ContentContainer from '../components/ContentContainer.vue'
@@ -125,6 +134,7 @@ import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDash
 import UtilizationDashboard from '../components/AGVC/UtilizationDashboard/index.vue'
 import UtilizationEQDashboard from '../components/AGVC/UtilizationEQDashboard/index.vue'
 import RackHistory from '@/components/EquipmentStatus/Rack/RackHistory.vue'
+import BatteryRecords from '@/components/EquipmentStatus/AGV/BatteryRecords.vue'
 import { uiStatsStore } from '../stores/UiStats'
 import { realTimeStore } from '../stores/realTime'
 import { useSignalR } from '@/composables/useSignalR'
@@ -134,7 +144,7 @@ import RackStatus from '@/components/EquipmentStatus/Rack/index.vue'
 import { useAlarmStore } from '@/stores/alert'
 import dayjs from 'dayjs'
 import { csvExportAPI } from '@/api/csvExport';
-import { getTrafficAvailabilitys, getTransferAvailabilitys, getEqpAvailabilitys, getWipHistory,queryUtilizationEQ, queryHistoryAction } from '@/api/agvc' // 請確認此引入路徑是否符合您的專案結構
+import { getTrafficAvailabilitys, getTransferAvailabilitys, getEqpAvailabilitys, getWipHistory, getBatteryRecords, queryUtilizationEQ, queryHistoryAction } from '@/api/agvc'
 
 const alarmStore = useAlarmStore()
 const showEquipmentDrawer = ref(false)
@@ -144,6 +154,7 @@ const selectedEquipmentId = ref(null)
 const { on, off, connection, isConnected } = useSignalR()
 
 const TrafficStatsRef = ref()
+const BatteryRecordsRef = ref()
 const realTimeData = realTimeStore()
 const loading = ref(realTimeData.loading)
 const activeTab = ref('monitor')
@@ -348,8 +359,10 @@ async function loadHistoryTasks(resolve: () => void) {
 }
 
 async function _Init() {
-    loading.value = true
     const currentTab = activeTab.value;
+    // 電池紀錄頁由元件自行 loading，避免全頁遮罩擋住車輛下拉選單
+    const usePageLoading = currentTab !== 'battery-records'
+    if (usePageLoading) loading.value = true
     const currentRange = realTimeData.DateRange && realTimeData.DateRange.length >= 2 ? [
         dayjs(realTimeData.DateRange[0]).format('YYYY-MM-DD HH:mm:ss'),
         dayjs(realTimeData.DateRange[1]).format('YYYY-MM-DD HH:mm:ss')
@@ -426,13 +439,34 @@ async function _Init() {
                     console.error('API Error:', e);
                 }
                 break;
+            case 'battery-records':
+                try {
+                    // 進入頁籤 / 切換場域後：依目前 schema 向後端取 AgvStates 預設車輛與昨日資料
+                    await nextTick()
+                    if (BatteryRecordsRef.value?.reloadDefault) {
+                        await BatteryRecordsRef.value.reloadDefault()
+                    } else if (BatteryRecordsRef.value?.loadBySchema) {
+                        await BatteryRecordsRef.value.loadBySchema(true)
+                    } else {
+                        const res = await getBatteryRecords(
+                            currentAgvc,
+                            '',
+                            dayjs().subtract(1, 'day').format('YYYY-MM-DD')
+                        )
+                        const data = res?.data || res
+                        if (data) handleReceiveBatteryRecords(data)
+                    }
+                } catch(e) {
+                    console.error('API Error:', e);
+                }
+                break;
         }
 
     } catch (err) {
         console.error(err);
     }
 
-    loading.value = false
+    if (usePageLoading) loading.value = false
 }
 async function handleAgvcChange(value: string) {
     localStorage.setItem('agvc_selected_field', value);
@@ -645,6 +679,18 @@ function handleReceiveRealtimeAction(result: any) {
 
 function handleReceiveRackHistory(result: any) {
     realTimeData.updateRealTimeData('RackHistory', result)
+}
+
+function handleReceiveBatteryRecords(result: any) {
+    if (!result) return
+    realTimeData.updateRealTimeData('BatteryRecords', {
+        agvList: result.agvList || result.AgvList || [],
+        selectedAgv: result.selectedAgv || result.SelectedAgv || '',
+        date: result.date || result.Date || '',
+        points: result.points || result.Points || [],
+        statusPeriods: result.statusPeriods || result.StatusPeriods || [],
+        statusSummary: result.statusSummary || result.StatusSummary || {}
+    })
 }
 
 let intervalId: ReturnType<typeof setInterval> | null = null
