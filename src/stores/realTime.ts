@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia'
 import dayjs from 'dayjs'
-import { defaultMapModel } from '@/models/MapModel'
-import { reset } from 'ol/transform'
 interface SysStatus {
     RunMode: boolean
     HostConnMode: boolean
@@ -70,7 +68,7 @@ export const realTimeStore = defineStore('realTime', {
             statusPeriods: [] as any[],
             statusSummary: {} as Record<string, number>
         },
-        AGVC_TrafficStats_mapModel: defaultMapModel as typeof defaultMapModel,
+        AGVC_TrafficStats_mapModel: null as any,
         DateRange: calculateInitialDateRange() as [Date, Date],
     }),
 

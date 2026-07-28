@@ -135,6 +135,8 @@ const renderMapAll = () => {
             updateTaskPath(props.taskPath);
         }
     } else {
+        // 無有效地圖時清空圖層，避免殘留其他場域內容
+        clearAllLayers();
         console.warn("無法解析地圖資料結構，請確認 JSON 格式", props.mapModel);
     }
 }
@@ -280,8 +282,8 @@ const clearAllLayers = () => {
 watch(
     () => props.mapModel,
     (newMapModel) => {
-        // 確保 mapModel 有值且不為空物件時才進行繪製
-        if (newMapModel && Object.keys(newMapModel).length > 0) {
+        const hasMapData = !!(newMapModel?.Map || newMapModel?.Points);
+        if (hasMapData) {
             renderMapAll();
         } else {
             // 當地圖資料為 null 或空時，清除所有圖層，避免顯示舊地圖。

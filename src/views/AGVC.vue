@@ -318,6 +318,39 @@ async function handleRealtimeAction(payload: any) {
     await handleExportAction('AGVC_Realtime_Action', payload);
 }
 
+/** 作廢進行中地圖請求，避免切換場域後舊回應覆蓋 */
+let mapFetchSeq = 0
+
+function isValidMapModel(data: any): boolean {
+    if (!data || typeof data !== 'object') return false
+    // 後端可能回 { Map: {...} }，也可能直接回含 Points 的地圖本體
+    return !!(data.Map || data.Points)
+}
+
+async function fetchMapForAgvc(agvc: string) {
+    if (!agvc) {
+        realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
+        return
+    }
+    const seq = ++mapFetchSeq
+    const requestedAgvc = agvc
+    try {
+        const mapData = await getMap(requestedAgvc)
+        // 場域已切換或有更新的請求：忽略此回應
+        if (seq !== mapFetchSeq || realTimeData.selectedAgvc !== requestedAgvc) return
+        // 與原先行為一致：只要有回傳資料就採用；結構交由地圖元件解析
+        if (mapData) {
+            realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData))
+        } else {
+            realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
+        }
+    } catch (e) {
+        console.error('地圖獲取失敗', e)
+        if (seq === mapFetchSeq && realTimeData.selectedAgvc === requestedAgvc) {
+            realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null)
+        }
+    }
+}
 
 async function loadHistoryTasks(resolve: () => void) {
     try {
@@ -328,17 +361,9 @@ async function loadHistoryTasks(resolve: () => void) {
             dayjs(realTimeData.DateRange[1]).format('YYYY-MM-DD HH:mm:ss')
         ] : [];
         
-        // ★★★ 核心修正：載入歷史任務時，同步確保地圖已經被抓取
-        // 如果 Vuex 中沒有地圖資料，就在這裡主動 call API
-        if (!realTimeData.AGVC_TrafficStats_mapModel && currentAgvc) {
-            try {
-                const mapData = await getMap(currentAgvc);
-                if (mapData) {
-                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData));
-                }
-            } catch (e) {
-                console.error("載入歷史任務時，地圖獲取失敗", e);
-            }
+        // 載入歷史任務時，同步確保地圖已經被抓取；失敗則清空，避免殘留其他場域地圖
+        if (!isValidMapModel(realTimeData.AGVC_TrafficStats_mapModel) && currentAgvc) {
+            await fetchMapForAgvc(currentAgvc);
         }
 
         // 繼續獲取歷史任務資料
@@ -371,17 +396,9 @@ async function _Init() {
     const sel = realTimeData.AGVC_TrafficEfficiency_Selector;
 
     try {
-        // ★★★ 核心修正：統一在這裡詢問地圖 API，只要 Vuex 裡沒地圖才去抓，所有頁籤共用 ★★★
-        if (!realTimeData.AGVC_TrafficStats_mapModel) {
-            try {
-                const mapData = await getMap(currentAgvc);
-                if (mapData) {
-                    realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', markRaw(mapData));
-                }
-            } catch (e) {
-                console.error("地圖獲取失敗", e);
-                realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null);
-            }
+        // 統一在這裡詢問地圖 API，只要沒有地圖才去抓，所有頁籤共用；失敗則不顯示地圖
+        if (!isValidMapModel(realTimeData.AGVC_TrafficStats_mapModel) && currentAgvc) {
+            await fetchMapForAgvc(currentAgvc);
         }
 
         switch (currentTab) {
@@ -471,7 +488,7 @@ async function _Init() {
 async function handleAgvcChange(value: string) {
     localStorage.setItem('agvc_selected_field', value);
     
-    // ★★★ 核心修正：切換場域時，強制清空舊地圖快取，讓 _Init() 可以重新抓取新場域的地圖 ★★★
+    // 切換場域時立刻清空舊地圖；進行中的請求由 fetchMapForAgvc 的序號自動作廢
     realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null);
     
     await subscribeToSchema(value, activeTab.value)

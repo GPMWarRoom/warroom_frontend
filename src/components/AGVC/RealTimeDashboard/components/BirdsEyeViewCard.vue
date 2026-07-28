@@ -13,13 +13,13 @@
             <div class="map-body">
                 <BirdViewMap 
                     class="h-100 w-100" 
-                    v-if="showMap"
+                    v-if="showMap && mapModelWithVehicles"
                     mapId="map3" 
                     :map-model="mapModelWithVehicles"
                     :key="mapModelKey" 
                 />
                 <div v-else class="loading-placeholder">
-                    載入地圖中...
+                    {{ mapPlaceholderText }}
                 </div>
             </div>
         </el-card>
@@ -35,12 +35,15 @@
         >
             <div class="expanded-map-container">
                 <BirdViewMap 
-                    v-if="isExpanded"
+                    v-if="isExpanded && showMap && mapModelWithVehicles"
                     class="h-100 w-100" 
                     mapId="map-expanded" 
                     :map-model="mapModelWithVehicles"
                     :key="mapModelKey + '_expanded'" 
                 />
+                <div v-else-if="isExpanded" class="loading-placeholder">
+                    {{ mapPlaceholderText }}
+                </div>
             </div>
         </el-dialog>
     </div>
@@ -108,7 +111,10 @@ const getAgvStateNumber = (status: any) => {
 
 const mapModelWithVehicles = computed(() => {
     const mapModel = realTimeData.AGVC_TrafficStats_mapModel;
-    const points = mapModel?.Map?.Points || {};
+    // 無有效地圖時不組車輛資料，避免沿用上一場域圖層
+    if (!mapModel || !(mapModel.Map || mapModel.Points)) return null;
+
+    const points = mapModel.Map?.Points || mapModel.Points || {};
     
     const agvList = realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV || [];
     const agvStates = (realTimeData as any).AGVC_RealTimeDashboard_AgvStates || [];
@@ -136,7 +142,7 @@ const mapModelWithVehicles = computed(() => {
                     const pointInfo = Object.values(points).find((p: any) => 
                         String(p.TagNumber) === String(currentTag) || 
                         String(p.Name) === String(currentTag)
-                    );
+                    ) as { X?: number; Y?: number } | undefined;
                     if (pointInfo) {
                         x = pointInfo.X !== undefined ? pointInfo.X : x;
                         y = pointInfo.Y !== undefined ? pointInfo.Y : y;
@@ -197,17 +203,34 @@ const mapModelWithVehicles = computed(() => {
 })
 
 const showMap = ref(false)
+let showMapTimer: ReturnType<typeof setTimeout> | null = null
+
+const hasValidMap = (val: any) => !!(val && (val.Map || val.Points))
+
+const mapPlaceholderText = computed(() =>
+    hasValidMap(realTimeData.AGVC_TrafficStats_mapModel) ? '載入地圖中...' : '此場域無地圖資料'
+)
+
 watch(
     () => realTimeData.AGVC_TrafficStats_mapModel,
     (val) => {
-        if (val && val.Map) {
+        if (showMapTimer) {
+            clearTimeout(showMapTimer)
+            showMapTimer = null
+        }
+        if (hasValidMap(val)) {
             showMap.value = false
-            setTimeout(() => { 
-                showMap.value = true 
+            mapModelKey.value = Date.now()
+            showMapTimer = setTimeout(() => {
+                showMap.value = true
+                showMapTimer = null
             }, 50)
+        } else {
+            // 取得失敗或切換場域清空時，立即隱藏，避免顯示其他場域地圖
+            showMap.value = false
         }
     },
-    { deep: true, immediate: true }
+    { immediate: true }
 )
 </script>
 

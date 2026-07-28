@@ -4,11 +4,18 @@
             <h3 class="flex-header">
                 <span>AGV 電池紀錄</span>
                 <div class="filters">
+                    <el-radio-group v-model="viewMode" size="small" class="mode-group">
+                        <el-radio-button value="single">單圖</el-radio-button>
+                        <el-radio-button value="multi">多圖</el-radio-button>
+                    </el-radio-group>
+                    <el-checkbox v-model="showStatusBackground" size="small" class="status-check">
+                        狀態背景
+                    </el-checkbox>
                     <el-select
                         v-model="selectedAgv"
                         size="small"
                         :placeholder="agvList.length ? '選擇車輛' : '此場域無 AgvStates 車輛'"
-                        style="width: 200px;"
+                        style="width: 160px;"
                         filterable
                         clearable
                         :teleported="true"
@@ -23,18 +30,18 @@
                         size="small"
                         placeholder="選擇日期"
                         value-format="YYYY-MM-DD"
-                        style="width: 160px; margin-left: 8px;"
+                        style="width: 150px;"
                         :teleported="true"
                         @change="onFilterChange"
                     />
-                    <el-button size="small" type="primary" style="margin-left: 8px;" :loading="loading" @click="onFilterChange">
+                    <el-button size="small" type="primary" :loading="loading" @click="onFilterChange">
                         查詢
                     </el-button>
                 </div>
             </h3>
             <div class="content chart-wrapper" v-loading="loading">
-                <div class="status-legend" v-if="chartData.length > 0 || Object.keys(statusSummary).length">
-                    <span class="legend-title">狀態背景</span>
+                <div class="status-legend" v-if="hasChartData || Object.keys(statusSummary).length">
+                    <span class="legend-title">狀態</span>
                     <span v-for="item in statusLegend" :key="item.key" class="legend-item">
                         <i class="swatch" :style="{ background: item.bg, borderColor: item.color }" />
                         {{ item.label }}
@@ -42,15 +49,35 @@
                     </span>
                     <span v-if="!Object.keys(statusSummary).length" class="legend-empty">此日無 RealTimeAvailabilitys 重疊資料</span>
                 </div>
+
+                <!-- 單圖模式 -->
                 <BatteryLineChart
-                    v-if="chartData.length > 0"
-                    :datas="chartData"
-                    :status-periods="statusPeriods"
+                    v-if="viewMode === 'single' && hasChartData"
+                    :datas="singleChartData"
+                    :status-periods="activeStatusPeriods"
+                    :show-status-background="showStatusBackground"
                     :xAxisName="'時間'"
                     :yAxisName="'電壓 / 電流'"
                     :levelAxisName="'電量%'"
                     class="w-100 h-100"
                 />
+
+                <!-- 多圖模式：電量 / 電壓 / 充電電流 / 放電電流 -->
+                <div v-else-if="viewMode === 'multi' && hasChartData" class="multi-grid">
+                    <div v-for="panel in multiPanels" :key="panel.key" class="multi-panel">
+                        <BatteryLineChart
+                            :datas="panel.datas"
+                            :status-periods="activeStatusPeriods"
+                            :show-status-background="showStatusBackground"
+                            :single-y-axis="true"
+                            :compact="true"
+                            :title="panel.title"
+                            :yAxisName="panel.yAxisName"
+                            class="w-100 h-100"
+                        />
+                    </div>
+                </div>
+
                 <el-empty v-else description="無電池紀錄資料" class="w-100 h-100" />
             </div>
         </div>
@@ -71,8 +98,9 @@ const selectedAgv = ref('')
 const selectedDate = ref(dayjs().subtract(1, 'day').format('YYYY-MM-DD'))
 const agvList = ref<string[]>([])
 const boundSchema = ref('')
+const viewMode = ref<'single' | 'multi'>('single')
+const showStatusBackground = ref(true)
 
-// MAIN_STATUS: 0 Initializing, 1 IDLE, 2 RUN, 3 DOWN, 4 Charging, 5 Unknown
 const statusLegend = [
     { key: 'initializing', label: 'initializing', color: AGV_STATUS_COLORS.initializing, bg: AGV_STATUS_BG.initializing },
     { key: 'idle', label: 'idle', color: AGV_STATUS_COLORS.idle, bg: AGV_STATUS_BG.idle },
@@ -92,9 +120,123 @@ const payload = computed(() => realTimeData.BatteryRecords || {
 
 const statusPeriods = computed(() => payload.value.statusPeriods || [])
 const statusSummary = computed(() => payload.value.statusSummary || {})
+const activeStatusPeriods = computed(() =>
+    showStatusBackground.value ? statusPeriods.value : []
+)
+
+type SeriesItem = {
+    key: string
+    name: string
+    xData: string[]
+    xTimestamps: number[]
+    yData: (number | null)[]
+    color: string
+    isLevel?: boolean
+}
+
+const seriesBundle = computed(() => {
+    const points = payload.value.points || []
+    if (!points.length) {
+        return {
+            xData: [] as string[],
+            xTimestamps: [] as number[],
+            voltage1: [] as (number | null)[],
+            voltage2: [] as (number | null)[],
+            charge1: [] as (number | null)[],
+            charge2: [] as (number | null)[],
+            discharge1: [] as (number | null)[],
+            discharge2: [] as (number | null)[],
+            level: [] as (number | null)[]
+        }
+    }
+
+    const xData: string[] = []
+    const xTimestamps: number[] = []
+    const voltage1: (number | null)[] = []
+    const voltage2: (number | null)[] = []
+    const charge1: (number | null)[] = []
+    const charge2: (number | null)[] = []
+    const discharge1: (number | null)[] = []
+    const discharge2: (number | null)[] = []
+    const level: (number | null)[] = []
+
+    for (const p of points) {
+        const ts = dayjs(p.timestamp || p.Timestamp)
+        xData.push(ts.format('HH:mm:ss'))
+        xTimestamps.push(ts.valueOf())
+        voltage1.push(numOrNull(p.voltage1 ?? p.Voltage1))
+        voltage2.push(numOrNull(p.voltage2 ?? p.Voltage2))
+        charge1.push(numOrNull(p.chargeCurrent1 ?? p.ChargeCurrent1))
+        charge2.push(numOrNull(p.chargeCurrent2 ?? p.ChargeCurrent2))
+        discharge1.push(numOrNull(p.dischargeCurrent1 ?? p.DischargeCurrent1))
+        discharge2.push(numOrNull(p.dischargeCurrent2 ?? p.DischargeCurrent2))
+        level.push(numOrNull(p.level ?? p.Level))
+    }
+
+    return { xData, xTimestamps, voltage1, voltage2, charge1, charge2, discharge1, discharge2, level }
+})
+
+const hasChartData = computed(() => (seriesBundle.value.xTimestamps?.length || 0) > 0)
+
+const singleChartData = computed<SeriesItem[]>(() => {
+    const b = seriesBundle.value
+    if (!b.xTimestamps.length) return []
+    const base = { xData: b.xData, xTimestamps: b.xTimestamps }
+    return [
+        { key: 'voltage1', name: '電壓1', ...base, yData: b.voltage1, color: '#20A0FF' },
+        { key: 'voltage2', name: '電壓2', ...base, yData: b.voltage2, color: '#7EC8FF' },
+        { key: 'chargeCurrent1', name: '充電電流1', ...base, yData: b.charge1, color: '#FF9F40' },
+        { key: 'chargeCurrent2', name: '充電電流2', ...base, yData: b.charge2, color: '#FFC07A' },
+        { key: 'dischargeCurrent1', name: '放電電流1', ...base, yData: b.discharge1, color: '#FF6384' },
+        { key: 'dischargeCurrent2', name: '放電電流2', ...base, yData: b.discharge2, color: '#FF9BB0' },
+        { key: 'level', name: '電量%', ...base, yData: b.level, color: '#F5D76E', isLevel: true }
+    ]
+})
+
+const multiPanels = computed(() => {
+    const b = seriesBundle.value
+    if (!b.xTimestamps.length) return []
+    const base = { xData: b.xData, xTimestamps: b.xTimestamps }
+    return [
+        {
+            key: 'level',
+            title: '電量',
+            yAxisName: '電量%',
+            datas: [
+                { key: 'level', name: '電量%', ...base, yData: b.level, color: '#F5D76E', isLevel: true }
+            ]
+        },
+        {
+            key: 'voltage',
+            title: '電壓',
+            yAxisName: '電壓',
+            datas: [
+                { key: 'voltage1', name: '電壓1', ...base, yData: b.voltage1, color: '#20A0FF' },
+                { key: 'voltage2', name: '電壓2', ...base, yData: b.voltage2, color: '#7EC8FF' }
+            ]
+        },
+        {
+            key: 'charge',
+            title: '充電電流',
+            yAxisName: '充電電流',
+            datas: [
+                { key: 'chargeCurrent1', name: '充電電流1', ...base, yData: b.charge1, color: '#FF9F40' },
+                { key: 'chargeCurrent2', name: '充電電流2', ...base, yData: b.charge2, color: '#FFC07A' }
+            ]
+        },
+        {
+            key: 'discharge',
+            title: '放電電流',
+            yAxisName: '放電電流',
+            datas: [
+                { key: 'dischargeCurrent1', name: '放電電流1', ...base, yData: b.discharge1, color: '#FF6384' },
+                { key: 'dischargeCurrent2', name: '放電電流2', ...base, yData: b.discharge2, color: '#FF9BB0' }
+            ]
+        }
+    ]
+})
 
 function applyPayload(data: any) {
-    // 相容各種包一層 / 大小寫差異
     const root = data?.data && (data.data.agvList || data.data.AgvList || data.data.points)
         ? data.data
         : data
@@ -103,8 +245,6 @@ function applyPayload(data: any) {
     const nextAgv = root?.selectedAgv || root?.SelectedAgv || ''
     const nextDate = root?.date || root?.Date || selectedDate.value
     const summary = root?.statusSummary || root?.StatusSummary || {}
-
-    console.log('[BatteryRecords] statusSummary=', summary, 'statusPeriods=', (root?.statusPeriods || root?.StatusPeriods || []).length)
 
     agvList.value = Array.isArray(list) ? list.map((x: any) => String(x)).filter(Boolean) : []
     if (nextAgv) selectedAgv.value = nextAgv
@@ -144,10 +284,6 @@ function seedAgvListFromRealtime() {
     }
 }
 
-/**
- * 依目前場域 schema 載入。
- * resetDefault=true：不帶車輛條件，由後端依 AgvStates 預設編號1 + 前一日。
- */
 async function loadBySchema(resetDefault = false) {
     const schema = realTimeData.selectedAgvc
     if (!schema) return
@@ -168,7 +304,6 @@ async function loadBySchema(resetDefault = false) {
             resetDefault ? '' : (selectedAgv.value || ''),
             selectedDate.value || ''
         )
-        console.log('[BatteryRecords] raw response=', res)
         const data = res?.data !== undefined && !Array.isArray(res?.data) && typeof res.data === 'object'
             ? (res.data.agvList || res.data.points || res.data.AgvList ? res.data : res)
             : res
@@ -199,51 +334,12 @@ async function onFilterChange() {
     await loadBySchema(false)
 }
 
-const chartData = computed(() => {
-    const points = payload.value.points || []
-    if (!points.length) return []
-
-    const xData: string[] = []
-    const xTimestamps: number[] = []
-    const voltage1: (number | null)[] = []
-    const voltage2: (number | null)[] = []
-    const charge1: (number | null)[] = []
-    const charge2: (number | null)[] = []
-    const discharge1: (number | null)[] = []
-    const discharge2: (number | null)[] = []
-    const level: (number | null)[] = []
-
-    for (const p of points) {
-        const ts = dayjs(p.timestamp || p.Timestamp)
-        xData.push(ts.format('HH:mm:ss'))
-        xTimestamps.push(ts.valueOf())
-        voltage1.push(numOrNull(p.voltage1 ?? p.Voltage1))
-        voltage2.push(numOrNull(p.voltage2 ?? p.Voltage2))
-        charge1.push(numOrNull(p.chargeCurrent1 ?? p.ChargeCurrent1))
-        charge2.push(numOrNull(p.chargeCurrent2 ?? p.ChargeCurrent2))
-        discharge1.push(numOrNull(p.dischargeCurrent1 ?? p.DischargeCurrent1))
-        discharge2.push(numOrNull(p.dischargeCurrent2 ?? p.DischargeCurrent2))
-        level.push(numOrNull(p.level ?? p.Level))
-    }
-
-    return [
-        { key: 'voltage1', name: '電壓1', xData, xTimestamps, yData: voltage1, color: '#20A0FF' },
-        { key: 'voltage2', name: '電壓2', xData, xTimestamps, yData: voltage2, color: '#7EC8FF' },
-        { key: 'chargeCurrent1', name: '充電電流1', xData, xTimestamps, yData: charge1, color: '#FF9F40' },
-        { key: 'chargeCurrent2', name: '充電電流2', xData, xTimestamps, yData: charge2, color: '#FFC07A' },
-        { key: 'dischargeCurrent1', name: '放電電流1', xData, xTimestamps, yData: discharge1, color: '#FF6384' },
-        { key: 'dischargeCurrent2', name: '放電電流2', xData, xTimestamps, yData: discharge2, color: '#FF9BB0' },
-        { key: 'level', name: '電量%', xData, xTimestamps, yData: level, color: '#F5D76E', isLevel: true }
-    ]
-})
-
 function numOrNull(v: any): number | null {
     if (v === null || v === undefined || v === '') return null
     const n = Number(v)
     return Number.isFinite(n) ? n : null
 }
 
-// 場域 schema 變更：清空並依該場域 AgvStates 取預設資料
 watch(
     () => realTimeData.selectedAgvc,
     async (schema, prev) => {
@@ -302,6 +398,16 @@ defineExpose({
         display: flex;
         align-items: center;
         flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .mode-group {
+        margin-right: 4px;
+    }
+
+    .status-check {
+        color: #ddd;
+        margin-right: 4px;
     }
 
     .content {
@@ -320,6 +426,26 @@ defineExpose({
     }
 }
 
+.multi-grid {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    height: 100%;
+}
+
+.multi-panel {
+    min-height: 0;
+    min-width: 0;
+    background: #141414;
+    border: 1px solid #333;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
 .status-legend {
     display: flex;
     align-items: center;
@@ -329,6 +455,11 @@ defineExpose({
     color: #ccc;
     font-size: 12px;
     flex-shrink: 0;
+
+    .legend-title {
+        color: #aaa;
+        margin-right: 4px;
+    }
 
     .legend-count {
         color: #aaa;

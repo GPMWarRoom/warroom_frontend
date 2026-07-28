@@ -5,9 +5,12 @@
                 <div class="card">
                     <h3>停等狀態統計</h3>
                     <div class="content">
-                        <TagStopStatsMap class="h-100 w-100"
+                        <TagStopStatsMap
+                            v-if="hasMap"
+                            class="h-100 w-100"
                             mapId="map1" 
                             :map-model="realTimeData.AGVC_TrafficStats_mapModel" />
+                        <div v-else class="map-empty">此場域無地圖資料</div>
                     </div>
                 </div>
             </div>
@@ -15,9 +18,12 @@
                 <div class="card">
                     <h3>路線使用統計</h3>
                     <div class="content">
-                        <PathUseStatsMap class="h-100 w-100"
+                        <PathUseStatsMap
+                            v-if="hasMap"
+                            class="h-100 w-100"
                             mapId="map2" 
                             :map-model="realTimeData.AGVC_TrafficStats_mapModel" />
+                        <div v-else class="map-empty">此場域無地圖資料</div>
                     </div>
                 </div>
             </div>
@@ -28,8 +34,13 @@
 import PathUseStatsMap from '../maps/PathUseStatsMap.vue'
 import TagStopStatsMap from '../maps/TagStopStatsMap.vue'
 import { realTimeStore } from '@/stores/realTime'
+import { computed } from 'vue'
 
 const realTimeData = realTimeStore()
+const hasMap = computed(() => {
+    const m = realTimeData.AGVC_TrafficStats_mapModel
+    return !!(m && (m.Map || m.Points))
+})
 </script>
 <style scoped lang="scss">
 .traffic-stats-dashboard {
@@ -51,6 +62,15 @@ const realTimeData = realTimeStore()
                 height: 350px; // 手机视图下的固定高度
             }
         }
+    }
+
+    .map-empty {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #909399;
+        font-size: 14px;
     }
 }
 </style>
