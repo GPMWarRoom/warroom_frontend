@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820">
+  <rect width="1400" height="820" fill="#111827"/>
+  <rect x="0" y="0" width="1400" height="54" fill="#0b1220"/>
+  <text x="28" y="34" fill="#f9fafb" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700">War Room</text>
+  <rect x="0" y="54" width="180" height="766" fill="#161f2f"/>
+  <rect x="18" y="200" width="144" height="42" rx="8" fill="#2563eb"/>
+  <text x="24" y="227" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="18">�qH,�</text>
+  <rect x="208" y="86" width="1162" height="70" rx="14" fill="#1f2937"/>
+  <text x="238" y="130" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">H,�</text>
+  <rect x="1114" y="100" width="98" height="34" rx="8" fill="#2563eb"/>
+  <rect x="1222" y="100" width="98" height="34" rx="8" fill="#334155"/>
+  <text x="1142" y="123" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="16">9�</text>
+  <text x="1254" y="123" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="16">h<</text>
+
+  <rect x="226" y="186" width="1112" height="278" rx="18" fill="#1f2937"/>
+  <text x="252" y="220" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">9��</text>
+  <circle cx="326" cy="316" r="34" fill="#2563eb"/>
+  <text x="302" y="322" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="20">3F</text>
+  <circle cx="544" cy="258" r="30" fill="#334155"/>
+  <circle cx="544" cy="374" r="30" fill="#334155"/>
+  <circle cx="770" cy="224" r="26" fill="#38bdf8"/>
+  <circle cx="770" cy="292" r="26" fill="#38bdf8"/>
+  <circle cx="770" cy="350" r="26" fill="#38bdf8"/>
+  <circle cx="770" cy="418" r="26" fill="#38bdf8"/>
+  <line x1="360" y1="316" x2="514" y2="258" stroke="#64748b" stroke-width="4"/>
+  <line x1="360" y1="316" x2="514" y2="374" stroke="#64748b" stroke-width="4"/>
+  <line x1="574" y1="258" x2="744" y2="224" stroke="#64748b" stroke-width="3"/>
+  <line x1="574" y1="258" x2="744" y2="292" stroke="#64748b" stroke-width="3"/>
+  <line x1="574" y1="374" x2="744" y2="350" stroke="#64748b" stroke-width="3"/>
+  <line x1="574" y1="374" x2="744" y2="418" stroke="#64748b" stroke-width="3"/>
+  <text x="510" y="264" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="16">A@</text>
+  <text x="510" y="380" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="16">B@</text>
+  <text x="812" y="228" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="15">AGV-01 v1.2.0</text>
+  <text x="812" y="296" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="15">AGV-02 v1.2.3</text>
+  <text x="812" y="354" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="15">AGV-03 v1.1.9</text>
+  <text x="812" y="422" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="15">AGV-04 v1.2.4</text>
+  <text x="252" y="438" fill="#93c5fd" font-family="Segoe UI, Arial, sans-serif" font-size="18">9����d4��H,�
+d��</text>
+
+  <rect x="226" y="492" width="1112" height="264" rx="18" fill="#1f2937"/>
+  <text x="252" y="526" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">h<�</text>
+  <rect x="252" y="548" width="1060" height="178" rx="10" fill="#0f172a"/>
+  <text x="280" y="584" fill="#93c5fd" font-family="Segoe UI, Arial, sans-serif" font-size="16">4�
+1</text>
+  <text x="520" y="584" fill="#93c5fd" font-family="Segoe UI, Arial, sans-serif" font-size="16">>��qH,</text>
+  <text x="860" y="584" fill="#93c5fd" font-family="Segoe UI, Arial, sans-serif" font-size="16">�H,</text>
+  <line x1="270" y1="602" x2="1290" y2="602" stroke="#334155" stroke-width="2"/>
+  <text x="280" y="640" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="15">A@</text>
+  <text x="520" y="640" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="15">VMS 3.4.2</text>
+  <text x="860" y="640" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="15">AGV-01 v1.2.0 / AGV-02 v1.2.3</text>
+  <text x="280" y="678" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="15">B@</text>
+  <text x="520" y="678" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="15">VMS 3.4.1</text>
+  <text x="860" y="678" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="15">AGV-03 v1.1.9 / AGV-04 v1.2.4</text>
+</svg>

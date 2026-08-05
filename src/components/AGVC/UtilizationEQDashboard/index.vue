@@ -29,6 +29,26 @@
 
         <div class="divider"></div>
 
+        <div v-if="dataType === 'EQUtilization'" class="query-item">
+          <span class="label">設備:</span>
+          <el-select
+            v-model="selectedDevice"
+            size="small"
+            filterable
+            placeholder="選擇設備"
+            style="width: 180px"
+          >
+            <el-option label="全部" value="all" />
+            <el-option
+              v-for="name in deviceNameList"
+              :key="name"
+              :label="name"
+              :value="name"
+            />
+          </el-select>
+        </div>
+        <div v-if="dataType === 'EQUtilization'" class="divider"></div>
+
         <el-button 
           v-if="dataType === 'EQAlarms'" 
           @click="showFilterDialog = true" 
@@ -49,12 +69,13 @@
     <div class="content-body">
       <template v-if="dataType === 'EQUtilization'">
         <div 
-          v-if="realTimeData.AGVC_UtilizationEQ_deviceData && Object.keys(realTimeData.AGVC_UtilizationEQ_deviceData).length > 0" 
+          v-if="filteredDeviceEntries.length > 0" 
           class="dashboard-grid"
+          :class="{ 'single-device': !!selectedDevice && selectedDevice !== 'all' }"
         >
           <div
             class="card"
-            v-for="(statusList, deviceName) in realTimeData.AGVC_UtilizationEQ_deviceData"
+            v-for="[deviceName, statusList] in filteredDeviceEntries"
             :key="deviceName"
           >
             <h3>{{ deviceName }} 稼動狀態</h3>
@@ -145,7 +166,7 @@
 
 <script setup lang="ts">
 import PieChart from '../../common/charts/PieChart.vue'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { realTimeStore } from '@/stores/realTime'
 import dayjs from 'dayjs'
 
@@ -154,6 +175,7 @@ const emit = defineEmits(['realtime-action'])
 
 const dataType = ref('EQUtilization')
 const showFilterDialog = ref(false)
+const selectedDevice = ref('')
 
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -170,6 +192,34 @@ const queryParams = reactive({
     eqName: '',
     alarmCode: '',
     description: ''
+  }
+})
+
+const deviceNameList = computed(() => {
+  const data = realTimeData.AGVC_UtilizationEQ_deviceData
+  if (!data || typeof data !== 'object') return []
+  return Object.keys(data).sort((a, b) => a.localeCompare(b, 'zh-Hant'))
+})
+
+const filteredDeviceEntries = computed(() => {
+  const data = realTimeData.AGVC_UtilizationEQ_deviceData
+  if (!data || typeof data !== 'object') return []
+
+  const entries = Object.entries(data) as [string, any[]][]
+  if (!selectedDevice.value || selectedDevice.value === 'all') {
+    return entries.sort(([a], [b]) => a.localeCompare(b, 'zh-Hant'))
+  }
+  return entries.filter(([name]) => name === selectedDevice.value)
+})
+
+watch(deviceNameList, (names) => {
+  if (!names.length) {
+    selectedDevice.value = ''
+    return
+  }
+  // 有資料時預設選第一台，避免設備過多一次塞滿畫面
+  if (!selectedDevice.value || (selectedDevice.value !== 'all' && !names.includes(selectedDevice.value))) {
+    selectedDevice.value = names[0]
   }
 })
 
@@ -305,8 +355,35 @@ const indexMethod = (index: number) => {
 .dashboard-grid {
   display: grid;
   width: 100%;
+  height: 100%;
+  overflow-y: auto;
   grid-template-columns: repeat(3, minmax(0, 1fr)); /* 強制三欄平分寬度 */
   gap: 12px;
+  align-content: start;
+
+  &.single-device {
+    grid-template-columns: minmax(0, 480px);
+    justify-content: center;
+  }
+
+  .card {
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 12px;
+    background: #1a1a1a;
+    min-height: 280px;
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #ddd;
+      text-align: center;
+    }
+
+    .content {
+      height: 240px;
+    }
+  }
 }
 
 /* 查無資料的置中容器 */

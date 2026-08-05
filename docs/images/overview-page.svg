@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820">
+  <rect width="1400" height="820" fill="#111827"/>
+  <rect x="0" y="0" width="1400" height="54" fill="#0b1220"/>
+  <text x="28" y="34" fill="#f9fafb" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700">War Room</text>
+  <rect x="0" y="54" width="180" height="766" fill="#161f2f"/>
+  <rect x="18" y="92" width="144" height="42" rx="8" fill="#2563eb"/>
+  <rect x="18" y="146" width="144" height="42" rx="8" fill="#243244"/>
+  <rect x="18" y="200" width="144" height="42" rx="8" fill="#243244"/>
+  <text x="54" y="119" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="18">��</text>
+  <text x="42" y="173" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="18">4��
+</text>
+  <text x="24" y="227" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="18">�qH,�</text>
+  <rect x="208" y="86" width="1162" height="66" rx="14" fill="#1f2937"/>
+  <text x="238" y="128" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">Overview / ��</text>
+  <text x="1040" y="128" fill="#93c5fd" font-family="Segoe UI, Arial, sans-serif" font-size="18">��aG�04��
+</text>
+
+  <rect x="226" y="182" width="352" height="248" rx="18" fill="#1f2937" stroke="#ef4444" stroke-width="3"/>
+  <rect x="250" y="206" width="112" height="30" rx="8" fill="#7f1d1d"/>
+  <text x="267" y="227" fill="#fecaca" font-family="Segoe UI, Arial, sans-serif" font-size="16">f1 / p8</text>
+  <text x="250" y="266" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">3F - A@</text>
+  <text x="250" y="308" fill="#d1d5db" font-family="Segoe UI, Arial, sans-serif" font-size="17">�qKI: KI</text>
+  <text x="250" y="336" fill="#d1d5db" font-family="Segoe UI, Arial, sans-serif" font-size="17">Host #�: ONLINE</text>
+  <text x="250" y="364" fill="#d1d5db" font-family="Segoe UI, Arial, sans-serif" font-size="17">}�>: REMOTE</text>
+  <circle cx="266" cy="402" r="8" fill="#22c55e"/>
+  <text x="284" y="408" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="16">AGV-01 / RUN / 83%</text>
+  <circle cx="266" cy="430" r="8" fill="#eab308"/>
+  <text x="284" y="436" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="16">AGV-02 / IDLE / 55%</text>
+
+  <rect x="606" y="182" width="352" height="248" rx="18" fill="#1f2937" stroke="#f59e0b" stroke-width="3"/>
+  <rect x="630" y="206" width="154" height="30" rx="8" fill="#78350f"/>
+  <text x="646" y="227" fill="#fde68a" font-family="Segoe UI, Arial, sans-serif" font-size="16">>��qp8</text>
+  <text x="630" y="266" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">3F - B@</text>
+  <text x="630" y="308" fill="#d1d5db" font-family="Segoe UI, Arial, sans-serif" font-size="17">�qKI: �w</text>
+  <text x="630" y="336" fill="#d1d5db" font-family="Segoe UI, Arial, sans-serif" font-size="17">Host #�: OFFLINE</text>
+  <text x="630" y="364" fill="#d1d5db" font-family="Segoe UI, Arial, sans-serif" font-size="17">}�>: LOCAL</text>
+  <circle cx="646" cy="402" r="8" fill="#ef4444"/>
+  <text x="664" y="408" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="16">AGV-03 / DOWN / 18%</text>
+  <circle cx="646" cy="430" r="8" fill="#22c55e"/>
+  <text x="664" y="436" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="16">AGV-04 / CHARGING / 74%</text>
+
+  <rect x="986" y="182" width="352" height="248" rx="18" fill="#1f2937" stroke="#334155" stroke-width="2"/>
+  <text x="1010" y="266" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">2F - C@</text>
+  <text x="1010" y="308" fill="#d1d5db" font-family="Segoe UI, Arial, sans-serif" font-size="17">�qKI: KI</text>
+  <text x="1010" y="336" fill="#d1d5db" font-family="Segoe UI, Arial, sans-serif" font-size="17">Host #�: ONLINE</text>
+  <text x="1010" y="364" fill="#d1d5db" font-family="Segoe UI, Arial, sans-serif" font-size="17">}�>: REMOTE</text>
+  <circle cx="1026" cy="402" r="8" fill="#22c55e"/>
+  <text x="1044" y="408" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="16">AGV-05 / RUN / 91%</text>
+  <circle cx="1026" cy="430" r="8" fill="#22c55e"/>
+  <text x="1044" y="436" fill="#e5e7eb" font-family="Segoe UI, Arial, sans-serif" font-size="16">AGV-06 / RUN / 88%</text>
+
+  <rect x="226" y="474" width="1112" height="282" rx="18" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+  <text x="252" y="518" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">�\��</text>
+  <text x="252" y="562" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="20">1. �d@��4�sB�K</text>
+  <text x="252" y="598" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="20">2. F�h	f1XF�h>��qp8</text>
+  <text x="252" y="634" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="20">3. 1 AGV 
+1�_�ϝ�$���</text>
+  <text x="252" y="670" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="20">4. 
+4�aG�L�����2e
+� `4��
+` b</text>
+  <text x="252" y="706" fill="#93c5fd" font-family="Segoe UI, Arial, sans-serif" font-size="18">���MM�P�j�K�\:</text>
+</svg>

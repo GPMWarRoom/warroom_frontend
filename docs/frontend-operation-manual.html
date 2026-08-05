@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>War Room 前端操作說明</title>
+  <style>
+    :root {
+      --text: #1f2937;
+      --muted: #64748b;
+      --line: #dbe4f0;
+      --accent: #2563eb;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: #fff;
+      font-family: "Microsoft JhengHei", "Segoe UI", Arial, sans-serif;
+      line-height: 1.65;
+      font-size: 14px;
+    }
+    .page {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 28px 32px 48px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      color: #0f172a;
+    }
+    h2 {
+      margin: 28px 0 10px;
+      padding-bottom: 6px;
+      font-size: 22px;
+      border-bottom: 2px solid var(--line);
+      page-break-after: avoid;
+    }
+    h3 {
+      margin: 18px 0 8px;
+      font-size: 17px;
+      color: #0f172a;
+      page-break-after: avoid;
+    }
+    p, ul, ol { margin: 8px 0; }
+    ul, ol { padding-left: 22px; }
+    li { margin: 3px 0; }
+    .lead { color: var(--muted); margin-bottom: 16px; }
+    .note {
+      margin: 12px 0 18px;
+      padding: 10px 14px;
+      border-left: 4px solid var(--accent);
+      background: #eff6ff;
+      color: #1e3a8a;
+      border-radius: 6px;
+    }
+    .toc {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+    }
+    .toc ol { margin: 6px 0 0; }
+    .figure {
+      margin: 12px 0 18px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fafc;
+      page-break-inside: avoid;
+    }
+    .figure img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: #111827;
+    }
+    .caption {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+    .ops {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin: 8px 0 14px;
+    }
+    .ops strong { color: #0f172a; }
+    @media print {
+      body { background: #fff; }
+      .page { max-width: none; padding: 0; }
+      .figure { break-inside: avoid; }
+      h2, h3 { break-after: avoid; }
+      img { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>War Room 前端操作說明</h1>
+    <p class="lead">本文件依目前前端畫面與實際操作流程整理，並以系統真實截圖作為範例圖片。</p>
+    <div class="note">適用範圍：概覽、場域資訊各頁籤、設備詳情、水位 / 電池紀錄、週邊設備與系統版本管理。</div>
+
+    <div class="toc">
+      <strong>目錄</strong>
+      <ol>
+        <li>系統導覽</li>
+        <li>即時監控</li>
+        <li>設備狀態詳情（AGV）</li>
+        <li>交管狀態</li>
+        <li>搬運效能統計</li>
+        <li>設備稼動</li>
+        <li>水位紀錄</li>
+        <li>電池紀錄</li>
+        <li>週邊設備</li>
+        <li>建議操作流程</li>
+      </ol>
+    </div>
+
+    <h2>1. 系統導覽</h2>
+    <div class="ops">
+      <strong>左側選單</strong>
+      <ul>
+        <li><strong>概覽</strong>：查看各樓層 / 區域總覽。</li>
+        <li><strong>場域資訊</strong>：進入單一場域的即時與統計頁籤。</li>
+        <li><strong>系統版本管理</strong>：查看派車系統與車輛版本。</li>
+      </ul>
+      <strong>共通操作</strong>
+      <ul>
+        <li>點擊左上選單圖示可展開 / 收合側邊欄。</li>
+        <li>右上鈴鐺可控制告警聲音（正常 / 永久靜音）。</li>
+        <li>在場域資訊頁，可先用「場域」下拉選單切換目標場域。</li>
+      </ul>
+    </div>
+
+    <h2>2. 即時監控</h2>
+    <div class="figure">
+      <img src="./images/screenshots/realtime-monitor.png" alt="即時監控畫面" />
+      <div class="caption">圖 2-1｜場域資訊 &gt; 即時監控</div>
+    </div>
+    <div class="ops">
+      <strong>畫面說明</strong>
+      <ul>
+        <li><strong>系統狀態</strong>：確認運轉模式、Host 連線、命令派送模式。</li>
+        <li><strong>任務列表</strong>：查看目前 / 歷史任務，可查詢與匯出。</li>
+        <li><strong>設備狀態</strong>：查看 AGV / 主設備 / Rack；可切換類型。</li>
+        <li><strong>當前警報</strong>：顯示尚未處理的警報。</li>
+        <li><strong>歷史警報</strong>：查詢與匯出歷史告警。</li>
+        <li><strong>鳥瞰圖</strong>：查看場域路線與車輛位置。</li>
+      </ul>
+      <strong>操作步驟</strong>
+      <ol>
+        <li>左側選單進入「場域資訊」。</li>
+        <li>選擇目標場域。</li>
+        <li>點選「即時監控」頁籤。</li>
+        <li>若有紅框警報，先檢查「當前警報」與設備狀態。</li>
+        <li>點選 AGV 或 Rack，開啟設備詳情。</li>
+      </ol>
+    </div>
+
+    <h2>3. 設備狀態詳情（AGV）</h2>
+    <div class="figure">
+      <img src="./images/screenshots/agv-detail.png" alt="AGV 設備詳情畫面" />
+      <div class="caption">圖 3-1｜點選 AGV 後開啟的設備詳情抽屜</div>
+    </div>
+    <div class="ops">
+      <strong>畫面說明</strong>
+      <ul>
+        <li><strong>電池狀態</strong>：電量百分比、溫度、電流、電壓。</li>
+        <li><strong>里程資訊</strong>：總里程、目前里程、保養里程。</li>
+        <li><strong>任務統計</strong>：搬運任務與充電任務完成數。</li>
+        <li><strong>馬達狀態</strong>：左輪、右輪、升降馬達電流 / 電壓；異常時會顯示警告。</li>
+      </ul>
+      <strong>操作步驟</strong>
+      <ol>
+        <li>在「即時監控」設備狀態區點選目標 AGV。</li>
+        <li>於右側抽屜查看電池、里程、任務與馬達資訊。</li>
+        <li>完成後點擊「返回」關閉抽屜。</li>
+      </ol>
+    </div>
+
+    <h2>4. 交管狀態</h2>
+    <div class="figure">
+      <img src="./images/screenshots/traffic-stats.png" alt="交管狀態畫面" />
+      <div class="caption">圖 4-1｜場域資訊 &gt; 交管狀態</div>
+    </div>
+    <div class="ops">
+      <strong>畫面說明</strong>
+      <ul>
+        <li><strong>停等狀態統計（左）</strong>：以地圖節點顏色呈現停等熱點。</li>
+        <li><strong>路線使用統計（右）</strong>：以路線顏色呈現路徑使用頻率。</li>
+      </ul>
+      <strong>操作步驟</strong>
+      <ol>
+        <li>切換至「交管狀態」頁籤。</li>
+        <li>於右上選擇日期區間。</li>
+        <li>點擊「查詢」。</li>
+        <li>觀察左圖停等熱點與右圖繁忙路線，優先關注高亮路段 / 節點。</li>
+      </ol>
+    </div>
+
+    <h2>5. 搬運效能統計</h2>
+    <div class="figure">
+      <img src="./images/screenshots/traffic-efficiency.png" alt="搬運效能統計畫面" />
+      <div class="caption">圖 5-1｜場域資訊 &gt; 搬運效能統計</div>
+    </div>
+    <div class="ops">
+      <strong>畫面說明</strong>
+      <ul>
+        <li><strong>平均任務成功率 / 自動化比率</strong>：快速掌握整體績效。</li>
+        <li><strong>任務成功率走勢</strong>：觀察每日成功率變化。</li>
+        <li><strong>設備 Unload 平均等待時間</strong>：可切換全部設備或單一設備。</li>
+        <li><strong>From-To 統計數據</strong>：依起點 / 終點查看完成、失敗、取消與時間。</li>
+        <li><strong>執行時間 Box Plot</strong>：查看執行時間分布。</li>
+      </ul>
+      <strong>操作步驟</strong>
+      <ol>
+        <li>切換至「搬運效能統計」。</li>
+        <li>設定日期區間後點擊「查詢」。</li>
+        <li>調整 Unload 設備與 From-To 條件，觀察對應圖表變化。</li>
+        <li>若需看歷史路線，先載入任務資料並勾選任務，於地圖疊加路徑。</li>
+      </ol>
+    </div>
+
+    <h2>6. 設備稼動</h2>
+    <div class="figure">
+      <img src="./images/screenshots/utilization.png" alt="設備稼動畫面" />
+      <div class="caption">圖 6-1｜場域資訊 &gt; 設備稼動</div>
+    </div>
+    <div class="ops">
+      <strong>畫面說明</strong>
+      <ul>
+        <li><strong>命令來源 / 運載方式</strong>：圓餅圖呈現任務組成。</li>
+        <li><strong>AGV 稼動率</strong>：可切換「依狀態」或「依里程」。</li>
+        <li><strong>AGV MTBF</strong>：可調整計算週期天數。</li>
+        <li><strong>任務數、上線率、警報次數、拒絕任務數、交換命令次數</strong>：用於追蹤稼動與穩定度。</li>
+      </ul>
+      <strong>操作步驟</strong>
+      <ol>
+        <li>切換至「設備稼動」。</li>
+        <li>設定日期區間並查詢。</li>
+        <li>切換稼動率顯示方式與 MTBF 計算週期。</li>
+        <li>對照警報次數與拒絕任務數，判斷異常集中日期。</li>
+      </ol>
+    </div>
+
+    <h2>7. 水位紀錄</h2>
+    <div class="figure">
+      <img src="./images/screenshots/rack-history.png" alt="水位紀錄畫面" />
+      <div class="caption">圖 7-1｜場域資訊 &gt; 水位紀錄</div>
+    </div>
+    <div class="ops">
+      <strong>畫面說明</strong>
+      <ul>
+        <li><strong>Rack 水位變化</strong>：以折線圖顯示指定 Rack 水位走勢，可用下拉切換 WIP。</li>
+        <li><strong>Rack 水位紀錄列表</strong>：顯示 Rack 名稱、水位%、異動 CSTID、更新時間。</li>
+        <li>支援「匯出當日紀錄 CSV」與「按照篩選時間匯出 CSV」。</li>
+      </ul>
+      <strong>操作步驟</strong>
+      <ol>
+        <li>切換至「水位紀錄」。</li>
+        <li>設定日期區間後點擊「查詢」。</li>
+        <li>於左側下拉選擇要觀察的 Rack / WIP。</li>
+        <li>於右側列表確認異動明細，必要時匯出 CSV。</li>
+      </ol>
+    </div>
+
+    <h2>8. 電池紀錄</h2>
+    <div class="figure">
+      <img src="./images/screenshots/battery-single-a.png" alt="電池紀錄單圖畫面" />
+      <div class="caption">圖 8-1｜電池紀錄（單圖模式）</div>
+    </div>
+    <div class="figure">
+      <img src="./images/screenshots/battery-multi.png" alt="電池紀錄多圖畫面" />
+      <div class="caption">圖 8-2｜電池紀錄（多圖模式）</div>
+    </div>
+    <div class="ops">
+      <strong>畫面說明</strong>
+      <ul>
+        <li>可切換 <strong>單圖 / 多圖</strong>。</li>
+        <li>可勾選 <strong>狀態背景</strong>，依 initializing / idle / run / down / charging 顯示底色。</li>
+        <li>可選擇 AGV 與日期後查詢。</li>
+        <li>單圖：同圖比較電量、電壓、充放電電流。</li>
+        <li>多圖：分別顯示電量、電壓、充電電流、放電電流。</li>
+      </ul>
+      <strong>操作步驟</strong>
+      <ol>
+        <li>切換至「電池紀錄」。</li>
+        <li>選擇 AGV 與日期，點擊「查詢」。</li>
+        <li>依需求切換「單圖」或「多圖」。</li>
+        <li>勾選「狀態背景」後，對照電量升降與狀態區段（例如充電時電量是否上升）。</li>
+      </ol>
+      <strong>判讀建議</strong>
+      <ul>
+        <li>電量呈鋸齒狀下降再上升，通常代表正常放電與充電循環。</li>
+        <li>若長時間 charging 但電量不升，優先檢查充電設備。</li>
+        <li>若低電量區段落在 down，優先追查異常原因。</li>
+      </ul>
+    </div>
+
+    <h2>9. 週邊設備</h2>
+    <div class="figure">
+      <img src="./images/screenshots/utilization-eq.png" alt="週邊設備畫面" />
+      <div class="caption">圖 9-1｜場域資訊 &gt; 週邊設備</div>
+    </div>
+    <div class="ops">
+      <strong>畫面說明</strong>
+      <ul>
+        <li><strong>數據類別</strong>：可切換「稼動率」或「警報」。</li>
+        <li><strong>時間範圍</strong>：設定查詢起訖時間。</li>
+        <li>稼動率模式下，各設備會以圓餅圖顯示狀態比例（例如 Run 100%）。</li>
+        <li>警報模式下可再設定其他條件並匯出。</li>
+      </ul>
+      <strong>操作步驟</strong>
+      <ol>
+        <li>切換至「週邊設備」。</li>
+        <li>選擇數據類別與時間範圍。</li>
+        <li>若查警報，可開啟「其他條件」輸入設備名稱、異常碼、描述關鍵字。</li>
+        <li>點擊「查詢」；需要時點擊「匯出」。</li>
+      </ol>
+    </div>
+
+    <h2>10. 建議操作流程</h2>
+    <ol>
+      <li>先從「概覽」確認哪個場域有警報或異常。</li>
+      <li>雙擊場域卡片，進入「場域資訊」。</li>
+      <li>在「即時監控」確認系統狀態、任務與當前警報。</li>
+      <li>點選異常 AGV / Rack，查看設備詳情。</li>
+      <li>若需歷史分析，再切到交管狀態、搬運效能統計、設備稼動、水位紀錄或電池紀錄。</li>
+      <li>若需週邊設備狀態，進入「週邊設備」查詢與匯出。</li>
+    </ol>
+  </main>
+</body>
+</html>

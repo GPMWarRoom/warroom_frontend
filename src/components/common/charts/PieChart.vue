@@ -46,11 +46,11 @@ watch(
   () => props.datas,
   (data) => {
     const colorMap = {
-      'Run': '#5cb899',
+      'Run': '#2ecc71',
       'Down': '#c62828',
-      'Alarm': '#f06b69',
-      'Idle': '#f6b93d',
-      'PM': '#1976d2',
+      'Alarm': '#e53935',
+      'Idle': '#2196f3',
+      'PM': '#f6b93d',
       'Unknown': '#616161'
     }
     const defaultColors = [
