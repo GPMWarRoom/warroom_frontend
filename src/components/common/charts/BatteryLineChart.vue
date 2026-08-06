@@ -1,9 +1,11 @@
 <template>
-    <BaseChart
-        v-if="options.series.length > 0"
-        :options="options"
-        @chartReady="onChartReady"
-    />
+    <div class="battery-line-chart">
+        <BaseChart
+            v-if="options.series.length > 0"
+            :options="options"
+            @chartReady="onChartReady"
+        />
+    </div>
 </template>
 
 <script setup>
@@ -65,7 +67,7 @@ function buildMarkArea(statusPeriods) {
                 itemStyle: {
                     color: meta.bg,
                     borderColor: meta.solid,
-                    borderWidth: 1,
+                    borderWidth: 0.5,
                     borderType: 'solid'
                 }
             },
@@ -138,11 +140,50 @@ function ensureAtLeastOneSelected(names, selected) {
     return next
 }
 
+/** 由系列數值計算 Y 軸範圍（以最低值為底，不強制從 0） */
+function yExtentFromSeries(list) {
+    const values = []
+    for (const item of list || []) {
+        for (const v of item.yData || []) {
+            if (v !== null && v !== undefined && Number.isFinite(Number(v))) {
+                values.push(Number(v))
+            }
+        }
+    }
+    if (!values.length) return null
+    let min = Math.min(...values)
+    let max = Math.max(...values)
+    if (min === max) {
+        const pad = Math.max(Math.abs(min) * 0.05, 0.1)
+        return { min: min - pad, max: max + pad }
+    }
+    const pad = (max - min) * 0.06
+    return { min: min - pad * 0.15, max: max + pad }
+}
+
+/** 統一刻度字寬，避免不同量級數值導致各圖左右留白不同 */
+function formatAxisNumber(val) {
+    const n = Number(val)
+    if (!Number.isFinite(n)) return ''
+    const abs = Math.abs(n)
+    if (abs === 0) return '0'
+    if (abs >= 100) return n.toFixed(0)
+    if (abs >= 10) return n.toFixed(1)
+    if (abs >= 1) return n.toFixed(2)
+    return n.toFixed(3)
+}
+
+function activeSeriesFromProps() {
+    return (props.datas || []).filter((item) =>
+        (item.yData || []).some(v => v !== null && v !== undefined && Number.isFinite(Number(v)))
+    )
+}
+
 function onChartReady(chart) {
     chartInst = chart
     chart.off('legendselectchanged')
     chart.on('legendselectchanged', (params) => {
-        const names = seriesNames(props.datas)
+        const names = seriesNames(activeSeriesFromProps())
         if (!names.length) return
 
         const selected = { ...(params.selected || {}) }
@@ -181,10 +222,21 @@ watch(
             return
         }
 
-        const xTimestamps = seriesList[0].xTimestamps || []
-        const onlyLevel = seriesList.every(s => s.isLevel)
-        const noLevel = seriesList.every(s => !s.isLevel)
+        // 僅保留有有效數值的系列（雙保險：即使上游未過濾）
+        const activeSeries = seriesList.filter((item) =>
+            (item.yData || []).some(v => v !== null && v !== undefined && Number.isFinite(Number(v)))
+        )
+        if (!activeSeries.length) {
+            options.series = []
+            return
+        }
+
+        const xTimestamps = activeSeries[0].xTimestamps || seriesList[0].xTimestamps || []
+        const onlyLevel = activeSeries.every(s => s.isLevel)
+        const noLevel = activeSeries.every(s => !s.isLevel)
         const useSingle = props.singleYAxis || onlyLevel || noLevel
+        const valueSeries = activeSeries.filter(s => !s.isLevel)
+        const valueExtent = yExtentFromSeries(valueSeries)
 
         options.title = {
             text: props.title,
@@ -193,13 +245,22 @@ watch(
             textStyle: { color: '#fff', fontSize: props.compact ? 12 : 13 }
         }
         options.backgroundColor = '#141414'
-        options.grid = {
-            top: props.compact ? (props.title ? '22%' : '14%') : '18%',
-            left: '3%',
-            right: useSingle ? '4%' : '5%',
-            bottom: props.compact ? '8%' : '12%',
-            containLabel: true
-        }
+        // 多圖用固定像素邊距，避免 containLabel 依軸字寬擠壓導致各圖繪圖區大小不一
+        options.grid = props.compact
+            ? {
+                top: 40,
+                left: 54,
+                right: 14,
+                bottom: 28,
+                containLabel: false
+            }
+            : {
+                top: '18%',
+                left: '3%',
+                right: useSingle ? '4%' : '5%',
+                bottom: '12%',
+                containLabel: true
+            }
         options.dataZoom = props.compact
             ? [{ type: 'inside', xAxisIndex: [0], start: 0, end: 100 }]
             : [
@@ -240,15 +301,24 @@ watch(
 
         if (useSingle) {
             const isLevelAxis = onlyLevel
+            // 電量仍用 0–100；其餘以資料最低值為底，不強制從 0
+            const extent = isLevelAxis ? null : valueExtent
             options.yAxis = [{
                 type: 'value',
-                name: props.yAxisName,
-                min: isLevelAxis ? 0 : undefined,
-                max: isLevelAxis ? 100 : undefined,
+                // 多圖標題已顯示指標名，隱藏 Y 軸 name 避免長字（如「放電電流」）擠壓繪圖區
+                name: props.compact ? '' : props.yAxisName,
+                scale: !isLevelAxis,
+                min: isLevelAxis ? 0 : (extent ? extent.min : undefined),
+                max: isLevelAxis ? 100 : (extent ? extent.max : undefined),
+                nameGap: 8,
                 axisLabel: {
                     color: isLevelAxis ? '#F5D76E' : '#fff',
-                    fontSize: 11,
-                    formatter: isLevelAxis ? '{value}%' : undefined
+                    fontSize: props.compact ? 10 : 11,
+                    width: props.compact ? 44 : undefined,
+                    overflow: 'truncate',
+                    formatter: isLevelAxis
+                        ? '{value}%'
+                        : (val) => formatAxisNumber(val)
                 },
                 axisLine: { lineStyle: { color: isLevelAxis ? '#F5D76E' : '#666' } },
                 splitLine: { lineStyle: { color: '#333' } },
@@ -259,6 +329,9 @@ watch(
                 {
                     type: 'value',
                     name: props.yAxisName,
+                    scale: true,
+                    min: valueExtent ? valueExtent.min : undefined,
+                    max: valueExtent ? valueExtent.max : undefined,
                     axisLabel: { color: '#fff', fontSize: 11 },
                     axisLine: { lineStyle: { color: '#666' } },
                     splitLine: { lineStyle: { color: '#333' } },
@@ -291,7 +364,7 @@ watch(
                 lineStyle: { opacity: 0, width: 0 },
                 itemStyle: { opacity: 0 },
                 markArea,
-                z: 1,
+                z: 0,
                 tooltip: { show: false },
                 legendHoverLink: false
             }]
@@ -299,7 +372,7 @@ watch(
 
         options.series = [
             ...statusBgSeries,
-            ...seriesList.map((item) => {
+            ...activeSeries.map((item) => {
                 const isLevel = item.isLevel === true
                 const color = item.color || '#20A0FF'
                 const data = (item.yData || []).map((v, i) => [xTimestamps[i], v])
@@ -314,7 +387,7 @@ watch(
                     // large 模式在 legend 隱藏時容易殘留線條，故不啟用
                     lineStyle: {
                         color,
-                        width: isLevel ? 3 : 1.5
+                        width: isLevel ? 3.5 : 3
                     },
                     itemStyle: { color },
                     z: isLevel ? 10 : 5
@@ -322,7 +395,7 @@ watch(
             })
         ]
 
-        const names = seriesNames(seriesList)
+        const names = seriesNames(activeSeries)
         const selected = ensureAtLeastOneSelected(
             names,
             Object.fromEntries(names.map(n => [
@@ -346,4 +419,11 @@ watch(
 )
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.battery-line-chart {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+}
+</style>

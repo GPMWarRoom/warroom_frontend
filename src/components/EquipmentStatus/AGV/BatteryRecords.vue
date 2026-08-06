@@ -88,7 +88,7 @@
 import { ref, computed, watch } from 'vue'
 import dayjs from 'dayjs'
 import BatteryLineChart from '@/components/common/charts/BatteryLineChart.vue'
-import { AGV_STATUS_COLORS, AGV_STATUS_BG } from '@/utils/agvStatusColors.js'
+import { AGV_STATUS_COLORS } from '@/utils/agvStatusColors.js'
 import { realTimeStore } from '@/stores/realTime'
 import { getBatteryRecords } from '@/api/agvc'
 
@@ -102,11 +102,11 @@ const viewMode = ref<'single' | 'multi'>('single')
 const showStatusBackground = ref(true)
 
 const statusLegend = [
-    { key: 'initializing', label: 'initializing', color: AGV_STATUS_COLORS.initializing, bg: AGV_STATUS_BG.initializing },
-    { key: 'idle', label: 'idle', color: AGV_STATUS_COLORS.idle, bg: AGV_STATUS_BG.idle },
-    { key: 'run', label: 'run', color: AGV_STATUS_COLORS.run, bg: AGV_STATUS_BG.run },
-    { key: 'down', label: 'down', color: AGV_STATUS_COLORS.down, bg: AGV_STATUS_BG.down },
-    { key: 'charging', label: 'charging', color: AGV_STATUS_COLORS.charging, bg: AGV_STATUS_BG.charging }
+    { key: 'initializing', label: 'initializing', color: AGV_STATUS_COLORS.initializing, bg: AGV_STATUS_COLORS.initializing },
+    { key: 'idle', label: 'idle', color: AGV_STATUS_COLORS.idle, bg: AGV_STATUS_COLORS.idle },
+    { key: 'run', label: 'run', color: AGV_STATUS_COLORS.run, bg: AGV_STATUS_COLORS.run },
+    { key: 'down', label: 'down', color: AGV_STATUS_COLORS.down, bg: AGV_STATUS_COLORS.down },
+    { key: 'charging', label: 'charging', color: AGV_STATUS_COLORS.charging, bg: AGV_STATUS_COLORS.charging }
 ]
 
 const payload = computed(() => realTimeData.BatteryRecords || {
@@ -176,13 +176,20 @@ const seriesBundle = computed(() => {
     return { xData, xTimestamps, voltage1, voltage2, charge1, charge2, discharge1, discharge2, level }
 })
 
-const hasChartData = computed(() => (seriesBundle.value.xTimestamps?.length || 0) > 0)
+/** 系列至少有一個有效數值才顯示（例如僅電壓1有值就不顯示電壓2） */
+function hasSeriesValues(yData: (number | null)[] | undefined): boolean {
+    return (yData || []).some(v => v !== null && v !== undefined && Number.isFinite(Number(v)))
+}
+
+function filterSeriesWithValues(list: SeriesItem[]): SeriesItem[] {
+    return list.filter(s => hasSeriesValues(s.yData))
+}
 
 const singleChartData = computed<SeriesItem[]>(() => {
     const b = seriesBundle.value
     if (!b.xTimestamps.length) return []
     const base = { xData: b.xData, xTimestamps: b.xTimestamps }
-    return [
+    return filterSeriesWithValues([
         { key: 'voltage1', name: '電壓1', ...base, yData: b.voltage1, color: '#20A0FF' },
         { key: 'voltage2', name: '電壓2', ...base, yData: b.voltage2, color: '#7EC8FF' },
         { key: 'chargeCurrent1', name: '充電電流1', ...base, yData: b.charge1, color: '#FF9F40' },
@@ -190,8 +197,10 @@ const singleChartData = computed<SeriesItem[]>(() => {
         { key: 'dischargeCurrent1', name: '放電電流1', ...base, yData: b.discharge1, color: '#FF6384' },
         { key: 'dischargeCurrent2', name: '放電電流2', ...base, yData: b.discharge2, color: '#FF9BB0' },
         { key: 'level', name: '電量%', ...base, yData: b.level, color: '#F5D76E', isLevel: true }
-    ]
+    ])
 })
+
+const hasChartData = computed(() => singleChartData.value.length > 0)
 
 const multiPanels = computed(() => {
     const b = seriesBundle.value
@@ -202,38 +211,38 @@ const multiPanels = computed(() => {
             key: 'level',
             title: '電量',
             yAxisName: '電量%',
-            datas: [
+            datas: filterSeriesWithValues([
                 { key: 'level', name: '電量%', ...base, yData: b.level, color: '#F5D76E', isLevel: true }
-            ]
+            ])
         },
         {
             key: 'voltage',
             title: '電壓',
             yAxisName: '電壓',
-            datas: [
+            datas: filterSeriesWithValues([
                 { key: 'voltage1', name: '電壓1', ...base, yData: b.voltage1, color: '#20A0FF' },
                 { key: 'voltage2', name: '電壓2', ...base, yData: b.voltage2, color: '#7EC8FF' }
-            ]
+            ])
         },
         {
             key: 'charge',
             title: '充電電流',
             yAxisName: '充電電流',
-            datas: [
+            datas: filterSeriesWithValues([
                 { key: 'chargeCurrent1', name: '充電電流1', ...base, yData: b.charge1, color: '#FF9F40' },
                 { key: 'chargeCurrent2', name: '充電電流2', ...base, yData: b.charge2, color: '#FFC07A' }
-            ]
+            ])
         },
         {
             key: 'discharge',
             title: '放電電流',
             yAxisName: '放電電流',
-            datas: [
+            datas: filterSeriesWithValues([
                 { key: 'dischargeCurrent1', name: '放電電流1', ...base, yData: b.discharge1, color: '#FF6384' },
                 { key: 'dischargeCurrent2', name: '放電電流2', ...base, yData: b.discharge2, color: '#FF9BB0' }
-            ]
+            ])
         }
-    ]
+    ].filter(panel => panel.datas.length > 0)
 })
 
 function applyPayload(data: any) {
@@ -435,15 +444,27 @@ defineExpose({
     gap: 8px;
     width: 100%;
     height: 100%;
+    align-items: stretch;
+    justify-items: stretch;
 }
 
 .multi-panel {
     min-height: 0;
     min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     background: #141414;
     border: 1px solid #333;
     border-radius: 6px;
     overflow: hidden;
+
+    > :deep(*) {
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        height: 100%;
+    }
 }
 
 .status-legend {

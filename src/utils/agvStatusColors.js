@@ -21,12 +21,12 @@ export const AGV_STATUS_COLORS = {
     unknown: '#909399'
 }
 
-/** 黑底圖表狀態背景 */
+/** 黑底圖表狀態背景（較透，避免蓋過曲線） */
 export const AGV_STATUS_BG = {
-    initializing: 'rgba(144, 147, 153, 0.72)',
-    idle: 'rgba(230, 162, 60, 0.72)',
-    run: 'rgba(103, 194, 58, 0.72)',
-    down: 'rgba(245, 108, 108, 0.72)',
-    charging: 'rgba(64, 158, 255, 0.72)',
-    unknown: 'rgba(144, 147, 153, 0.55)'
+    initializing: 'rgba(144, 147, 153, 0.52)',
+    idle: 'rgba(230, 162, 60, 0.52)',
+    run: 'rgba(103, 194, 58, 0.52)',
+    down: 'rgba(245, 108, 108, 0.52)',
+    charging: 'rgba(64, 158, 255, 0.52)',
+    unknown: 'rgba(144, 147, 153, 0.18)'
 }
