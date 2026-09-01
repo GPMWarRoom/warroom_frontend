@@ -75,6 +75,15 @@
                     </template>
                     <BatteryRecords class="tab-content-component" ref="BatteryRecordsRef" />
                 </el-tab-pane>
+                <el-tab-pane name="charge-station" :lazy="true">
+                    <template #label>
+                        <el-icon>
+                            <List />
+                        </el-icon>
+                        <span>充電站資訊</span>
+                    </template>
+                    <ChargeStationDashboard class="tab-content-component" ref="ChargeStationRef" />
+                </el-tab-pane>
                 <el-tab-pane name="utilizationEQ" :lazy="true">
                     <template #label>
                         <el-icon>
@@ -116,7 +125,7 @@
                 <RackStatus v-else-if="equipmentType === 'rack'" :id="selectedEquipmentId" @back="showEquipmentDrawer = false"/>
             </el-drawer>
 
-            <div class="date-select" v-if="!['monitor', 'utilizationEQ', 'battery-records'].includes(activeTab)">
+            <div class="date-select" v-if="!['monitor', 'utilizationEQ', 'battery-records', 'charge-station'].includes(activeTab)">
                 <el-date-picker v-model="localDateRange" type="daterange" range-separator="至" start-placeholder="開始日期" end-placeholder="結束日期" @change="handleDateRangeChange"/>
                 <el-button style="margin: 0px 2px" @click="() => _Init()">查詢</el-button>
             </div>
@@ -135,6 +144,7 @@ import UtilizationDashboard from '../components/AGVC/UtilizationDashboard/index.
 import UtilizationEQDashboard from '../components/AGVC/UtilizationEQDashboard/index.vue'
 import RackHistory from '@/components/EquipmentStatus/Rack/RackHistory.vue'
 import BatteryRecords from '@/components/EquipmentStatus/AGV/BatteryRecords.vue'
+import ChargeStationDashboard from '@/components/EquipmentStatus/ChargeStation/index.vue'
 import { uiStatsStore } from '../stores/UiStats'
 import { realTimeStore } from '../stores/realTime'
 import { useSignalR } from '@/composables/useSignalR'
@@ -155,6 +165,7 @@ const { on, off, connection, isConnected } = useSignalR()
 
 const TrafficStatsRef = ref()
 const BatteryRecordsRef = ref()
+const ChargeStationRef = ref()
 const realTimeData = realTimeStore()
 const loading = ref(realTimeData.loading)
 const activeTab = ref('monitor')
@@ -456,6 +467,18 @@ async function _Init() {
                     console.error('API Error:', e);
                 }
                 break;
+            case 'charge-station':
+                try {
+                    // 即時狀態走 SignalR 推播，歷史資料由元件自行以 API 查詢當日充電區間
+                    await connection.value?.invoke('InitDataByTab');
+                    await nextTick()
+                    if (ChargeStationRef.value?.reloadDefault) {
+                        await ChargeStationRef.value.reloadDefault()
+                    }
+                } catch(e) {
+                    console.error('API Error:', e);
+                }
+                break;
             case 'battery-records':
                 try {
                     // 進入頁籤 / 切換場域後：依目前 schema 向後端取 AgvStates 預設車輛與昨日資料
@@ -519,7 +542,10 @@ const tabStoreMap: Record<string, Record<string, string>> = {
         SysStatus: "AGVC_RealTimeDashboard_SysStatus"
     },
     "RackHistory": {
-        RackHistory: "RackHistory" 
+        RackHistory: "RackHistory"
+    },
+    "charge-station": {
+        EQStatus_ChargeStation: "AGVC_RealTimeDashboard_EQStatus_ChargeStation"
     }
 };
 
@@ -547,7 +573,7 @@ function handleNotification(result: any) {
 
     if (!storeMap) return;
 
-    if (['monitor', 'RackHistory', 'traffic-stats'].includes(activeTab.value)) {
+    if (['monitor', 'RackHistory', 'traffic-stats', 'charge-station'].includes(activeTab.value)) {
         const type = (result.type || result.Type || '').toLowerCase();
         if (type === 'init') {
             const data = result.data || result.Data || {};

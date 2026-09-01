@@ -48,6 +48,15 @@ export function getBatteryRecords(schema: string, agvName?: string, date?: strin
     }, { timeout: 60000 });
 }
 
+export function getChargeStationRecords(schema: string, stationName?: string, date?: string, sessionId?: number | null): Promise<any> {
+    return post('/api/AGVC/ChargeStationRecords', {
+        schema,
+        stationName: stationName || '',
+        date: date || '',
+        sessionId: sessionId ?? null
+    }, { timeout: 60000 });
+}
+
 export function queryUtilizationEQ(schema: string, target: string, dateRange: any[], params: any): Promise<any> {
     return post('/api/AGVC/UtilizationEQ', {
         schema,

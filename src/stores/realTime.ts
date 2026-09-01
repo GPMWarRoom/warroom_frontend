@@ -68,6 +68,16 @@ export const realTimeStore = defineStore('realTime', {
             statusPeriods: [] as any[],
             statusSummary: {} as Record<string, number>
         },
+        AGVC_RealTimeDashboard_EQStatus_ChargeStation: [] as any[],
+        ChargeStationRecords: {
+            stationList: [] as string[],
+            selectedStation: '',
+            date: '',
+            usageCount: 0,
+            sessions: [] as any[],
+            selectedSessionId: null as number | null,
+            points: [] as any[]
+        },
         AGVC_TrafficStats_mapModel: null as any,
         DateRange: calculateInitialDateRange() as [Date, Date],
     }),
