@@ -5,7 +5,8 @@ export const uiStatsStore = defineStore('uiStats', {
         isCollapse: false,
         agvcTabSelected: 'monitor',
         routeSelected: 'monitor',
-        selectedAgvc: '', 
+        selectedAgvc: '',
+        theme: (typeof localStorage !== 'undefined' && localStorage.getItem('agvc-theme') === 'light') ? 'light' : 'dark',
     }),
 
     actions: {
@@ -23,6 +24,11 @@ export const uiStatsStore = defineStore('uiStats', {
         },
         setSelectedAgvc(value: string) {
             this.selectedAgvc = value
+        },
+        setTheme(theme: 'dark' | 'light') {
+            this.theme = theme
+            localStorage.setItem('agvc-theme', theme)
+            document.documentElement.classList.toggle('dark', theme === 'dark')
         }
     },
     getters: {

@@ -219,7 +219,7 @@ const exportFilteredCsv = () => {
 }
 
 .card {
-    background: #1e1e1e;
+    background: var(--card-bg);
     border: 1px solid #333;
     border-radius: 8px;
     display: flex;
@@ -230,8 +230,8 @@ const exportFilteredCsv = () => {
     h3 {
         margin: 0;
         padding: 12px 16px;
-        background: #23272f;
-        color: #fff;
+        background: var(--surface-2);
+        color: var(--text-color);
         font-size: 1.1rem;
         border-bottom: 1px solid #333;
         flex-shrink: 0; // 標題高度固定
@@ -280,20 +280,20 @@ const exportFilteredCsv = () => {
 :deep(.el-table) {
     background-color: transparent !important;
     --el-table-border-color: #333;
-    --el-table-header-bg-color: #23272f;
-    --el-table-header-text-color: #fff;
-    --el-table-tr-bg-color: #1e1e1e;
+    --el-table-header-bg-color: var(--table-header-bg);
+    --el-table-header-text-color: var(--text-color);
+    --el-table-tr-bg-color: var(--card-bg);
     --el-table-row-hover-bg-color: #2c2c2c;
 }
 :deep(.el-table th.el-table__cell) {
-    background-color: #23272f !important;
+    background-color: var(--surface-2) !important;
     border-bottom: 1px solid #333 !important;
 }
 :deep(.el-table tr) {
-    background-color: #1e1e1e !important;
+    background-color: var(--card-bg) !important;
 }
 :deep(.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
-    background: #23272f !important;
+    background: var(--surface-2) !important;
 }
 :deep(.el-table td.el-table__cell) {
     border-bottom: 1px solid #333 !important;

@@ -154,7 +154,7 @@ watch(
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    background: #141414;
+    background: var(--app-bg-color);
     border: 1px solid #333;
     border-radius: 6px;
     overflow: hidden;
@@ -177,7 +177,7 @@ watch(
     }
 
     .lv-current {
-        color: #fff;
+        color: var(--text-color);
         font-size: 16px;
         font-weight: 700;
         font-variant-numeric: tabular-nums;

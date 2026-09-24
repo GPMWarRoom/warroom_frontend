@@ -149,8 +149,8 @@ const nextAGV = () => {
 }
 
 .arrow-btn {
-  background: #2c3e50;
-  color: white;
+  background: var(--surface-2);
+  color: var(--text-color);
   border: none;
   border-radius: 6px;
   padding: 4px 10px;
@@ -159,7 +159,7 @@ const nextAGV = () => {
 }
 
 .arrow-btn:hover:not(:disabled) {
-  background: #34495e;
+  background: var(--surface-3);
 }
 
 .arrow-btn:disabled {

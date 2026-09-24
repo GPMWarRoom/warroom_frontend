@@ -47,6 +47,16 @@
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
+                <div class="theme-switch" role="group" aria-label="色彩切換">
+                    <button type="button" :class="{ active: uiStats.theme === 'dark' }" @click="uiStats.setTheme('dark')">
+                        <el-icon><Moon /></el-icon>
+                        <span>黑暗</span>
+                    </button>
+                    <button type="button" :class="{ active: uiStats.theme === 'light' }" @click="uiStats.setTheme('light')">
+                        <el-icon><Sunny /></el-icon>
+                        <span>明亮</span>
+                    </button>
+                </div>
                 <el-dropdown v-if="false">
                     <span class="user-profile"> {{ userName }} <el-icon>
                             <ArrowDown />
@@ -67,7 +77,7 @@
         <!-- Main Container -->
         <div class="app-container">
             <!-- Side Menu -->
-            <el-menu class="side-menu" :collapse="isCollapse" background-color="#1e1e1e" text-color="#fff" active-text-color="rgb(32, 160, 255)" :collapse-transition="true" :default-active="route.path" @select="handleSelect">
+            <el-menu class="side-menu" :collapse="isCollapse" :background-color="menuBg" :text-color="menuText" active-text-color="rgb(32, 160, 255)" :collapse-transition="true" :default-active="route.path" :key="uiStats.theme" @select="handleSelect">
                 <el-menu-item v-for="item in menu" :index="item.path + ''" :route="item.path" @click="handleSelect(item?.path as string)">
                     <el-icon>
                         <component :is="item.icon" />
@@ -100,7 +110,7 @@ import type { RouteMeta } from "vue-router";
 import { userStore } from "../stores/user";
 import AlarmMessage from "../components/Alarms/AlarmMessage.vue";
 import { useRoute } from "vue-router";
-import { BellFilled, ArrowDown, Fold, Expand } from '@element-plus/icons-vue'
+import { BellFilled, ArrowDown, Fold, Expand, Moon, Sunny } from '@element-plus/icons-vue'
 import { useAlarmStore } from '@/stores/alert'
 
 const alarmStore = useAlarmStore()
@@ -110,6 +120,8 @@ const user = userStore();
 const menu = menuRoutes as RouteMeta[];
 const isCollapse = ref(false);
 const uiStats = uiStatsStore();
+const menuBg = computed(() => uiStats.theme === 'dark' ? '#1e1e1e' : '#ffffff')
+const menuText = computed(() => uiStats.theme === 'dark' ? '#ffffff' : '#303133')
 const toggleSideMenu = () => {
     isCollapse.value = !isCollapse.value;
     uiStats.setCollapse(isCollapse.value);
@@ -135,8 +147,8 @@ const login = () => {
 <style scoped>
 .app-header {
     height: 40px;
-    background-color: #1e1e1e;
-    border-bottom: 1px solid #333;
+    background-color: var(--header-bg);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -158,12 +170,12 @@ const login = () => {
 .header-left h1 {
     margin: 0;
     font-size: 1.1rem;
-    color: #fff;
+    color: var(--text-color);
     white-space: nowrap;
 }
 
 .header-right {
-    color: #fff;
+    color: var(--text-color);
     align-items: center;
     justify-content: center;
     display: flex;
@@ -185,7 +197,8 @@ const login = () => {
 
 .side-menu {
     height: calc(100vh - 40px);
-    border-right: 1px solid #333;
+    border-right: 1px solid var(--border-color);
+    background-color: var(--header-bg);
 }
 
 .side-menu:not(.el-menu--collapse) {
@@ -230,5 +243,33 @@ const login = () => {
 }
 .bell-btn {
   position: relative;
+}
+.theme-switch {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+.theme-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, var(--text-color));
+  cursor: pointer;
+  font-size: 13px;
+}
+.theme-switch button.active {
+  background: #409eff;
+  color: #fff;
+}
+.theme-switch .el-icon {
+  font-size: 14px;
 }
 </style>

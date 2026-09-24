@@ -954,7 +954,7 @@ watch(
 
 <style scoped>
 .h-100 {
-  border: 2px solid #444;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   padding: 4px;
 }
@@ -974,7 +974,7 @@ watch(
 
     .select-agvc-label {
         margin: 0 10px;
-        color: #fff;
+        color: var(--text-color);
         font-weight: bold;
         letter-spacing: 2px;
     }
@@ -989,7 +989,7 @@ watch(
     align-items: center;
     height: 32px;
     padding: 0 12px;
-    color: #909399;
+    color: var(--text-color);
     background: transparent;
     border: 1px solid #333;
     border-radius: 0;
@@ -1044,7 +1044,7 @@ watch(
 }
 
 .agvc-tabs :deep(.el-tabs__item) {
-    color: #909399;
+    color: var(--text-color);
     border: 1px solid #333;
     margin-right: 4px;
     height: 32px;

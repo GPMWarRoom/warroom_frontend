@@ -75,7 +75,7 @@ const batteryHealthStatus = computed(() => {
 </script>
 <style scoped>
 .battery-status {
-    background: #1e1e1e;
+    background: var(--card-bg);
     border-radius: 8px;
     padding: 15px;
     width: 100%;
@@ -90,7 +90,7 @@ const batteryHealthStatus = computed(() => {
 
 .battery-header h3 {
     margin: 0;
-    color: #fff;
+    color: var(--text-color);
 }
 
 .battery-container {
@@ -112,7 +112,7 @@ const batteryHealthStatus = computed(() => {
     border: 2px solid #fff;
     border-radius: 4px;
     overflow: hidden;
-    background: #2f2f2f;
+    background: var(--surface-2);
 }
 
 .battery-level {
@@ -129,7 +129,7 @@ const batteryHealthStatus = computed(() => {
 }
 
 .battery-percentage {
-    color: #fff;
+    color: var(--text-color);
     font-size: 1.2em;
     font-weight: bold;
     min-width: 60px;
@@ -147,9 +147,9 @@ const batteryHealthStatus = computed(() => {
     flex-direction: column;
     align-items: center;
     padding: 10px;
-    background: #2f2f2f;
+    background: var(--surface-2);
     border-radius: 6px;
-    color: #fff;
+    color: var(--text-color);
 }
 
 .detail-item .el-icon {

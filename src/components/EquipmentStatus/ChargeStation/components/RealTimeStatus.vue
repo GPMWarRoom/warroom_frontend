@@ -130,7 +130,7 @@ const updateTimeText = computed(() => {
 
 <style scoped lang="scss">
 .card {
-    background: #1e1e1e;
+    background: var(--card-bg);
     border: 1px solid #333;
     border-radius: 8px;
     display: flex;
@@ -142,8 +142,8 @@ const updateTimeText = computed(() => {
     h3 {
         margin: 0;
         padding: 8px 16px;
-        background: #23272f;
-        color: #fff;
+        background: var(--surface-2);
+        color: var(--text-color);
         font-size: 1.1rem;
         border-bottom: 1px solid #333;
         flex-shrink: 0;
@@ -195,7 +195,7 @@ const updateTimeText = computed(() => {
     justify-content: space-between;
     gap: 8px;
     padding: 6px 10px;
-    background: #141414;
+    background: var(--app-bg-color);
     border: 1px solid #2c2c2c;
     border-radius: 6px;
 
@@ -206,7 +206,7 @@ const updateTimeText = computed(() => {
     }
 
     .value {
-        color: #fff;
+        color: var(--text-color);
         font-size: 13px;
         font-weight: 600;
         text-align: right;

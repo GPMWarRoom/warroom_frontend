@@ -36,8 +36,43 @@ const initChart = () => {
     if (props.options) {
         chart.setOption(props.options)
     }
+    applyChartTheme()
 
     emit('chartReady', chart)
+}
+
+const chartPalette = () => {
+    const dark = uiStats.theme !== 'light'
+    return dark
+        ? { text: '#ffffff', axis: '#aaaaaa', split: '#333333', tipBg: 'rgba(50,50,50,0.92)', tipText: '#ffffff', border: '#333333' }
+        : { text: '#141414', axis: '#141414', split: '#dcdfe6', tipBg: '#ffffff', tipText: '#141414', border: '#dcdfe6' }
+}
+
+const paintAxis = (axis, palette) => {
+    if (!axis) return axis
+    const list = Array.isArray(axis) ? axis : [axis]
+    return list.map((item) => ({
+        ...item,
+        axisLabel: { ...(item.axisLabel || {}), color: palette.text },
+        nameTextStyle: { ...(item.nameTextStyle || {}), color: palette.text },
+        axisLine: { ...(item.axisLine || {}), lineStyle: { ...((item.axisLine && item.axisLine.lineStyle) || {}), color: palette.axis } },
+        splitLine: { ...(item.splitLine || {}), lineStyle: { ...((item.splitLine && item.splitLine.lineStyle) || {}), color: palette.split } }
+    }))
+}
+
+const applyChartTheme = () => {
+    if (!chartInstance) return
+    const palette = chartPalette()
+    const current = chartInstance.getOption()
+    chartInstance.setOption({
+        backgroundColor: 'transparent',
+        textStyle: { color: palette.text },
+        title: { textStyle: { color: palette.text } },
+        legend: { textStyle: { color: palette.text } },
+        tooltip: { backgroundColor: palette.tipBg, borderColor: palette.border, textStyle: { color: palette.tipText } },
+        xAxis: paintAxis(current.xAxis, palette),
+        yAxis: paintAxis(current.yAxis, palette)
+    })
 }
 
 // 更新圖表
@@ -47,6 +82,7 @@ const updateChart = () => {
             notMerge: true,
             lazyUpdate: false
         })
+        applyChartTheme()
     }
 }
 
@@ -77,6 +113,10 @@ watch(() => uiStats.isCollapse, (newVal) => {
         }, 1000);
     }),
         { immediate: true, deep: true }
+})
+
+watch(() => uiStats.theme, () => {
+    nextTick(() => applyChartTheme())
 })
 
 watch(() => uiStats.agvcTabSelected, () => {

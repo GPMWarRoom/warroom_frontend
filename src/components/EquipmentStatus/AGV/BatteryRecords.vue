@@ -374,7 +374,7 @@ defineExpose({
 }
 
 .card {
-    background: #1e1e1e;
+    background: var(--card-bg);
     border: 1px solid #333;
     border-radius: 8px;
     display: flex;
@@ -385,8 +385,8 @@ defineExpose({
     h3 {
         margin: 0;
         padding: 12px 16px;
-        background: #23272f;
-        color: #fff;
+        background: var(--surface-2);
+        color: var(--text-color);
         font-size: 1.1rem;
         border-bottom: 1px solid #333;
         flex-shrink: 0;
@@ -454,7 +454,7 @@ defineExpose({
     height: 100%;
     display: flex;
     flex-direction: column;
-    background: #141414;
+    background: var(--app-bg-color);
     border: 1px solid #333;
     border-radius: 6px;
     overflow: hidden;

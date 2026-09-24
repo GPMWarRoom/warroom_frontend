@@ -51,7 +51,7 @@ onDeactivated(async () => {
   align-items: center;
   /* justify-content: space-between;  // 移除這行 */
   gap: 16px; /* 增加間距 */
-  background: #23272f;
+  background: var(--surface-2);
   border-radius: 12px 12px 0 0;
   padding: 18px 24px 18px 24px;
   margin-bottom: 0;
@@ -62,13 +62,13 @@ onDeactivated(async () => {
   gap: 6px;
 }
 .select-agvc-label {
-  color: #fff;
+  color: var(--text-color);
   font-weight: bold;
   letter-spacing: 2px;
   font-size: 20px;
 }
 .header-select {
-  background: #232323;
+  background: var(--surface-2);
   border-radius: 6px;
   width: 180px; /* 固定寬度 */
   min-width: 180px;
@@ -80,11 +80,11 @@ onDeactivated(async () => {
 }
 .info-content {
   min-height: 200px;
-  background: #232323;
+  background: var(--surface-2);
   border-radius: 0 0 12px 12px;
   padding: 32px 24px;
   font-size: 18px;
-  color: #fff;
+  color: var(--text-color);
   margin-bottom: 32px;
 }
 </style>

@@ -108,7 +108,7 @@ const formatDate = (date: Date) => {
 </script>
 <style scoped>
 .task-stats {
-    background: #1e1e1e;
+    background: var(--card-bg);
     border-radius: 8px;
     padding: 15px;
     width: 100%;
@@ -124,7 +124,7 @@ const formatDate = (date: Date) => {
 
 .task-header h3 {
     margin: 0;
-    color: #fff;
+    color: var(--text-color);
 }
 
 .stats-container {
@@ -134,7 +134,7 @@ const formatDate = (date: Date) => {
 }
 
 .stat-card {
-    background: #2f2f2f;
+    background: var(--surface-2);
     border-radius: 6px;
     padding: 15px;
     display: flex;
@@ -168,7 +168,7 @@ const formatDate = (date: Date) => {
 }
 
 .info .value {
-    color: #fff;
+    color: var(--text-color);
     font-size: 1.8em;
     font-weight: bold;
     margin-bottom: 10px;
@@ -181,7 +181,7 @@ const formatDate = (date: Date) => {
 }
 
 .stat-item {
-    background: #2f2f2f;
+    background: var(--surface-2);
     border-radius: 6px;
     padding: 15px;
 }
@@ -209,7 +209,7 @@ const formatDate = (date: Date) => {
     align-items: baseline;
     justify-content: center;
     gap: 5px;
-    color: #fff;
+    color: var(--text-color);
 }
 
 .stat-numbers .completed {
@@ -237,6 +237,6 @@ const formatDate = (date: Date) => {
 }
 
 :deep(.el-progress__text) {
-    color: #fff;
+    color: var(--text-color);
 }
 </style>

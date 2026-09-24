@@ -12,21 +12,45 @@ html.dark {
   --app-bg-color: #161616;
   --header-bg: #1e1e1e;
   --text-color: #fff;
+  --text-muted: #c0c4cc;
   --card-bg: rgb(29, 30, 31);
+  --surface-2: #23272f;
+  --surface-3: #2e3440;
   --card-border-color: rgb(51, 51, 51);
   --border-color: #333;
+  --map-bg: #222;
+  --table-header-bg: #23272f;
+  --table-row-bg: #2e3440;
+  --table-hover-bg: #394150;
   --scrollbar-thumb: #4a4a4a;
   --scrollbar-track: #1e1e1e;
+  --el-bg-color: #1e1e1e;
+  --el-bg-color-overlay: #1d1e1f;
+  --el-text-color-primary: #fff;
+  --el-text-color-regular: #e5eaf3;
+  --el-fill-color-blank: #1e1e1e;
+  --el-border-color: #333;
   color-scheme: dark;
 }
 
 html:not(.dark) {
   --app-bg-color: #f5f7fa;
   --header-bg: #ffffff;
-  --text-color: #303133;
+  --text-color: #141414;
+  --text-muted: #141414;
+  --el-text-color-primary: #141414;
+  --el-text-color-regular: #141414;
+  --el-text-color-secondary: #141414;
+  --el-text-color-placeholder: #303133;
   --card-bg: #ffffff;
+  --surface-2: #f5f7fa;
+  --surface-3: #eef1f6;
   --card-border-color: #e4e7ed;
   --border-color: #dcdfe6;
+  --map-bg: #eef2f7;
+  --table-header-bg: #f5f7fa;
+  --table-row-bg: #ffffff;
+  --table-hover-bg: #ecf5ff;
   --scrollbar-thumb: #c0c4cc;
   --scrollbar-track: #f2f3f5;
   color-scheme: light;
@@ -58,6 +82,43 @@ html.dark .el-menu {
 
 html.dark .el-button--text {
   color: #fff !important;
+}
+
+html:not(.dark) .hint,
+html:not(.dark) .source-hint,
+html:not(.dark) .status-label,
+html:not(.dark) .status-desc {
+  opacity: 1;
+  color: #141414;
+}
+
+html:not(.dark) .el-menu {
+  --el-menu-bg-color: #ffffff !important;
+  --el-menu-text-color: #303133 !important;
+  --el-menu-hover-bg-color: #ecf5ff !important;
+}
+
+.el-card,
+.el-dialog,
+.el-drawer,
+.el-popover,
+.el-dropdown-menu,
+.el-select-dropdown,
+.el-picker-panel {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.el-table {
+  --el-table-bg-color: var(--card-bg);
+  --el-table-tr-bg-color: var(--card-bg);
+  --el-table-header-bg-color: var(--table-header-bg);
+  --el-table-header-text-color: var(--text-color);
+  --el-table-text-color: var(--text-color);
+  --el-table-row-hover-bg-color: var(--table-hover-bg);
+  --el-table-border-color: var(--border-color);
+  --el-table-current-row-bg-color: var(--table-hover-bg);
 }
 
 /* 滾動條樣式 */

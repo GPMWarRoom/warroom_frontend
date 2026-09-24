@@ -301,7 +301,7 @@ const indexMethod = (index: number) => {
 .query-section {
   padding: 10px 0;           /* 稍微增加上下內距 */
   margin-bottom: 5px;        /* 與下方內容保持微小間距 */
-  border-bottom: 1px solid #333; /* 增加明顯的底線，顏色可依需求調成 #444 */
+  border-bottom: 1px solid var(--border-color);
 }
 
 .query-bar {
@@ -327,7 +327,7 @@ const indexMethod = (index: number) => {
 .divider {
   width: 1px;
   height: 20px;
-  background-color: #444;
+  background-color: var(--surface-2);
   margin: 0 4px;
 }
 
@@ -370,7 +370,7 @@ const indexMethod = (index: number) => {
     border: 1px solid #333;
     border-radius: 8px;
     padding: 12px;
-    background: #1a1a1a;
+    background: var(--card-bg);
     min-height: 280px;
 
     h3 {
@@ -416,12 +416,12 @@ const indexMethod = (index: number) => {
 /* 深色模式覆蓋 */
 :deep(.el-input__wrapper),
 :deep(.el-range-editor.el-input__inner) {
-  background-color: #1a1a1a !important;
+  background-color: var(--card-bg) !important;
   border: 1px solid #333 !important;
   box-shadow: none !important;
   .el-range-input {
     background: transparent;
-    color: #fff;
+    color: var(--text-color);
   }
 }
 
@@ -430,6 +430,6 @@ const indexMethod = (index: number) => {
   padding: 10px 5px;
   flex-shrink: 0;    /* 確保分頁不會被壓縮 */
   background-color: transparent; /* 或者與背景同色 */
-  border-top: 1px solid #222;    /* 可選：增加一點視覺區隔 */
+  border-top: 1px solid var(--border-color);
 }
 </style>

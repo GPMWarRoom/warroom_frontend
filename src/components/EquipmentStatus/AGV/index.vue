@@ -122,7 +122,7 @@ function onBack() {
 }
 
 .page-title {
-    color: #fff;
+    color: var(--text-color);
     margin-bottom: 20px;
     font-size: 1.5rem;
 }
@@ -182,7 +182,7 @@ function onBack() {
 
 // 暗色主題優化
 :deep(.el-card) {
-    background: #1e1e1e;
+    background: var(--card-bg);
     border: 1px solid #333;
 
     .el-card__header {
@@ -196,7 +196,7 @@ function onBack() {
     gap: 16px;
     margin-bottom: 5px;
     padding: 10px 20px; // 高度縮小
-    background: #23272f;
+    background: var(--surface-2);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.10);
     min-height: 10px; // 可視需要調整
@@ -204,7 +204,7 @@ function onBack() {
 
 .back-btn {
     font-weight: bold;
-    color: #fff;
+    color: var(--text-color);
     letter-spacing: 1px;
     font-size: 0.9rem;
 }
@@ -212,7 +212,7 @@ function onBack() {
 .header-title {
     font-size: 1.0rem;
     font-weight: bold;
-    color: #fff;
+    color: var(--text-color);
 }
 
 .header-divider {

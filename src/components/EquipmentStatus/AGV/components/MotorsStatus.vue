@@ -90,7 +90,7 @@ const motorHealthStatus = computed(() => {
 </script>
 <style scoped>
 .motors-status {
-    background: #1e1e1e;
+    background: var(--card-bg);
     border-radius: 8px;
     padding: 15px;
     width: 100%;
@@ -105,7 +105,7 @@ const motorHealthStatus = computed(() => {
 
 .motors-header h3 {
     margin: 0;
-    color: #fff;
+    color: var(--text-color);
 }
 
 .motors-grid {
@@ -115,7 +115,7 @@ const motorHealthStatus = computed(() => {
 }
 
 .motor-card {
-    background: #2f2f2f;
+    background: var(--surface-2);
     border-radius: 6px;
     padding: 15px;
 }
@@ -124,7 +124,7 @@ const motorHealthStatus = computed(() => {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #fff;
+    color: var(--text-color);
     margin-bottom: 15px;
     font-weight: bold;
 }
@@ -140,7 +140,7 @@ const motorHealthStatus = computed(() => {
 }
 
 .stat-item {
-    background: #1e1e1e;
+    background: var(--card-bg);
     border-radius: 6px;
     padding: 10px;
 }
@@ -159,7 +159,7 @@ const motorHealthStatus = computed(() => {
 }
 
 .stat-value {
-    color: #fff;
+    color: var(--text-color);
     font-size: 1.2em;
     font-weight: bold;
     margin-bottom: 5px;

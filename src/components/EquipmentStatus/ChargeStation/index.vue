@@ -165,7 +165,7 @@ defineExpose({
     flex-wrap: wrap;
     flex-shrink: 0;
     padding: 8px 16px;
-    background: #23272f;
+    background: var(--surface-2);
     border: 1px solid #333;
     border-radius: 8px;
     position: relative;

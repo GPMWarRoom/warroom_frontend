@@ -157,7 +157,7 @@ function getAgvStatusType(status) {
 }
 .floor-title {
   font-size: 24px;
-  color: #fff;
+  color: var(--text-color);
   margin-bottom: 12px;
 }
 .zone-title {
@@ -171,12 +171,12 @@ function getAgvStatusType(status) {
   gap: 20px;
 }
 .device-card {
-  background-color: #333;
+  background-color: var(--card-bg);
   border-radius: 12px;
   padding: 16px;
   width: 340px;
-  color: #eee;
-  border: 1px solid #444;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   max-height: 420px;         /* 你可以依需求調整高度 */
   overflow-y: auto; 
@@ -187,7 +187,7 @@ function getAgvStatusType(status) {
 .device-header {
   display: flex;
   justify-content: space-between;
-  color: #eee;
+  color: var(--text-color);
   font-weight: 600;
 }
 .error-tag {
@@ -208,7 +208,7 @@ function getAgvStatusType(status) {
 }
 .status-label {
   font-size: 14px;
-  color: #bbb;
+  color: var(--text-muted);
   margin-bottom: 4px;
 }
 .el-switch {
@@ -220,7 +220,7 @@ function getAgvStatusType(status) {
   font-size: 13px;
 }
 .device-card:hover {
-  background-color: #3a3a3a;
+  background-color: var(--surface-2);
   box-shadow: 0 6px 16px rgba(0,0,0,0.2);
   border-color: #409eff; 
   box-shadow: 0 0 12px 0 #0d81f5b0;
@@ -240,7 +240,7 @@ function getAgvStatusType(status) {
   font-size: 12px;
   font-weight: 500;
   /* 根據 switch 狀態顏色，預設為灰色 */
-  color: #bbb;
+  color: var(--text-muted);
 }
 .device-card.has-alarm {
   border-color: #ff4d4f !important;
@@ -258,13 +258,13 @@ function getAgvStatusType(status) {
   gap: 10px;
 }
 .agv-card {
-  background: #444950ce;         /* 更柔和的深灰色 */
+  background: var(--surface-2);
   border-radius: 10px;
   padding: 12px 16px;
   margin-bottom: 8px;
-  color: #eee;
+  color: var(--text-color);
   box-shadow: 0 1px 4px #0002;
-  border: 1px solid #444;
+  border: 1px solid var(--border-color);
   min-width: 220px;
 }
 .agv-header {

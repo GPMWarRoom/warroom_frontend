@@ -83,7 +83,7 @@ const handleLogin = async () => {
 }
 
 .login-box {
-    background: #2a2a2a;
+    background: var(--card-bg);
     /* 深色卡片背景 */
     padding: 2rem;
     border-radius: 8px;
@@ -96,7 +96,7 @@ const handleLogin = async () => {
 
 h1 {
     margin-bottom: 1.5rem;
-    color: #fff;
+    color: var(--text-color);
     /* 白色標題 */
     text-align: center;
 }
@@ -122,7 +122,7 @@ input {
     font-size: 1rem;
     background-color: #333;
     /* 輸入框深色背景 */
-    color: #fff;
+    color: var(--text-color);
     /* 輸入文字顏色 */
 }
 

@@ -42,6 +42,7 @@ import { ref, onMounted, onUnmounted, watch, nextTick, onActivated, onDeactivate
 import type { FloorVersions } from '@api/system'
 import * as echarts from 'echarts'
 import { useSignalR } from '@/composables/useSignalR'
+import { uiStatsStore } from '@/stores/UiStats'
 const { on, off, connection } = useSignalR()
 
 const viewType = ref<'tree' | 'table'>('tree')
@@ -78,6 +79,9 @@ const setChartRef = (el: Element | null, floor: number) => {
     }
 }
 
+const uiStats = uiStatsStore()
+const chartTextColor = () => uiStats.theme === 'light' ? '#141414' : '#ffffff'
+
 const createChartOption = (floorData: FloorVersions) => {
     return {
         tooltip: {
@@ -106,7 +110,7 @@ const createChartOption = (floorData: FloorVersions) => {
                 fontSize: 16,
                 fontWeight: 'bold',
                 offset: [0, -20],
-                color: 'white',
+                color: chartTextColor(),
                 formatter: (params: any) => {
                     if (params.value) {
                         return `${params.name} : ${params.value}`
@@ -122,7 +126,7 @@ const createChartOption = (floorData: FloorVersions) => {
                     verticalAlign: 'middle',
                     align: 'center',
                     fontSize: 16,
-                    color: 'white',
+                    color: chartTextColor(),
                     fontWeight: 'bold',
                     offset: [60, 5]
                 },
@@ -145,6 +149,8 @@ const createChartOption = (floorData: FloorVersions) => {
         }]
     }
 }
+
+watch(() => uiStats.theme, () => nextTick(() => initCharts()))
 
 const initCharts = () => {
     versionList.value.forEach(floor => {
@@ -223,7 +229,7 @@ onUnmounted(() => {
 }
 
 .title {
-    color: #ffffff;
+    color: var(--text-color);
     margin: 0;
 }
 
@@ -240,7 +246,7 @@ onUnmounted(() => {
 }
 
 .floor-title {
-    color: #ffffff;
+    color: var(--text-color);
     text-align: center;
     margin-bottom: 20px;
 }

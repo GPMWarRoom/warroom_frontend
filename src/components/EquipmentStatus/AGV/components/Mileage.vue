@@ -83,7 +83,7 @@ const formatDate = (date: Date) => {
 </script>
 <style scoped>
 .mileage-status {
-    background: #1e1e1e;
+    background: var(--card-bg);
     border-radius: 8px;
     padding: 15px;
     width: 100%;
@@ -98,7 +98,7 @@ const formatDate = (date: Date) => {
 
 .mileage-header h3 {
     margin: 0;
-    color: #fff;
+    color: var(--text-color);
 }
 
 .mileage-content {
@@ -108,7 +108,7 @@ const formatDate = (date: Date) => {
 }
 
 .mileage-card {
-    background: #2f2f2f;
+    background: var(--surface-2);
     border-radius: 6px;
     padding: 15px;
     display: flex;
@@ -142,7 +142,7 @@ const formatDate = (date: Date) => {
 }
 
 .info .value {
-    color: #fff;
+    color: var(--text-color);
     font-size: 1.5em;
     font-weight: bold;
 }
@@ -154,7 +154,7 @@ const formatDate = (date: Date) => {
 }
 
 .stat-card {
-    background: #2f2f2f;
+    background: var(--surface-2);
     border-radius: 6px;
     padding: 15px;
 }
@@ -172,7 +172,7 @@ const formatDate = (date: Date) => {
 }
 
 .stat-value {
-    color: #fff;
+    color: var(--text-color);
     font-size: 1.2em;
     font-weight: bold;
     margin-bottom: 10px;

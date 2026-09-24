@@ -115,7 +115,7 @@ function onBack() {
 }
 
 :deep(.el-card) {
-  background: #1e1e1e;
+  background: var(--card-bg);
   border: 1px solid #333;
 
   .el-card__header {
@@ -130,7 +130,7 @@ function onBack() {
   gap: 16px;
   margin-bottom: 5px;
   padding: 10px 20px; 
-  background: #23272f;
+  background: var(--surface-2);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.10);
   min-height: 10px; 
@@ -139,7 +139,7 @@ function onBack() {
 
 .back-btn {
   font-weight: bold;
-  color: #fff;
+  color: var(--text-color);
   letter-spacing: 1px;
   font-size: 0.9rem;
 }
@@ -147,7 +147,7 @@ function onBack() {
 .header-title {
   font-size: 1.0rem;
   font-weight: bold;
-  color: #fff;
+  color: var(--text-color);
 }
 
 
@@ -166,10 +166,10 @@ function onBack() {
   text-align: center;
   border-radius: 12px;
   font-size: 1.05rem;
-  background-color: #1e1e1e;
+  background-color: var(--card-bg);
   height: 100%;       
   box-sizing: border-box;
-  border: 2px solid #44444400;
+  border: 2px solid var(--border-color)44400;
 }
 .rack-cell.has-alarm {
   border-color: #ff4d4f !important;
@@ -185,14 +185,14 @@ function onBack() {
   align-items: center;
   margin-bottom: 6px;
   font-weight: bold;
-  background: #23272f;    
-  color: #fff;             
+  background: var(--surface-2);    
+  color: var(--text-color);             
   border-radius: 4px;
   padding: 4px 8px;
 }
 
 .cell-no {
-  color: #fff;
+  color: var(--text-color);
   font-size: 1.3rem;
 }
 
@@ -222,7 +222,7 @@ function onBack() {
 }
 
 .cell-value {
-  color: #fff;
+  color: var(--text-color);
   font-size: 1rem;
   text-align: right;
   margin-left: 8px;

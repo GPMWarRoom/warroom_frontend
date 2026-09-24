@@ -44,7 +44,7 @@ defineEmits(['show-equipment-status', 'realtime-action'])
     width: 100%;
     padding-top: 0.5rem;
     overflow-y: auto; /* 允許垂直捲動 */
-    background-color: #1a1a1a;
+    background-color: var(--card-bg);
 
     /* 美化 scrollbar (比照第一頁樣式) */
     &::-webkit-scrollbar {
@@ -73,7 +73,7 @@ defineEmits(['show-equipment-status', 'realtime-action'])
     flex-shrink: 0;
     width: 100%;
     --el-card-border-color: #333;
-    --el-card-bg-color: #1e1e1e;
+    --el-card-bg-color: var(--card-bg);
 }
 
 /* 修正地圖容器高度，避免在 auto 模式下消失 */
