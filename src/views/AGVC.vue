@@ -1,10 +1,6 @@
 <template>
     <content-container>
-        <div class="h-100 "
-            :class="{
-                'not-alive': aliveCheck && (aliveCheck.isAlive === false || aliveCheck.isVMSAlive === false)
-            }"
-        >
+        <div class="h-100">
             <el-tabs v-model="activeTab" class="agvc-tabs" type="card" v-loading="loading" @tab-change="handleTabChange">
                 <el-tab-pane :disabled="true" name="select-agvc" >
                     <template #label>
@@ -93,6 +89,15 @@
                     </template>
                     <UtilizationEQDashboard class="tab-content-component" @realtime-action="handleUtilizationEQRealtimeAction"/>
                 </el-tab-pane>
+                <el-tab-pane name="log-download" :lazy="true">
+                    <template #label>
+                        <el-icon>
+                            <Download />
+                        </el-icon>
+                        <span>LOG 撈取</span>
+                    </template>
+                    <LogDownloadPanel class="tab-content-component" />
+                </el-tab-pane>
                 
                 <!-- <el-tab-pane label="任務管理" name="tasks">
                     <template #label>
@@ -125,7 +130,7 @@
                 <RackStatus v-else-if="equipmentType === 'rack'" :id="selectedEquipmentId" @back="showEquipmentDrawer = false"/>
             </el-drawer>
 
-            <div class="date-select" v-if="!['monitor', 'utilizationEQ', 'battery-records', 'charge-station'].includes(activeTab)">
+            <div class="date-select" v-if="!['monitor', 'utilizationEQ', 'battery-records', 'charge-station', 'log-download'].includes(activeTab)">
                 <el-date-picker v-model="localDateRange" type="daterange" range-separator="至" start-placeholder="開始日期" end-placeholder="結束日期" @change="handleDateRangeChange"/>
                 <el-button style="margin: 0px 2px" @click="() => _Init()">查詢</el-button>
             </div>
@@ -134,7 +139,7 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, markRaw, nextTick } from 'vue'
-import { Monitor, List, LocationFilled } from '@element-plus/icons-vue'
+import { Monitor, List, LocationFilled, Download } from '@element-plus/icons-vue'
 import { ElNotification, ElMessage } from 'element-plus'
 import ContentContainer from '../components/ContentContainer.vue'
 import RealTimeDashboard from '../components/AGVC/RealTimeDashboard/index.vue'
@@ -142,6 +147,7 @@ import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard/inde
 import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDashboard/index.vue'
 import UtilizationDashboard from '../components/AGVC/UtilizationDashboard/index.vue'
 import UtilizationEQDashboard from '../components/AGVC/UtilizationEQDashboard/index.vue'
+import LogDownloadPanel from '../components/AGVC/LogDownload/index.vue'
 import RackHistory from '@/components/EquipmentStatus/Rack/RackHistory.vue'
 import BatteryRecords from '@/components/EquipmentStatus/AGV/BatteryRecords.vue'
 import ChargeStationDashboard from '@/components/EquipmentStatus/ChargeStation/index.vue'
@@ -171,7 +177,6 @@ const loading = ref(realTimeData.loading)
 const activeTab = ref('monitor')
 const uiStats = uiStatsStore()
 const agvcList = ref([])
-const aliveCheck = ref({ isAlive: true, isVMSAlive: true })
 watch(isConnected, async (newVal) => {
     if (newVal && realTimeData.selectedAgvc) {
         console.log('🔗 SignalR 已連線，開始自動訂閱場域...');
@@ -552,7 +557,12 @@ const tabStoreMap: Record<string, Record<string, string>> = {
 let currentSubscribedSchema: string | null = null
 let currentTab: string | null = null
 
+/** 不需要即時推播的頁籤（例如 LOG 撈取） */
+const NO_SUBSCRIBE_TABS = ['log-download']
+
 async function subscribeToSchema(schema: string, tab: string) {
+    if (NO_SUBSCRIBE_TABS.includes(tab)) return
+
     if (!connection.value || !isConnected.value) {
         console.warn(`⚠️ SignalR 尚未連線，無法訂閱 ${schema}-${tab}，將等待連線恢復`);
         return;
@@ -632,10 +642,6 @@ function handleUtilizationEQ(result: any) {
             total: payload.total || payload.Total || 0
         };
     }
-}
-
-function handleReceiveAliveCheck(result: any) {
-    aliveCheck.value = result
 }
 
 function handleReceiveTrafficStats(result: any) {
@@ -737,12 +743,10 @@ function handleReceiveBatteryRecords(result: any) {
 }
 
 let intervalId: ReturnType<typeof setInterval> | null = null
-let intervalAlive: ReturnType<typeof setInterval> | null = null
 onMounted(async () => {
     // 接收後端推播通知
     on('ReceiveChannels', handleReceiveChannels);
     on('ReceiveNotification', handleNotification);
-    on('ReceiveAliveCheck', handleReceiveAliveCheck);
     connection.value?.onreconnected(async () => {
         console.log('🔁 SignalR 已重新連線')
         if (currentSubscribedSchema && currentTab) {
@@ -769,7 +773,6 @@ onMounted(async () => {
         // 重連失敗或被手動關閉，解除卡住的畫面
         loading.value = false
         ElMessage.error('與伺服器連線已中斷，請重整頁面。')
-        aliveCheck.value = { isAlive: false, isVMSAlive: false }
     })
 
     try {
@@ -784,10 +787,6 @@ onMounted(async () => {
             _Init()
         }, 60 * 60 * 1000) // 每小時
     }
-    
-    intervalAlive = setInterval(async() => {
-        await connection.value?.invoke('GetAliveCheck')
-    }, 2 * 1000) 
 })
 
 onUnmounted(async () => {
@@ -795,13 +794,8 @@ onUnmounted(async () => {
         clearInterval(intervalId)
         intervalId = null
     }
-    if (intervalAlive) {
-        clearInterval(intervalAlive)
-        intervalAlive = null
-    }
     off('ReceiveChannels', handleReceiveChannels);
     off('ReceiveNotification', handleNotification);
-    off('ReceiveAliveCheck', handleReceiveAliveCheck);
 
     if (currentSubscribedSchema && currentTab) {
     await connection.value?.invoke('AGVCUnsubscribe', currentSubscribedSchema, currentTab)
@@ -892,9 +886,6 @@ watch(
   border: 2px solid #444;
   border-radius: 12px;
   padding: 4px;
-}
-.h-100.not-alive {
-  border-color: #fdc84ca4 !important; /* 亮橘色 */
 }
 .agvc-tabs :deep(.el-tabs__item:first-child) {
     border: none !important;

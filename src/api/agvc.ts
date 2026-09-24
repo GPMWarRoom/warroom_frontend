@@ -1,4 +1,4 @@
-import { post } from '../utils/http';
+import { get, post } from '../utils/http';
 
 export function getTrafficAvailabilitys(schema: string, dateRange: any[]): Promise<any> {
     return post('/api/AGVC/TrafficAvailabilitys', {
@@ -73,4 +73,14 @@ export function queryHistoryAction(schema: string, target: string, dateRange: an
         dateRange,
         filters: params
     });
+}
+
+/** 取得該場域資料庫中的 AGV 車號（AgvStates.AGV_Name），撈 LOG 的車輛下拉選單用 */
+export function getAgvNames(schema: string): Promise<any> {
+    return get(`/api/AGVC/AgvList/${encodeURIComponent(schema)}`);
+}
+
+/** 取得該場域撈 LOG API 的位址（派車主機 IP 與抓派車地圖的同一台，只有埠號不同） */
+export function getLogApiEndpoint(schema: string): Promise<any> {
+    return get(`/api/AGVC/LogApi/${encodeURIComponent(schema)}`);
 }

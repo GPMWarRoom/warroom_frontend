@@ -3,6 +3,7 @@
         <template #header>
             <div class="d-flex justify-content-between align-items-center">
                 <span>任務列表</span>
+                <div class="d-flex align-items-center header-actions">
                 <el-button-group>
                     <el-button
                         :type="currentTab === 'current' ? 'primary' : 'info'"
@@ -20,6 +21,10 @@
                         @click="currentTab = 'query'"
                     >查詢/匯出</el-button>
                 </el-button-group>
+                <el-tooltip content="放大檢視" placement="top">
+                    <el-icon class="expand-icon" @click="isExpanded = true"><FullScreen /></el-icon>
+                </el-tooltip>
+                </div>
             </div>
         </template>
 
@@ -96,7 +101,84 @@
             <div v-else class="pagination-placeholder"></div>
         </div>
 
-        <el-dialog v-model="showFilterDialog" title="進階查詢條件" width="350px" center>
+        <el-dialog
+            v-model="isExpanded"
+            width="90%"
+            top="5vh"
+            append-to-body
+            class="expand-view-dialog"
+        >
+            <template #header>
+                <div class="d-flex justify-content-between align-items-center expand-dialog-header">
+                    <span>任務列表</span>
+                    <el-button-group>
+                        <el-button :type="currentTab === 'current' ? 'primary' : 'info'" size="small" @click="currentTab = 'current'">當前任務</el-button>
+                        <el-button :type="currentTab === 'completed' ? 'primary' : 'info'" size="small" @click="currentTab = 'completed'">歷史記錄</el-button>
+                        <el-button :type="currentTab === 'query' ? 'primary' : 'info'" size="small" @click="currentTab = 'query'">查詢/匯出</el-button>
+                    </el-button-group>
+                </div>
+            </template>
+            <div class="expanded-panel">
+                <div v-if="currentTab === 'query'" class="query-section">
+                    <div class="query-bar">
+                        <div class="query-item">
+                            <span class="label">時間範圍:</span>
+                            <el-date-picker
+                                v-model="queryParams.dateRange"
+                                type="datetimerange"
+                                range-separator="-"
+                                start-placeholder="開始"
+                                end-placeholder="結束"
+                                format="YYYY-MM-DD HH:mm:ss"
+                                value-format="YYYY-MM-DD HH:mm:ss"
+                                size="small"
+                                style="width: 340px"
+                            />
+                        </div>
+                        <div class="divider"></div>
+                        <el-button @click="showFilterDialog = true" size="small" icon="Filter" :class="{ 'filter-active': isFiltered }">其他條件</el-button>
+                        <div class="divider"></div>
+                        <div class="action-group">
+                            <el-button @click="handleQuery" icon="Search" size="small">查詢</el-button>
+                            <el-button @click="handleExport" icon="Download" size="small">匯出</el-button>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <el-table :data="filteredTasks" stripe height="100%">
+                        <el-table-column show-overflow-tooltip prop="DesignatedAGVName" label="AGV" align="center"/>
+                        <el-table-column show-overflow-tooltip prop="StartTime" label="開始時間" align="center" />
+                        <el-table-column show-overflow-tooltip prop="FinishTime" label="結束時間" align="center" />
+                        <el-table-column show-overflow-tooltip prop="TaskName" label="任務ID" min-width="140" align="center" />
+                        <el-table-column show-overflow-tooltip prop="Action" label="類型" align="center">
+                            <template #default="{ row }">{{ actionMap[row.Action] }}</template>
+                        </el-table-column>
+                        <el-table-column show-overflow-tooltip prop="FromName" label="起點" align="center" />
+                        <el-table-column show-overflow-tooltip prop="ToName" label="終點" align="center" />
+                        <el-table-column show-overflow-tooltip prop="State" label="狀態" width="120" align="center">
+                            <template #default="{ row }">
+                                <el-tag :type="getTaskStatusType(row.State)">{{ stateMap[row.State] }}</el-tag>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </div>
+                <div v-if="currentTab === 'query'" class="pagination-container">
+                    <el-pagination
+                        v-model:current-page="currentPage"
+                        @current-change="handleQuery"
+                        :page-size="pageSize"
+                        :total="realTimeData.AGVC_RealTimeDashboard_Query_Tasks.total"
+                        layout="slot, prev, pager, next"
+                        background
+                        size="small"
+                    >
+                        <span class="el-pagination__total">總筆數: {{ realTimeData.AGVC_RealTimeDashboard_Query_Tasks.total }}</span>
+                    </el-pagination>
+                </div>
+            </div>
+        </el-dialog>
+
+        <el-dialog v-model="showFilterDialog" title="進階查詢條件" width="350px" center append-to-body>
             <el-form :model="queryParams.tasks" label-width="80px">
                 <el-form-item label="AGV 名稱">
                     <el-select v-model="queryParams.tasks.agvName" placeholder="請選擇" style="width: 100%" clearable>
@@ -153,9 +235,11 @@
 import { computed, ref, reactive } from 'vue'
 import { realTimeStore } from '@/stores/realTime'
 import dayjs from 'dayjs'
+import { FullScreen } from '@element-plus/icons-vue'
 
 const emit = defineEmits(['realtime-action'])
 const realTimeData = realTimeStore()
+const isExpanded = ref(false)
 const currentTab = ref<'current' | 'completed' | 'query'>('current')
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -362,5 +446,26 @@ const applyFilters = () => {
 .filter-active:hover {
     background-color: rgba(64, 158, 255, 0.3) !important;
     box-shadow: 0 0 10px rgba(64, 158, 255, 0.5);
+}
+
+.header-actions {
+    gap: 8px;
+}
+
+.expand-icon {
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.expanded-panel {
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.expand-dialog-header {
+    width: 100%;
+    padding-right: 24px;
 }
 </style>

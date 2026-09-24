@@ -61,5 +61,22 @@
             "name": "yel",
             "value": "yel"
         }
-    ]
+    ],
+    "LogApi": {
+        "default": "",
+        "servers": {
+            "UMTC_YM_3F_ABF": "",
+            "UMTC_YM_3F_MEC": "",
+            "UMTC_YM_3F_AOI": "",
+            "UMTC_YM_4F_ABF": "",
+            "UMTC_YM_4F_MEC": "",
+            "UMTC_YM_4F_AOI": "",
+            "UMTC_YM_4F_YEL": "",
+            "UMTC_YM_5F_ABF": "",
+            "UMTC_YM_5F_MEC": "",
+            "UMTC_YM_5F_AOI": "",
+            "UMTC_YM_5F_YEL": "",
+            "yel": ""
+        }
+    }
 }
