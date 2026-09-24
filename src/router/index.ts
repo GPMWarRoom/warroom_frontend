@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
-import { InfoFilled } from '@element-plus/icons-vue'
+import { DataBoard, InfoFilled, Management, MapLocation } from '@element-plus/icons-vue'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -8,7 +8,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/OverviewView.vue'),
     meta: {
       title: '概覽',
-      icon: InfoFilled,
+      icon: DataBoard,
       showInMenu: true
     }
   },
@@ -18,7 +18,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/AGVC.vue'),
     meta: {
       title: '場域資訊',
-      icon: InfoFilled,
+      icon: MapLocation,
       showInMenu: true
     }
   },
@@ -38,7 +38,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/VersionListView.vue'),
     meta: {
       title: '系統版本管理',
-      icon: InfoFilled,
+      icon: Management,
       showInMenu: true
     }
   },

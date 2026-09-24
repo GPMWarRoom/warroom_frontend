@@ -7,53 +7,48 @@
                 </div>
             </template>
 
-            <el-form label-width="110px" label-position="left">
-                <el-row :gutter="16">
-                    <el-col :xs="24" :sm="12" :md="8">
-                        <el-form-item label="派車系統 IP">
-                            <div class="ip-row">
-                                <el-input v-model="ipInput" :disabled="ipLocked" placeholder="例如 10.22.141.10"
-                                    @keyup.enter="saveIp" />
-                                <el-button v-if="ipLocked" :icon="Unlock" @click="unlockIp">解鎖</el-button>
-                                <template v-else>
-                                    <el-button type="primary" :icon="Check" @click="saveIp">儲存</el-button>
-                                    <el-button v-if="hasIpOverride" :icon="RefreshLeft" @click="resetIp">還原</el-button>
-                                </template>
-                            </div>
-                            <span class="hint">{{ ipHint }}</span>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :xs="24" :sm="12" :md="8">
-                        <el-form-item label="日期">
-                            <el-date-picker v-model="selectedDate" type="date" value-format="YYYY-MM-DD"
-                                :clearable="false" placeholder="選擇日期" style="width: 100%" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :xs="24" :sm="12" :md="8">
-                        <el-form-item label="LOG 種類">
-                            <el-select v-model="selectedKind" style="width: 100%">
-                                <el-option v-for="t in logKinds" :key="t.key" :label="t.name" :value="t.key" />
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :xs="24" :sm="12" :md="8" v-if="currentKind.needAgvName">
-                        <el-form-item label="AGV">
-                            <el-select v-model="selectedAgv" filterable allow-create default-first-option
-                                placeholder="選擇或輸入車號" style="width: 100%" :loading="agvLoading">
-                                <el-option v-for="a in agvOptions" :key="a" :label="a" :value="a" />
-                            </el-select>
-                            <span class="hint">{{ agvHint }}</span>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :xs="24" :sm="12" :md="8">
-                        <el-form-item label="包含參數檔">
+            <el-form label-position="top" class="log-form">
+                <div class="field-grid">
+                    <el-form-item label="LOG 種類">
+                        <el-select v-model="selectedKind" style="width: 100%">
+                            <el-option v-for="t in logKinds" :key="t.key" :label="t.name" :value="t.key" />
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="日期">
+                        <el-date-picker v-model="selectedDate" type="date" value-format="YYYY-MM-DD"
+                            :clearable="false" placeholder="選擇日期" style="width: 100%" />
+                    </el-form-item>
+                    <el-form-item label="派車系統 IP" class="span-2">
+                        <div class="ip-row">
+                            <el-input v-model="ipInput" :disabled="ipNotNeeded || ipLocked"
+                                :placeholder="ipNotNeeded ? '車載／車控不需填寫' : '例如 10.22.141.10'"
+                                @keyup.enter="saveIp" />
+                            <el-button v-if="ipLocked" :icon="Unlock" :disabled="ipNotNeeded" @click="unlockIp">解鎖</el-button>
+                            <template v-else>
+                                <el-button type="primary" :icon="Check" :disabled="ipNotNeeded" @click="saveIp">儲存</el-button>
+                                <el-button v-if="hasIpOverride" :icon="RefreshLeft" :disabled="ipNotNeeded" @click="resetIp">還原</el-button>
+                            </template>
+                        </div>
+                        <span class="hint">{{ ipHint }}</span>
+                    </el-form-item>
+                    <el-form-item label="AGV" class="span-2">
+                        <el-select v-model="selectedAgv" filterable allow-create default-first-option
+                            :disabled="!currentKind.needAgvName"
+                            :placeholder="currentKind.needAgvName ? '選擇或輸入車號' : '僅車載／車控需要'"
+                            style="width: 100%" :loading="agvLoading">
+                            <el-option v-for="a in agvOptions" :key="a" :label="a" :value="a" />
+                        </el-select>
+                        <span class="hint">{{ currentKind.needAgvName ? agvHint : '此 LOG 種類不需選擇 AGV' }}</span>
+                    </el-form-item>
+                    <el-form-item label="包含參數檔" class="span-2">
+                        <div class="check-line">
                             <el-checkbox v-model="includeConfig" :disabled="!currentKind.supportIncludeConfig">
                                 一併打包系統參數
                             </el-checkbox>
-                            <span class="hint" v-if="!currentKind.supportIncludeConfig">此類型無參數檔可打包</span>
-                        </el-form-item>
-                    </el-col>
-                </el-row>
+                        </div>
+                        <span class="hint" v-if="!currentKind.supportIncludeConfig">此類型無參數檔可打包</span>
+                    </el-form-item>
+                </div>
 
                 <div class="source-hint">
                     <div>來源：{{ currentKind.source }}</div>
@@ -218,7 +213,11 @@ async function fetchDbAgvNames(): Promise<string[]> {
     }
 }
 
+/** 車控、車載 LOG 由車輛取得，不需改派車系統 IP */
+const ipNotNeeded = computed(() => selectedKind.value === 'gpm' || selectedKind.value === 'gpmagv')
+
 const ipHint = computed(() => {
+    if (ipNotNeeded.value) return '車載／車控由車輛取得 LOG，不需指定派車系統 IP'
     if (!ipInput.value) return '資料庫沒有此場域的派車系統 IP，請直接填入'
     if (hasIpOverride.value) return `手動指定（自動偵測為 ${serverIp.value || '無'}）`
     return '取自派車系統資料庫（與派車地圖同一台主機）'
@@ -405,6 +404,32 @@ onUnmounted(stopElapsed)
     justify-content: space-between;
 }
 
+.log-form :deep(.el-form-item) {
+    margin-bottom: 8px;
+}
+
+.log-form :deep(.el-form-item__content) {
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+.field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+    align-items: start;
+}
+
+.span-2 {
+    grid-column: span 2;
+}
+
+.check-line {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+}
+
 .ip-row {
     display: flex;
     align-items: center;
@@ -417,9 +442,22 @@ onUnmounted(stopElapsed)
 }
 
 .hint {
-    margin-left: 10px;
+    display: block;
+    width: 100%;
+    margin-top: 4px;
     font-size: 12px;
+    line-height: 1.4;
     opacity: 0.7;
+}
+
+@media (max-width: 900px) {
+    .field-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .span-2 {
+        grid-column: auto;
+    }
 }
 
 .source-hint {

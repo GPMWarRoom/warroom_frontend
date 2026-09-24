@@ -1,13 +1,35 @@
 :root {
-  --app-bg-color: #161616;
   --header-height: 60px;
   --menu-width: 200px;
   --menu-collapsed-width: 64px;
-  --card-border-color:rgb(51, 51, 51) ;
   --card-header-font-size: 0.9rem;
   --version-view-table-color: #0556a7;
   --base-view-height: calc(100vh - 70px);
   --base-view-padding: 6px 2px;
+}
+
+html.dark {
+  --app-bg-color: #161616;
+  --header-bg: #1e1e1e;
+  --text-color: #fff;
+  --card-bg: rgb(29, 30, 31);
+  --card-border-color: rgb(51, 51, 51);
+  --border-color: #333;
+  --scrollbar-thumb: #4a4a4a;
+  --scrollbar-track: #1e1e1e;
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  --app-bg-color: #f5f7fa;
+  --header-bg: #ffffff;
+  --text-color: #303133;
+  --card-bg: #ffffff;
+  --card-border-color: #e4e7ed;
+  --border-color: #dcdfe6;
+  --scrollbar-thumb: #c0c4cc;
+  --scrollbar-track: #f2f3f5;
+  color-scheme: light;
 }
 
 
@@ -18,7 +40,7 @@ body,
   margin: 0;
   padding: 0;
   background-color: var(--app-bg-color);
-  color: #fff;
+  color: var(--text-color);
 }
 
 /* Reset */
@@ -28,14 +50,13 @@ body,
   box-sizing: border-box;
 }
 
-/* Element Plus 暗色主題覆蓋 */
-.el-menu {
+html.dark .el-menu {
   --el-menu-bg-color: #1e1e1e !important;
   --el-menu-text-color: #fff !important;
   --el-menu-hover-bg-color: #2c2c2c !important;
 }
 
-.el-button--text {
+html.dark .el-button--text {
   color: #fff !important;
 }
 
@@ -46,17 +67,17 @@ body,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4a4a4a;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e1e1e;
+  background: var(--scrollbar-track);
 }
 
 .card {
   height: 100%;
-  background: rgb(29, 30, 31);
+  background: var(--card-bg);
   border-radius: 4px;
   border: 1px solid var(--card-border-color);
   padding: 0rem;
@@ -64,7 +85,7 @@ body,
   flex-direction: column;
 
   h3 {
-    color: #fff;
+    color: var(--text-color);
     margin: 0;
     padding: 0.55rem 0.55rem;
     font-size: var(--card-header-font-size);

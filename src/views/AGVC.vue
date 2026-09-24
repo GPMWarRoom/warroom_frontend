@@ -1,101 +1,80 @@
 <template>
     <content-container>
         <div class="h-100">
+            <div class="agvc-tabbar">
+                <div class="select-agvc-container">
+                    <el-icon>
+                        <LocationFilled />
+                    </el-icon>
+                    <span class="select-agvc-label">場域</span>
+                    <el-select v-model="realTimeData.selectedAgvc">
+                        <el-option v-for="item in agvcList" :key="item.value" :label="item.name" :value="item.value" />
+                    </el-select>
+                </div>
+                <button type="button" class="agvc-tab" :class="{ 'is-active': activeTab === 'monitor' }" @click="selectTab('monitor')">
+                    <el-icon><Monitor /></el-icon>
+                    <span>即時監控</span>
+                </button>
+                <el-dropdown
+                    v-for="group in tabGroups"
+                    :key="group.label"
+                    trigger="click"
+                    popper-class="agvc-tab-dropdown"
+                    @command="selectTab"
+                >
+                    <button type="button" class="agvc-tab" :class="{ 'is-active': isGroupActive(group) }">
+                        <span>{{ group.label }}</span>
+                        <el-icon class="agvc-tab-caret"><ArrowDown /></el-icon>
+                    </button>
+                    <template #dropdown>
+                        <el-dropdown-menu>
+                            <el-dropdown-item
+                                v-for="item in group.items"
+                                :key="item.name"
+                                :command="item.name"
+                                :class="{ 'is-current': activeTab === item.name }"
+                            >
+                                {{ item.label }}
+                            </el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
+                <button type="button" class="agvc-tab" :class="{ 'is-active': activeTab === 'log-download' }" @click="selectTab('log-download')">
+                    <el-icon><Download /></el-icon>
+                    <span>LOG撈取</span>
+                </button>
+            </div>
             <el-tabs v-model="activeTab" class="agvc-tabs" type="card" v-loading="loading" @tab-change="handleTabChange">
-                <el-tab-pane :disabled="true" name="select-agvc" >
-                    <template #label>
-                        <div class="select-agvc-container">
-                            <el-icon>
-                                <LocationFilled />
-                            </el-icon>
-                            <span class="select-agvc-label">場域</span>
-                            <el-select v-model="realTimeData.selectedAgvc">
-                                <el-option v-for="item in agvcList" :key="item.value" :label="item.name" :value="item.value" />
-                            </el-select>
-                        </div>
-                    </template>
-                </el-tab-pane>
                 <el-tab-pane label="即時監控" name="monitor">
-                    <template #label>
-                        <el-icon>
-                            <Monitor />
-                        </el-icon>
-                        <span>即時監控</span>
-                    </template>
                     <RealTimeDashboard class="tab-content-component" 
                         @show-equipment-status="handleShowEquipmentStatus" @realtime-action="handleRealtimeAction"/>
                 </el-tab-pane>
-                <el-tab-pane :lazy="true" name="traffic-stats">
-                    <template #label>
-                        <el-icon>
-                            <List />
-                        </el-icon>
-                        <span>交管狀態</span>
-                    </template>
+                <el-tab-pane :lazy="true" name="traffic-stats" label="交管統計">
                     <TrafficStatsDashboard class="tab-content-component" ref="TrafficStatsRef"/>
                 </el-tab-pane>
-                <el-tab-pane :lazy="true" name="traffic-efficiency">
-                    <template #label>
-                        <el-icon>
-                            <List />
-                        </el-icon>
-                        <span>搬運效能統計</span>
-                    </template>
+                <el-tab-pane :lazy="true" name="traffic-efficiency" label="搬運效能統計">
                     <TrafficEfficiencyDashboard class="tab-content-component" 
-                        @selector-change="() => _Init()" @loadHistoryTasks="loadHistoryTasks" :connection="connection"/>
+                        @selector-change="() => _Init()" />
                 </el-tab-pane>
-                <el-tab-pane name="utilization" :lazy="true">
-                    <template #label>
-                        <el-icon>
-                            <List />
-                        </el-icon>
-                        <span>設備稼動</span>
-                    </template>
+                <el-tab-pane :lazy="true" name="history-task-route" label="歷史任務路線">
+                    <HistoryTaskRoute ref="HistoryTaskRouteRef" class="tab-content-component" @loadHistoryTasks="loadHistoryTasks" />
+                </el-tab-pane>
+                <el-tab-pane name="utilization" label="AGV稼動率" :lazy="true">
                     <UtilizationDashboard class="tab-content-component" />
                 </el-tab-pane>
-                <el-tab-pane name="RackHistory" :lazy="true">
-                    <template #label>
-                        <el-icon>
-                            <List />
-                        </el-icon>
-                        <span>水位紀錄</span>
-                    </template>
+                <el-tab-pane name="RackHistory" label="Rack水位紀錄" :lazy="true">
                     <RackHistory class="tab-content-component" />
                 </el-tab-pane>
-                <el-tab-pane name="battery-records" :lazy="true">
-                    <template #label>
-                        <el-icon>
-                            <List />
-                        </el-icon>
-                        <span>電池紀錄</span>
-                    </template>
+                <el-tab-pane name="battery-records" label="電池紀錄" :lazy="true">
                     <BatteryRecords class="tab-content-component" ref="BatteryRecordsRef" />
                 </el-tab-pane>
-                <el-tab-pane name="charge-station" :lazy="true">
-                    <template #label>
-                        <el-icon>
-                            <List />
-                        </el-icon>
-                        <span>充電站資訊</span>
-                    </template>
+                <el-tab-pane name="charge-station" label="充電站資訊" :lazy="true">
                     <ChargeStationDashboard class="tab-content-component" ref="ChargeStationRef" />
                 </el-tab-pane>
-                <el-tab-pane name="utilizationEQ" :lazy="true">
-                    <template #label>
-                        <el-icon>
-                            <List />
-                        </el-icon>
-                        <span>週邊設備</span>
-                    </template>
+                <el-tab-pane name="utilizationEQ" label="周邊設備" :lazy="true">
                     <UtilizationEQDashboard class="tab-content-component" @realtime-action="handleUtilizationEQRealtimeAction"/>
                 </el-tab-pane>
-                <el-tab-pane name="log-download" :lazy="true">
-                    <template #label>
-                        <el-icon>
-                            <Download />
-                        </el-icon>
-                        <span>LOG 撈取</span>
-                    </template>
+                <el-tab-pane name="log-download" label="LOG撈取" :lazy="true">
                     <LogDownloadPanel class="tab-content-component" />
                 </el-tab-pane>
                 
@@ -139,12 +118,13 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, markRaw, nextTick } from 'vue'
-import { Monitor, List, LocationFilled, Download } from '@element-plus/icons-vue'
+import { Monitor, LocationFilled, Download, ArrowDown } from '@element-plus/icons-vue'
 import { ElNotification, ElMessage } from 'element-plus'
 import ContentContainer from '../components/ContentContainer.vue'
 import RealTimeDashboard from '../components/AGVC/RealTimeDashboard/index.vue'
 import TrafficStatsDashboard from '../components/AGVC/TrafficStatsDashboard/index.vue'
 import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDashboard/index.vue'
+import HistoryTaskRoute from '../components/AGVC/HistoryTaskRoute/index.vue'
 import UtilizationDashboard from '../components/AGVC/UtilizationDashboard/index.vue'
 import UtilizationEQDashboard from '../components/AGVC/UtilizationEQDashboard/index.vue'
 import LogDownloadPanel from '../components/AGVC/LogDownload/index.vue'
@@ -172,9 +152,87 @@ const { on, off, connection, isConnected } = useSignalR()
 const TrafficStatsRef = ref()
 const BatteryRecordsRef = ref()
 const ChargeStationRef = ref()
+const HistoryTaskRouteRef = ref()
 const realTimeData = realTimeStore()
 const loading = ref(realTimeData.loading)
 const activeTab = ref('monitor')
+const tabGroups = [
+    {
+        label: '搬運統計資料',
+        items: [
+            { name: 'traffic-efficiency', label: '搬運效能統計' },
+            { name: 'utilization', label: 'AGV稼動率' },
+            { name: 'traffic-stats', label: '交管統計' },
+            { name: 'history-task-route', label: '歷史任務路線' },
+        ],
+    },
+    {
+        label: '設備統計資料',
+        items: [
+            { name: 'RackHistory', label: 'Rack水位紀錄' },
+            { name: 'utilizationEQ', label: '周邊設備' },
+        ],
+    },
+    {
+        label: '能源統計',
+        items: [
+            { name: 'battery-records', label: '電池紀錄' },
+            { name: 'charge-station', label: '充電站資訊' },
+        ],
+    },
+]
+function isGroupActive(group: { items: { name: string }[] }) {
+    return group.items.some(item => item.name === activeTab.value)
+}
+const readyTabs = new Set<string>()
+let selectSeq = 0
+let activatingTab: string | null = null
+let loadingTimer: ReturnType<typeof setTimeout> | null = null
+
+function tabCacheKey(name: string) {
+    return `${realTimeData.selectedAgvc}::${name}`
+}
+
+function beginDelayedLoading() {
+    if (loadingTimer) clearTimeout(loadingTimer)
+    loadingTimer = setTimeout(() => {
+        loading.value = true
+    }, 180)
+}
+
+function endDelayedLoading() {
+    if (loadingTimer) clearTimeout(loadingTimer)
+    loadingTimer = null
+    loading.value = false
+}
+
+async function selectTab(name: string) {
+    if (!name || activeTab.value === name) return
+    const seq = ++selectSeq
+    const revisit = readyTabs.has(tabCacheKey(name))
+    const instant = revisit || ['log-download', 'history-task-route', 'battery-records', 'utilizationEQ', 'charge-station'].includes(name)
+
+    if (instant) {
+        activeTab.value = name
+        await nextTick()
+        if (seq !== selectSeq) return
+        await runTabLoad(name, { showLoading: false })
+        if (seq === selectSeq) readyTabs.add(tabCacheKey(name))
+        return
+    }
+
+    activatingTab = name
+    beginDelayedLoading()
+    try {
+        await runTabLoad(name, { showLoading: false })
+        if (seq !== selectSeq) return
+        readyTabs.add(tabCacheKey(name))
+        activeTab.value = name
+    } finally {
+        if (activatingTab === name) activatingTab = null
+        if (seq === selectSeq) endDelayedLoading()
+    }
+}
 const uiStats = uiStatsStore()
 const agvcList = ref([])
 watch(isConnected, async (newVal) => {
@@ -392,17 +450,17 @@ async function loadHistoryTasks(resolve: () => void) {
             true // needTaskList
         );
         const data = res?.data || res;
-        if (data) handleAGVEfficiency(data);
+        if (data && realTimeData.selectedAgvc === currentAgvc) handleAGVEfficiency(data, true);
     } catch(e) {
         console.error('API Error:', e);
     }
     resolve();
 }
 
-async function _Init() {
-    const currentTab = activeTab.value;
+async function _Init(tab?: string, options?: { showLoading?: boolean }) {
+    const currentTab = tab || activeTab.value;
     // 電池紀錄頁由元件自行 loading，避免全頁遮罩擋住車輛下拉選單
-    const usePageLoading = currentTab !== 'battery-records'
+    const usePageLoading = options?.showLoading !== false && currentTab !== 'battery-records'
     if (usePageLoading) loading.value = true
     const currentRange = realTimeData.DateRange && realTimeData.DateRange.length >= 2 ? [
         dayjs(realTimeData.DateRange[0]).format('YYYY-MM-DD HH:mm:ss'),
@@ -433,6 +491,12 @@ async function _Init() {
                     console.error('API Error in traffic-stats:', e);
                 }
                 break;
+            case 'history-task-route':
+                await nextTick()
+                if (HistoryTaskRouteRef.value?.reloadIfLoaded) {
+                    await HistoryTaskRouteRef.value.reloadIfLoaded()
+                }
+                break;
             case 'traffic-efficiency':
                 try {
                     const res = await getTransferAvailabilitys(
@@ -459,9 +523,6 @@ async function _Init() {
                 }
                 break;
             case 'utilizationEQ':
-                realTimeData.AGVC_UtilizationEQ_deviceData = []
-                realTimeData.AGVC_UtilizationEQ_alarmData.data = []
-                realTimeData.AGVC_UtilizationEQ_alarmData.total = 0
                 break;
             case 'RackHistory':
                 try {
@@ -518,16 +579,23 @@ async function handleAgvcChange(value: string) {
     
     // 切換場域時立刻清空舊地圖；進行中的請求由 fetchMapForAgvc 的序號自動作廢
     realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null);
+    readyTabs.clear()
+    realTimeData.AGVC_UtilizationEQ_deviceData = []
+    realTimeData.AGVC_UtilizationEQ_alarmData.data = []
+    realTimeData.AGVC_UtilizationEQ_alarmData.total = 0
     
     await subscribeToSchema(value, activeTab.value)
     await _Init()
     
     realTimeData.resetQueryData();
 }
-const handleTabChange = async (tab: string) => {
+async function runTabLoad(tab: string, options?: { showLoading?: boolean }) {
     uiStats.setAGVCTabSelected(tab)
-    await subscribeToSchema(realTimeData.selectedAgvc, activeTab.value)
-    await _Init()
+    await subscribeToSchema(realTimeData.selectedAgvc, tab)
+    await _Init(tab, options)
+}
+const handleTabChange = async (tab: string) => {
+    await runTabLoad(tab)
 }
 const tabStoreMap: Record<string, Record<string, string>> = {
     "monitor": {
@@ -557,8 +625,8 @@ const tabStoreMap: Record<string, Record<string, string>> = {
 let currentSubscribedSchema: string | null = null
 let currentTab: string | null = null
 
-/** 不需要即時推播的頁籤（例如 LOG 撈取） */
-const NO_SUBSCRIBE_TABS = ['log-download']
+/** 不需要即時推播的頁籤（例如 LOG 撈取、歷史任務路線） */
+const NO_SUBSCRIBE_TABS = ['log-download', 'history-task-route']
 
 async function subscribeToSchema(schema: string, tab: string) {
     if (NO_SUBSCRIBE_TABS.includes(tab)) return
@@ -579,11 +647,12 @@ async function subscribeToSchema(schema: string, tab: string) {
 }
 
 function handleNotification(result: any) {
-    const storeMap = tabStoreMap[activeTab.value];
+    const tabName = activatingTab || activeTab.value
+    const storeMap = tabStoreMap[tabName];
 
     if (!storeMap) return;
 
-    if (['monitor', 'RackHistory', 'traffic-stats', 'charge-station'].includes(activeTab.value)) {
+    if (['monitor', 'RackHistory', 'traffic-stats', 'charge-station'].includes(tabName)) {
         const type = (result.type || result.Type || '').toLowerCase();
         if (type === 'init') {
             const data = result.data || result.Data || {};
@@ -604,13 +673,15 @@ function handleNotification(result: any) {
     }
 }
 
-function handleAGVEfficiency(result: any) {
+function handleAGVEfficiency(result: any, includeTaskList = false) {
     if (!result) return;
     realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_TaskSuccess', result.TaskSuccess || result.taskSuccess || 0)
     realTimeData.updateRealTimeData('MainEQList', result.MainEQList || result.mainEQList || [])
     realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_UnloadWaitTime', result.UnloadWaitTime || result.unloadWaitTime || [])
     realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStatics', result.CarryStatics || result.carryStatics || [])
-    realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_TaskList', result.TaskList || result.taskList || [])
+    if (includeTaskList) {
+        realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_TaskList', result.TaskList || result.taskList || [])
+    }
     realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStaticsByPath', result.CarryStaticsByPath || result.carryStaticsByPath || [])
 }
 
@@ -887,40 +958,70 @@ watch(
   border-radius: 12px;
   padding: 4px;
 }
-.agvc-tabs :deep(.el-tabs__item:first-child) {
-    border: none !important;
-    background: transparent !important;
-    cursor: default !important;
-    min-width: 0 !important;
-    padding: 0 !important;
+.agvc-tabbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 10px;
+    min-height: 36px;
+}
+
+.select-agvc-container {
+    display: flex;
+    align-items: center;
+    width: 260px;
+    margin-right: 8px;
+
+    .select-agvc-label {
+        margin: 0 10px;
+        color: #fff;
+        font-weight: bold;
+        letter-spacing: 2px;
+    }
+
+    .el-select {
+        width: 180px;
+    }
+}
+
+.agvc-tab {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 12px;
+    color: #909399;
+    background: transparent;
+    border: 1px solid #333;
+    border-radius: 0;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 32px;
+}
+
+.agvc-tab .el-icon {
+    margin-right: 4px;
+}
+
+.agvc-tab-caret {
+    margin-left: 4px;
+    margin-right: 0 !important;
+}
+
+.agvc-tab:hover {
+    color: #409EFF;
+}
+
+.agvc-tab.is-active,
+.agvc-tab.is-active:hover {
+    background-color: #409EFF;
+    border-color: #409EFF;
+    color: #fff;
 }
 
 .agvc-tabs {
-    --tab-offset-top: 111px;
+    --tab-offset-top: 147px;
     padding: 0 10px;
     margin-bottom: 10px;
-}
-
-:deep(#tab-select-agvc) {
-    width: 260px;
-    padding-left: 5px;
-
-    .select-agvc-container {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-
-        .select-agvc-label {
-            margin-right: 10px;
-            color: #fff;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        .el-select {
-            width: 180px;
-        }
-    }
 }
 
 
@@ -929,7 +1030,7 @@ watch(
 }
 
 .agvc-tabs :deep(.el-tabs__header) {
-    margin: 0;
+    display: none;
 }
 
 .agvc-tabs :deep(.el-tabs__content) {
@@ -974,5 +1075,12 @@ watch(
     position: absolute;
     top: 44px;
     right: 10px;
+}
+</style>
+<style>
+.agvc-tab-dropdown .el-dropdown-menu__item.is-current {
+    color: #409EFF;
+    font-weight: 700;
+    background: rgba(64, 158, 255, 0.12);
 }
 </style>

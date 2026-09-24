@@ -9,7 +9,7 @@
                         <Expand v-else />
                     </el-icon>
                 </el-button>
-                <h1 class="px-1">War Room</h1>
+                <h1 class="px-1">GPM AGV Dashboard</h1>
             </div>
             <AlarmMessage v-if="false" class="mx-2" />
             <div class="header-right">
@@ -151,13 +151,15 @@ const login = () => {
 .header-left {
     display: flex;
     align-items: center;
-    width: 9rem;
+    flex: 0 0 auto;
+    min-width: 0;
 }
 
 .header-left h1 {
     margin: 0;
     font-size: 1.1rem;
     color: #fff;
+    white-space: nowrap;
 }
 
 .header-right {

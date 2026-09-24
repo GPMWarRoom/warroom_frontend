@@ -5,7 +5,6 @@
 import { onMounted, ref, watch, nextTick, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import { uiStatsStore } from '../../../stores/UiStats.ts'
-import { debounce } from '../../../utils/debounce'
 const props = defineProps({
     width: {
         type: String,
@@ -51,15 +50,11 @@ const updateChart = () => {
     }
 }
 
-// 調整圖表大小
+// 隱藏中的頁籤寬高為 0，這時 resize 會把圖表壓成一小團，之後再被拉回
 const handleResize = () => {
-
-    const debouncedResize = debounce(() => {
-        if (chartInstance) {
-            chartInstance.resize();
-        }
-    }, 100);
-    debouncedResize()
+    const el = chartRef.value
+    if (!chartInstance || !el || el.clientWidth === 0 || el.clientHeight === 0) return
+    chartInstance.resize({ animation: { duration: 0 } })
 }
 
 
@@ -84,13 +79,10 @@ watch(() => uiStats.isCollapse, (newVal) => {
         { immediate: true, deep: true }
 })
 
-watch(() => uiStats.agvcTabSelected, (newVal) => {
+watch(() => uiStats.agvcTabSelected, () => {
     nextTick(() => {
-        setTimeout(() => {
-            handleResize();
-        }, 10);
-    }),
-        { immediate: true, deep: true }
+        requestAnimationFrame(() => handleResize())
+    })
 })
 
 watch(() => uiStats.routeSelected, (newVal) => {
@@ -105,14 +97,24 @@ watch(() => uiStats.routeSelected, (newVal) => {
 
 
 // 生命週期鉤子
+let resizeObserver = null
+
 onMounted(() => {
     nextTick(() => {
         initChart()
         window.addEventListener('resize', handleResize)
+        if (chartRef.value && typeof ResizeObserver !== 'undefined') {
+            resizeObserver = new ResizeObserver(() => handleResize())
+            resizeObserver.observe(chartRef.value)
+        }
     })
 })
 
 onUnmounted(() => {
+    if (resizeObserver) {
+        resizeObserver.disconnect()
+        resizeObserver = null
+    }
     if (chartInstance) {
         chartInstance.dispose()
         chartInstance = null
