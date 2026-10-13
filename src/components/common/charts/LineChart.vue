@@ -39,6 +39,10 @@ const props = defineProps({
     height: {
         type: [String, Number],
         default: 300
+    },
+    tooltipFormatter: {
+        type: [Function, String],
+        default: null
     }
 })
   
@@ -56,6 +60,12 @@ const options = reactive(new globalChartOptions())
 watch(
 () => props.datas,
 (newDatas) => {
+    if (props.tooltipFormatter) {
+        options.tooltip.formatter = props.tooltipFormatter
+    } else {
+        delete options.tooltip.formatter
+    }
+
     if (newDatas.length > 0) {
         options.title.text = props.title
         options.xAxis.name = props.xAxisName

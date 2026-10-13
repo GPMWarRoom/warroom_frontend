@@ -321,7 +321,7 @@ const indexMethod = (index: number) => {
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  color: #999;
+  color: var(--text-color);
 }
 
 .divider {
@@ -376,7 +376,7 @@ const indexMethod = (index: number) => {
     h3 {
       margin: 0 0 8px;
       font-size: 14px;
-      color: #ddd;
+      color: var(--text-color);
       text-align: center;
     }
 

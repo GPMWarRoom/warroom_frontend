@@ -30,6 +30,10 @@ html.dark {
   --el-text-color-regular: #e5eaf3;
   --el-fill-color-blank: #1e1e1e;
   --el-border-color: #333;
+  /* 強調色：accent-color 用於文字（hover/選中），accent-fill 用於白字的填色背景；皆符合 WCAG AA 4.5:1 */
+  --accent-color: #409eff;
+  --accent-fill: #1d6ad0;
+  --tab-border-color: #6c6e72;
   color-scheme: dark;
 }
 
@@ -53,6 +57,9 @@ html:not(.dark) {
   --table-hover-bg: #ecf5ff;
   --scrollbar-thumb: #c0c4cc;
   --scrollbar-track: #f2f3f5;
+  --accent-color: #1d6ad0;
+  --accent-fill: #1d6ad0;
+  --tab-border-color: #333333;
   color-scheme: light;
 }
 
@@ -98,6 +105,56 @@ html:not(.dark) .el-menu {
   --el-menu-hover-bg-color: #ecf5ff !important;
 }
 
+html:not(.dark) .el-dropdown-menu__item {
+  color: #333333 !important;
+}
+
+html:not(.dark) .el-dropdown-menu__item:hover {
+  color: var(--accent-color) !important;
+  background-color: rgba(64, 158, 255, 0.12) !important;
+}
+
+/* 修復明亮模式下的硬編碼灰色顏色，確保可讀性 */
+html:not(.dark) {
+  --color-text-muted: #333333;
+  --color-text-light: #555555;
+  --color-text-lighter: #666666;
+  --color-text-warn: #c87f0a;
+}
+
+/* 針對特定組件的顏色修複 */
+html:not(.dark) :deep(.status-check) {
+  color: #333333 !important;
+}
+
+html:not(.dark) :deep(.label) {
+  color: #555555 !important;
+}
+
+html:not(.dark) :deep(.status-legend) {
+  color: #333333 !important;
+}
+
+html:not(.dark) :deep(.legend-title),
+html:not(.dark) :deep(.legend-count) {
+  color: #555555 !important;
+}
+
+html:not(.dark) :deep(.legend-empty) {
+  color: #c87f0a !important;
+}
+
+/* 修複表格和分頁的文字顏色 */
+html:not(.dark) :deep(.el-table td.el-table__cell) {
+  color: #333333 !important;
+}
+
+html:not(.dark) :deep(.el-pagination__total),
+html:not(.dark) :deep(.el-pagination .el-pager li),
+html:not(.dark) :deep(.el-pagination button) {
+  color: #333333 !important;
+}
+
 .el-card,
 .el-dialog,
 .el-drawer,
@@ -119,6 +176,25 @@ html:not(.dark) .el-menu {
   --el-table-row-hover-bg-color: var(--table-hover-bg);
   --el-table-border-color: var(--border-color);
   --el-table-current-row-bg-color: var(--table-hover-bg);
+}
+
+/* 卡片內的子頁籤（el-button-group：選中 primary／未選 info），白字對比度 ≥ 4.5:1 */
+.el-button-group > .el-button--primary {
+  --el-button-bg-color: var(--accent-fill);
+  --el-button-border-color: var(--accent-fill);
+  --el-button-hover-bg-color: #1a5fb8;
+  --el-button-hover-border-color: #1a5fb8;
+  --el-button-active-bg-color: #1a5fb8;
+  --el-button-active-border-color: #1a5fb8;
+}
+
+.el-button-group > .el-button--info {
+  --el-button-bg-color: #6b6e75;
+  --el-button-border-color: #6b6e75;
+  --el-button-hover-bg-color: #5d6068;
+  --el-button-hover-border-color: #5d6068;
+  --el-button-active-bg-color: #5d6068;
+  --el-button-active-border-color: #5d6068;
 }
 
 /* 滾動條樣式 */

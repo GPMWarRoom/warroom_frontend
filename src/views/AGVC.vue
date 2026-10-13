@@ -991,7 +991,7 @@ watch(
     padding: 0 12px;
     color: var(--text-color);
     background: transparent;
-    border: 1px solid #333;
+    border: 1px solid var(--tab-border-color);
     border-radius: 0;
     cursor: pointer;
     font-size: 14px;
@@ -1008,13 +1008,13 @@ watch(
 }
 
 .agvc-tab:hover {
-    color: #409EFF;
+    color: var(--accent-color);
 }
 
 .agvc-tab.is-active,
 .agvc-tab.is-active:hover {
-    background-color: #409EFF;
-    border-color: #409EFF;
+    background-color: var(--accent-fill);
+    border-color: var(--accent-fill);
     color: #fff;
 }
 
@@ -1045,20 +1045,20 @@ watch(
 
 .agvc-tabs :deep(.el-tabs__item) {
     color: var(--text-color);
-    border: 1px solid #333;
+    border: 1px solid var(--tab-border-color);
     margin-right: 4px;
     height: 32px;
     line-height: 32px;
 }
 
 .agvc-tabs :deep(.el-tabs__item.is-active) {
-    background-color: #409EFF;
-    border-color: #409EFF;
+    background-color: var(--accent-fill);
+    border-color: var(--accent-fill);
     color: #fff;
 }
 
 .agvc-tabs :deep(.el-tabs__item:hover) {
-    color: #409EFF;
+    color: var(--accent-color);
 }
 
 .agvc-tabs :deep(.el-tabs__item.is-active:hover) {
@@ -1078,9 +1078,19 @@ watch(
 }
 </style>
 <style>
+.agvc-tab-dropdown .el-dropdown-menu__item {
+    color: var(--text-color);
+}
+
+/* !important：蓋過 style.css 明亮模式的全域下拉選單文字色 */
 .agvc-tab-dropdown .el-dropdown-menu__item.is-current {
-    color: #409EFF;
+    color: var(--accent-color) !important;
     font-weight: 700;
     background: rgba(64, 158, 255, 0.12);
+}
+
+.agvc-tab-dropdown .el-dropdown-menu__item:hover {
+    color: var(--accent-color);
+    background-color: rgba(64, 158, 255, 0.12);
 }
 </style>

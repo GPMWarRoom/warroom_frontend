@@ -297,19 +297,19 @@ const exportFilteredCsv = () => {
 }
 :deep(.el-table td.el-table__cell) {
     border-bottom: 1px solid #333 !important;
-    color: #e5e7eb;
+    color: var(--text-color);
 }
 
-// Pagination 樣式調整 (深色主題)
+// Pagination 樣式調整
 :deep(.el-pagination) {
     --el-pagination-bg-color: transparent;
-    --el-pagination-text-color: #e5e7eb;
+    --el-pagination-text-color: var(--text-color);
     --el-pagination-button-disabled-bg-color: transparent;
     --el-pagination-hover-color: #409EFF;
 }
 :deep(.el-pagination .el-pager li) {
     background-color: transparent !important;
-    color: #e5e7eb;
+    color: var(--text-color);
 }
 :deep(.el-pagination .el-pager li.is-active) {
     color: #409EFF;
@@ -317,9 +317,9 @@ const exportFilteredCsv = () => {
 }
 :deep(.el-pagination button) {
     background-color: transparent !important;
-    color: #e5e7eb;
+    color: var(--text-color);
 }
 :deep(.el-pagination__total) {
-    color: #e5e7eb;
+    color: var(--text-color);
 }
 </style>

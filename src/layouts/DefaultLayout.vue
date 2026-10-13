@@ -266,7 +266,7 @@ const login = () => {
   font-size: 13px;
 }
 .theme-switch button.active {
-  background: #409eff;
+  background: var(--accent-fill);
   color: #fff;
 }
 .theme-switch .el-icon {

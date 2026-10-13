@@ -56,10 +56,6 @@ type LogServerSetting = string | {
     url?: string
     /** 明確列出車號（最優先） */
     agvs?: string[]
-    /** 車號前綴，對應 tools IPMap 的 key，例如 YM3FABF；沒填會由 schema 推導 */
-    agvPrefix?: string
-    /** 該場域車數；沒填會用即時資料的車輛數 */
-    agvCount?: number
 }
 
 interface LogApiConfig {
@@ -193,18 +189,10 @@ export function clearLogApiBaseCache(schema?: string) {
     else serverBaseCache.clear()
 }
 
-/**
- * 由 dashboard 的場域代號推導 tools IPMap 的車號前綴：
- *   UMTC_YM_3F_ABF → YM3FABF、S1_5F_SMK → S15FSMK
- */
-export function deriveAgvPrefix(schema: string): string {
-    return (schema || '')
-        .replace(/^UMTC_/i, '')   // 去掉廠別前綴
-        .replace(/[_\s-]/g, '')
-        .toUpperCase()
-}
+export type AgvOptionSource = 'db' | 'config' | 'realtime' | 'fixed'
 
-export type AgvOptionSource = 'db' | 'config' | 'realtime' | 'derived' | 'none'
+/** 沒有車號清單時使用的預設車號（tools 會依場域 schema 對應到 AGVsIP） */
+export const DEFAULT_AGV_NAME = 'AGV_001'
 
 export interface AgvOptionResult {
     options: string[]
@@ -216,9 +204,10 @@ export interface AgvOptionResult {
  * 1. 場域資料庫的車號（AgvStates.AGV_Name，由 dashboardServer 提供）
  * 2. config.json 明確列出的 agvs
  * 3. 即時監控推播的車名
- * 4. 「前綴 + 車數」組出 {prefix}_AGV1..n（前綴取 agvPrefix 或由 schema 推導）
+ * 4. 以上都沒有 → 不給選項，畫面直接預設固定格式的 AGV_001（可自行修改）
  *
- * 車號會原樣送給 GPM_Tools_API，由它比對 IPMap（可接受 AGV_001、AGV1、YM3FABF_AGV1 等寫法）。
+ * 車號會原樣送給 GPM_Tools_API，由它依「場域 schema + 車號」對應到 tools 的 AGVsIP，
+ * 例如 area=UMTC_YM_3F_ABF、agvName=AGV_001 → YM3FABF_AGV1 → 10.22.141.201。
  */
 export async function getAgvOptions(
     schema: string,
@@ -238,14 +227,8 @@ export async function getAgvOptions(
     const realtimeNames = unique(sources.realtimeNames)
     if (realtimeNames.length) return { options: realtimeNames, source: 'realtime' }
 
-    const prefix = setting.agvPrefix || deriveAgvPrefix(schema)
-    const count = setting.agvCount || 0
-    if (!prefix || count <= 0) return { options: [], source: 'none' }
-
-    return {
-        options: Array.from({ length: count }, (_, i) => `${prefix}_AGV${i + 1}`),
-        source: 'derived'
-    }
+    // 沒有任何車號來源：不提供下拉選項，畫面會預設 AGV_001
+    return { options: [], source: 'fixed' }
 }
 
 function unique(names?: string[]): string[] {

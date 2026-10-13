@@ -180,7 +180,7 @@ defineExpose({
 }
 
 .bar-label {
-    color: #aaa;
+    color: var(--text-color);
     font-size: 12px;
 }
 

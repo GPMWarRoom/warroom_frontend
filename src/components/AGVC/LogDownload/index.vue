@@ -32,12 +32,15 @@
                         <span class="hint">{{ ipHint }}</span>
                     </el-form-item>
                     <el-form-item label="AGV" class="span-2">
-                        <el-select v-model="selectedAgv" filterable allow-create default-first-option
-                            :disabled="!currentKind.needAgvName"
+                        <el-select v-if="agvOptions.length" v-model="selectedAgv" filterable allow-create
+                            default-first-option :disabled="!currentKind.needAgvName"
                             :placeholder="currentKind.needAgvName ? '選擇或輸入車號' : '僅車載／車控需要'"
                             style="width: 100%" :loading="agvLoading">
                             <el-option v-for="a in agvOptions" :key="a" :label="a" :value="a" />
                         </el-select>
+                        <el-input v-else v-model="selectedAgv" :disabled="!currentKind.needAgvName"
+                            :placeholder="currentKind.needAgvName ? 'AGV_001' : '僅車載／車控需要'"
+                            style="width: 100%" />
                         <span class="hint">{{ currentKind.needAgvName ? agvHint : '此 LOG 種類不需選擇 AGV' }}</span>
                     </el-form-item>
                     <el-form-item label="包含參數檔" class="span-2">
@@ -99,7 +102,7 @@ import { ElMessage } from 'element-plus'
 import { Download, CopyDocument, Unlock, Check, RefreshLeft } from '@element-plus/icons-vue'
 import { realTimeStore } from '@/stores/realTime'
 import {
-    LOG_KINDS, getAgvOptions, getLogApiBase, getLogApiEndpointInfo,
+    LOG_KINDS, DEFAULT_AGV_NAME, getAgvOptions, getLogApiBase, getLogApiEndpointInfo,
     getIpOverride, setIpOverride, normalizeApiBase, clearLogApiBaseCache,
     downloadLog, pickLogApiError
 } from '@api/logTools'
@@ -112,7 +115,7 @@ const logKinds = LOG_KINDS
 const selectedKind = ref<LogKindKey>('agvs')
 const selectedDate = ref<string>(today())
 const agvOptions = ref<string[]>([])
-const agvSource = ref<AgvOptionSource>('none')
+const agvSource = ref<AgvOptionSource>('fixed')
 const agvLoading = ref(false)
 const selectedAgv = ref<string>('')
 const includeConfig = ref(true)
@@ -188,14 +191,13 @@ const AGV_SOURCE_TEXT: Record<AgvOptionSource, string> = {
     db: '場域資料庫',
     config: 'config.json 設定',
     realtime: '即時監控資料',
-    derived: '場域車數推導',
-    none: ''
+    fixed: '固定格式 AGV_00n'
 }
 
 const agvHint = computed(() => {
     if (agvLoading.value) return '車號載入中…'
-    if (!agvOptions.value.length) {
-        return '取不到此場域車號，請直接輸入（需對應 tools 的 IPMap）'
+    if (agvSource.value === 'fixed' || !agvOptions.value.length) {
+        return '此場域無車號清單，預設 AGV_001（可自行修改，tools 會依場域對應車號 IP）'
     }
     return `${agvOptions.value.length} 台（${AGV_SOURCE_TEXT[agvSource.value]}）`
 })
@@ -291,8 +293,11 @@ async function loadAgvOptions() {
         agvOptions.value = result.options
         agvSource.value = result.source
 
-        if (!agvOptions.value.includes(selectedAgv.value)) {
-            selectedAgv.value = agvOptions.value[0] ?? ''
+        if (!agvOptions.value.length) {
+            // 沒有車號清單 → 固定預設 AGV_001
+            selectedAgv.value = DEFAULT_AGV_NAME
+        } else if (!agvOptions.value.includes(selectedAgv.value)) {
+            selectedAgv.value = agvOptions.value[0]
         }
     } finally {
         agvLoading.value = false

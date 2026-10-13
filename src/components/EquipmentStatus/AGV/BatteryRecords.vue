@@ -415,7 +415,7 @@ defineExpose({
     }
 
     .status-check {
-        color: #ddd;
+        color: var(--text-color);
         margin-right: 4px;
     }
 
@@ -473,22 +473,22 @@ defineExpose({
     gap: 12px;
     flex-wrap: wrap;
     padding: 0 4px 8px;
-    color: #ccc;
+    color: var(--text-color);
     font-size: 12px;
     flex-shrink: 0;
 
     .legend-title {
-        color: #aaa;
+        color: var(--text-color);
         margin-right: 4px;
     }
 
     .legend-count {
-        color: #aaa;
+        color: var(--text-color);
         font-size: 11px;
     }
 
     .legend-empty {
-        color: #f0ad4e;
+        color: #c87f0a;
         font-size: 12px;
     }
 

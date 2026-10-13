@@ -6,21 +6,20 @@
                     <div class="card w-100" style="height:130px">
                         <h3>平均任務成功率</h3>
                         <div class="text-light text-center p-2">
-                            <el-progress type="circle" :percentage="realTimeData.AGVC_TrafficEfficiency_TaskSuccess[0]?.AvgSuccessRate" :stroke-width="8" :width="70"></el-progress>
+                            <el-progress type="circle" :percentage="avgSuccessRate" :stroke-width="8" :width="70"></el-progress>
                         </div>
                     </div>
                     <div class="card w-100" style="height:130px">
                         <h3>自動化比率</h3>
                         <div class="text-light text-center p-2">
-                            <el-progress type="circle" :percentage="realTimeData.AGVC_TrafficEfficiency_TaskSuccess[0]?.AvgAutoRate" :stroke-width="8" :width="70"></el-progress>
+                            <el-progress type="circle" :percentage="avgAutoRate" :stroke-width="8" :width="70"></el-progress>
                         </div>
                     </div>
                 </div>
                 <div class="card my-1">
                     <h3>任務成功率走勢</h3>
                     <div class="content w-100 ">
-                        <LineChart class="content h-100 w-100" :datas="[{name: '任務成功率', xData:realTimeData.AGVC_TrafficEfficiency_TaskSuccess.map(item => item.Date), 
-                            yData:realTimeData.AGVC_TrafficEfficiency_TaskSuccess.map(item => item.DailySuccessRate)}]"></LineChart>
+                        <LineChart class="content h-100 w-100" :datas="taskSuccessTrendData" :tooltipFormatter="taskSuccessTooltipFormatter"></LineChart>
                     </div>
                 </div>
                 <div class="card my-1">
@@ -80,6 +79,45 @@ function handleSelectorChange() {
 }
 
 const realTimeData = realTimeStore()
+
+// 任務成功率只採計已結束的搬運任務：成功(State=4) 與 失敗(State=6)，取消(State=7) 不列入計算
+const taskSuccessList = computed<any[]>(() => {
+    const list = realTimeData.AGVC_TrafficEfficiency_TaskSuccess
+    return Array.isArray(list) ? list : []
+})
+
+const toNumber = (value: any): number | null => {
+    if (value === null || value === undefined || value === '') return null
+    const num = Number(value)
+    return Number.isFinite(num) ? num : null
+}
+
+const avgSuccessRate = computed(() => toNumber(taskSuccessList.value[0]?.AvgSuccessRate) ?? 0)
+const avgAutoRate = computed(() => toNumber(taskSuccessList.value[0]?.AvgAutoRate) ?? 0)
+
+const taskSuccessTrendData = computed(() => [{
+    name: '任務成功率',
+    xData: taskSuccessList.value.map(item => item.Date),
+    yData: taskSuccessList.value.map(item => toNumber(item.DailySuccessRate))
+}])
+
+const taskSuccessTooltipFormatter = (params: any) => {
+    const list = Array.isArray(params) ? params : [params]
+    const point = list[0]
+    if (!point) return ''
+
+    const row = taskSuccessList.value[point.dataIndex] || {}
+    const success = toNumber(row.SuccessCount) ?? 0
+    const fail = toNumber(row.FailCount) ?? 0
+    const rate = toNumber(row.DailySuccessRate)
+
+    return [
+        `${point.axisValue ?? row.Date ?? ''}`,
+        `${point.marker}成功率：${rate === null ? '--' : rate + '%'}`,
+        `成功：${success} 件`,
+        `失敗：${fail} 件`
+    ].join('<br/>')
+}
 
 const carryStaticsBoxPlotData = computed(() => {
     const source = realTimeData.AGVC_TrafficEfficiency_Selector.source;
