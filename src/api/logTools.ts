@@ -42,8 +42,8 @@ export const LOG_KINDS: LogKindInfo[] = [
     { key: 'vms', name: 'VMS LOG', needAgvName: false, supportIncludeConfig: false, source: '派車主機：VMS LOG（無參數檔）' },
     { key: 'cim', name: 'CIM LOG', needAgvName: false, supportIncludeConfig: true, source: '派車主機：CIM LOG + CIM 參數' },
     { key: 'mcs', name: 'MCS LOG', needAgvName: false, supportIncludeConfig: true, source: '派車主機：GPM MCS LOG + MCS 參數' },
-    { key: 'gpm', name: 'GPM LOG（車控）', needAgvName: true, supportIncludeConfig: true, source: 'AGV：/home/gpm/GPMLog + agv_control_settings' },
-    { key: 'gpmagv', name: 'GPM_AGV_LOG（車載）', needAgvName: true, supportIncludeConfig: true, source: 'AGV：/home/gpm/GPM_AGV_LOG（KG 車為 KgLog）+ param' }
+    { key: 'gpm', name: 'GPM LOG（車控）', needAgvName: true, supportIncludeConfig: true, source: '派車主機 tools 連到 AGV 撈取：/home/gpm/GPMLog + agv_control_settings' },
+    { key: 'gpmagv', name: 'GPM_AGV_LOG（車載）', needAgvName: true, supportIncludeConfig: true, source: '派車主機 tools 連到 AGV 撈取：/home/gpm/GPM_AGV_LOG（KG 車為 KgLog）+ param' }
 ]
 
 export interface CollectParams {
@@ -113,6 +113,17 @@ export function normalizeApiBase(input: string, port: number = 5051): string {
         const url = new URL(withScheme)
         if (!url.port) url.port = String(port || 5051)
         return url.origin
+    } catch {
+        return ''
+    }
+}
+
+/** 把 API 位址轉回欄位上顯示的 IP；埠號是預設值就只顯示 IP */
+export function displayHost(base: string, defaultPort: number = 5051): string {
+    if (!base) return ''
+    try {
+        const url = new URL(base)
+        return url.port && Number(url.port) !== defaultPort ? url.host : url.hostname
     } catch {
         return ''
     }
@@ -259,19 +270,23 @@ export interface DownloadResult {
 /**
  * 呼叫撈 LOG API 並讓瀏覽器存檔。
  *
+ * 六種 LOG（含車載／車控）都送到該區域派車主機上的 tools，由 tools 執行撈取，
+ * 所以一律需要派車系統的位址（base），不依賴 dashboard 資料庫有沒有上報紀錄。
+ *
  * API 是「撈完才回應」：車載 LOG 可能要好幾分鐘，這段期間請求會一直等著，
  * 所以這裡不設 timeout，成功／失敗都以 API 的回應為準。
  *
+ * @param base 該區域 tools 的位址，例如 http://10.22.141.10:5051
  * @param onProgress 已接收位元組 / 總位元組（總長度未知時為 0）；撈取階段不會有進度
  */
 export async function downloadLog(
+    base: string,
     schema: string,
     kind: LogKindKey,
     params: CollectParams,
     onProgress?: (loaded: number, total: number) => void
 ): Promise<DownloadResult> {
-    const base = await getLogApiBase(schema)
-    const res = await logHttp.get(`${base}/api/log/${kind}`, {
+    const res = await logHttp.get(`${base.replace(/\/+$/, '')}/api/log/${kind}`, {
         params: {
             date: params.date,
             includeConfig: params.includeConfig,
@@ -324,7 +339,7 @@ export async function pickLogApiError(err: any, fallback = '撈取失敗'): Prom
         // 不是 JSON 就往下走
     }
     if (err?.message === 'Network Error') {
-        return '無法連線到該場域的撈 LOG 服務，請確認服務是否啟動、config.json 位址是否正確'
+        return '無法連線到該區域的 tools，請確認派車系統 IP 是否正確、網路是否可通、tools 是否已啟動'
     }
     return err?.message || fallback
 }

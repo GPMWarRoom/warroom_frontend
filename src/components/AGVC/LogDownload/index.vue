@@ -18,18 +18,17 @@
                         <el-date-picker v-model="selectedDate" type="date" value-format="YYYY-MM-DD"
                             :clearable="false" placeholder="選擇日期" style="width: 100%" />
                     </el-form-item>
-                    <el-form-item label="派車系統 IP" class="span-2">
+                    <el-form-item label="派車系統 IP（必填）" class="span-2">
                         <div class="ip-row">
-                            <el-input v-model="ipInput" :disabled="ipNotNeeded || ipLocked"
-                                :placeholder="ipNotNeeded ? '車載／車控不需填寫' : '例如 10.22.141.10'"
-                                @keyup.enter="saveIp" />
-                            <el-button v-if="ipLocked" :icon="Unlock" :disabled="ipNotNeeded" @click="unlockIp">解鎖</el-button>
+                            <el-input v-model="ipInput" :disabled="ipLocked" placeholder="例如 10.22.141.10"
+                                @keyup.enter="saveIp()" />
+                            <el-button v-if="ipLocked" :icon="Unlock" @click="unlockIp">解鎖</el-button>
                             <template v-else>
-                                <el-button type="primary" :icon="Check" :disabled="ipNotNeeded" @click="saveIp">儲存</el-button>
-                                <el-button v-if="hasIpOverride" :icon="RefreshLeft" :disabled="ipNotNeeded" @click="resetIp">還原</el-button>
+                                <el-button type="primary" :icon="Check" @click="saveIp()">儲存</el-button>
+                                <el-button v-if="hasIpOverride" :icon="RefreshLeft" @click="resetIp">還原</el-button>
                             </template>
                         </div>
-                        <span class="hint">{{ ipHint }}</span>
+                        <span class="hint" :class="{ 'is-error': !apiBase }">{{ ipHint }}</span>
                     </el-form-item>
                     <el-form-item label="AGV" class="span-2">
                         <el-select v-if="agvOptions.length" v-model="selectedAgv" filterable allow-create
@@ -56,7 +55,7 @@
                 <div class="source-hint">
                     <div>來源：{{ currentKind.source }}</div>
                     <div :class="{ 'is-error': !apiBase }">
-                        撈取服務：{{ apiBase || '取不到此場域派車主機 IP（請確認 SysStatus 的 ExternalNetworkIP 或 config.json 的 LogApi）' }}
+                        送往 tools：{{ apiBase || '尚未填入派車系統 IP' }}
                     </div>
                 </div>
 
@@ -103,7 +102,7 @@ import { Download, CopyDocument, Unlock, Check, RefreshLeft } from '@element-plu
 import { realTimeStore } from '@/stores/realTime'
 import {
     LOG_KINDS, DEFAULT_AGV_NAME, getAgvOptions, getLogApiBase, getLogApiEndpointInfo,
-    getIpOverride, setIpOverride, normalizeApiBase, clearLogApiBaseCache,
+    getIpOverride, setIpOverride, normalizeApiBase, displayHost, clearLogApiBaseCache,
     downloadLog, pickLogApiError
 } from '@api/logTools'
 import type { LogKindKey, LogKindInfo, CollectParams, DownloadResult, AgvOptionSource } from '@api/logTools'
@@ -120,7 +119,6 @@ const agvLoading = ref(false)
 const selectedAgv = ref<string>('')
 const includeConfig = ref(true)
 
-const apiBase = ref('')
 const transferText = ref('')
 const ipInput = ref('')
 const ipLocked = ref(false)
@@ -215,23 +213,27 @@ async function fetchDbAgvNames(): Promise<string[]> {
     }
 }
 
-/** 車控、車載 LOG 由車輛取得，不需改派車系統 IP */
-const ipNotNeeded = computed(() => selectedKind.value === 'gpm' || selectedKind.value === 'gpmagv')
+/**
+ * 送往的 tools 位址：一律以畫面上的「派車系統 IP」為準。
+ * 六種 LOG（含車載／車控）都是由該區域派車主機上的 tools 撈取，所以每一種都要有這個 IP；
+ * 只要 dashboard 連得到該區域網路就能下指令，不需要資料庫有上報紀錄。
+ */
+const apiBase = computed(() => normalizeApiBase(ipInput.value, serverPort.value))
 
 const ipHint = computed(() => {
-    if (ipNotNeeded.value) return '車載／車控由車輛取得 LOG，不需指定派車系統 IP'
-    if (!ipInput.value) return '資料庫沒有此場域的派車系統 IP，請直接填入'
-    if (hasIpOverride.value) return `手動指定（自動偵測為 ${serverIp.value || '無'}）`
-    return '取自派車系統資料庫（與派車地圖同一台主機）'
+    if (!ipInput.value.trim()) return '必填：所有 LOG 都由該區域派車主機上的 tools 撈取。資料庫沒有此場域的 IP，請直接填入'
+    if (!apiBase.value) return 'IP 格式不正確，例如 10.22.141.10 或 10.22.141.10:5051'
+    if (!ipLocked.value) return '填完按儲存（或直接按撈取，會一併記住）'
+    if (hasIpOverride.value) return `手動指定（資料庫記錄為 ${serverIp.value || '無'}）`
+    return '取自派車系統資料庫（與派車地圖同一台主機），要改請按解鎖'
 })
 
 /**
- * 撈 LOG API 位址：預設用派車系統 IP（與抓派車地圖相同的那台，由 dashboardServer 提供），
- * 使用者手動填的 IP 優先。
+ * 帶入派車系統 IP，順序：手動填過的 → config.json → 資料庫（與派車地圖同一台）→ config default。
+ * 都沒有就留空讓使用者自己填，不影響撈取。
  */
 async function loadApiBase() {
     if (!schema.value) {
-        apiBase.value = ''
         ipInput.value = ''
         ipLocked.value = false
         hasIpOverride.value = false
@@ -244,34 +246,37 @@ async function loadApiBase() {
 
     const override = getIpOverride(schema.value)
     hasIpOverride.value = !!override
-    ipInput.value = override || info.ip || ''
+    ipInput.value = override || displayHost(await getLogApiBase(schema.value), serverPort.value)
     ipLocked.value = !!ipInput.value        // 有值先鎖住，要改請按解鎖；空的可直接填
-    apiBase.value = await getLogApiBase(schema.value)
 }
 
 function unlockIp() {
     ipLocked.value = false
 }
 
-async function saveIp() {
-    if (ipLocked.value) return
-
+/**
+ * 記住畫面上的派車系統 IP（每個場域一筆，存在瀏覽器）。
+ * 跟資料庫記錄相同就不另外存，之後資料庫 IP 變了會自動跟著變。
+ * @returns 是否儲存成功
+ */
+function saveIp(silent = false): boolean {
     const value = ipInput.value.trim()
     if (!value) {
         ElMessage.warning('請填入派車系統 IP')
-        return
+        return false
     }
-    if (!normalizeApiBase(value, serverPort.value)) {
+    if (!apiBase.value) {
         ElMessage.warning('IP 格式不正確，例如 10.22.141.10 或 10.22.141.10:5051')
-        return
+        return false
     }
 
-    setIpOverride(schema.value, value)
+    const sameAsDb = !!serverIp.value && value === serverIp.value
+    setIpOverride(schema.value, sameAsDb ? '' : value)
     clearLogApiBaseCache(schema.value)
-    hasIpOverride.value = true
+    hasIpOverride.value = !sameAsDb
     ipLocked.value = true
-    apiBase.value = await getLogApiBase(schema.value)
-    ElMessage.success(`已設定派車系統 IP：${apiBase.value}`)
+    if (!silent) ElMessage.success(`已設定派車系統 IP：${apiBase.value}`)
+    return true
 }
 
 /** 清掉手動指定，改回資料庫偵測到的 IP */
@@ -310,10 +315,17 @@ async function handleDownload() {
         ElMessage.warning('請先選擇場域')
         return
     }
-    if (!apiBase.value) {
-        ElMessage.warning('取不到此場域派車主機的撈 LOG 服務位址')
+    // 所有種類都要送到該區域的 tools：派車系統 IP 必填
+    if (!ipInput.value.trim()) {
+        ElMessage.warning('請先填入派車系統 IP（所有 LOG 都由該區域派車主機上的 tools 撈取）')
         return
     }
+    if (!apiBase.value) {
+        ElMessage.warning('派車系統 IP 格式不正確，例如 10.22.141.10 或 10.22.141.10:5051')
+        return
+    }
+    // 解鎖後改了 IP 但還沒按儲存：直接採用並記住
+    if (!ipLocked.value && !saveIp(true)) return
     if (kind.needAgvName && !selectedAgv.value) {
         ElMessage.warning('請先選擇或輸入 AGV 車號')
         return
@@ -337,7 +349,7 @@ async function handleDownload() {
     startElapsed()
 
     try {
-        const result = await downloadLog(schema.value, kind.key, params, (loaded, total) => {
+        const result = await downloadLog(apiBase.value, schema.value, kind.key, params, (loaded, total) => {
             // 有資料進來＝API 撈完開始回傳檔案了
             transferText.value = total > 0
                 ? `接收檔案 ${Math.floor((loaded / total) * 100)}%（${toMb(loaded)} / ${toMb(total)} MB）`
@@ -472,7 +484,8 @@ onUnmounted(stopElapsed)
     word-break: break-all;
 }
 
-.source-hint .is-error {
+.source-hint .is-error,
+.hint.is-error {
     color: var(--el-color-danger);
     opacity: 1;
 }
