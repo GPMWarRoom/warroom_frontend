@@ -78,19 +78,20 @@ const handleLogin = async () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #1a1a1a 0%, #242424 100%);
-    /* 微妙的深色漸層背景 */
+    background: transparent;
+    /* 背景沿用全域漸層 */
 }
 
 .login-box {
     background: var(--card-bg);
     /* 深色卡片背景 */
     padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-card);
+    box-shadow: var(--glass-shadow);
     width: 100%;
     max-width: 400px;
-    border: 1px solid #333;
+    border: 1px solid var(--card-border-color);
+    backdrop-filter: var(--glass-blur);
     /* 添加邊框 */
 }
 
@@ -108,7 +109,7 @@ h1 {
 label {
     display: block;
     margin-bottom: 0.5rem;
-    color: #ccc;
+    color: var(--text-muted);
     /* 淺灰色標籤 */
     font-size: 0.9rem;
 }
@@ -116,26 +117,25 @@ label {
 input {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #444;
+    border: 1px solid var(--border-strong);
     /* 深色邊框 */
-    border-radius: 4px;
+    border-radius: var(--radius-control);
     font-size: 1rem;
-    background-color: #333;
+    background-color: var(--el-fill-color-blank);
     /* 輸入框深色背景 */
     color: var(--text-color);
     /* 輸入文字顏色 */
 }
 
 input::placeholder {
-    color: #666;
+    color: var(--el-text-color-placeholder);
     /* 佔位符顏色 */
 }
 
 input:focus {
     outline: none;
-    border-color: #42b983;
-    /* Vue綠色 */
-    box-shadow: 0 0 0 2px rgba(66, 185, 131, 0.2);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 25%, transparent);
 }
 
 .options {
@@ -143,7 +143,7 @@ input:focus {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.25rem;
-    color: #ccc;
+    color: var(--text-muted);
     /* 選項文字顏色 */
 }
 
@@ -154,8 +154,7 @@ input:focus {
 }
 
 .forgot-password {
-    color: #42b983;
-    /* Vue綠色 */
+    color: var(--accent-color);
     text-decoration: none;
     font-size: 0.9rem;
 }
@@ -167,24 +166,22 @@ input:focus {
 button {
     width: 100%;
     padding: 0.75rem;
-    background-color: #42b983;
-    /* Vue綠色 */
+    background: var(--accent-gradient);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
     font-size: 1rem;
     cursor: pointer;
-    transition: background-color 0.2s;
+    box-shadow: var(--accent-glow);
+    transition: filter 0.2s;
 }
 
 button:hover {
-    background-color: #3aa876;
-    /* 深一點的Vue綠色 */
+    filter: brightness(1.12);
 }
 
 button:disabled {
-    background-color: #2c745a;
-    /* 更深的Vue綠色 */
+    filter: saturate(0.4) brightness(0.8);
     cursor: not-allowed;
 }
 
@@ -192,12 +189,11 @@ button:disabled {
 input[type="checkbox"] {
     width: auto;
     margin-right: 0.5rem;
-    accent-color: #42b983;
-    /* Vue綠色 */
+    accent-color: var(--accent-fill);
 }
 
 .error-message {
-    color: #ff6b6b;
+    color: var(--el-color-danger);
     margin-bottom: 1rem;
     text-align: center;
     font-size: 0.9rem;

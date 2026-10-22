@@ -131,8 +131,9 @@ const updateTimeText = computed(() => {
 <style scoped lang="scss">
 .card {
     background: var(--card-bg);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid var(--card-border-color);
+    border-radius: var(--radius-card);
+    box-shadow: var(--glass-shadow);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -145,7 +146,7 @@ const updateTimeText = computed(() => {
         background: var(--surface-2);
         color: var(--text-color);
         font-size: 1.1rem;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid var(--border-color);
         flex-shrink: 0;
     }
 
@@ -167,7 +168,7 @@ const updateTimeText = computed(() => {
     }
 
     .window-label {
-        color: #aaa;
+        color: var(--text-muted);
         font-size: 12px;
     }
 
@@ -196,11 +197,11 @@ const updateTimeText = computed(() => {
     gap: 8px;
     padding: 6px 10px;
     background: var(--app-bg-color);
-    border: 1px solid #2c2c2c;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
 
     .label {
-        color: #aaa;
+        color: var(--text-muted);
         font-size: 12px;
         white-space: nowrap;
     }
@@ -213,7 +214,7 @@ const updateTimeText = computed(() => {
         word-break: break-all;
 
         &.warning {
-            color: #ff4757;
+            color: var(--el-color-danger);
         }
     }
 }

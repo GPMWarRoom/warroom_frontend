@@ -128,9 +128,9 @@ function gotoAGVC(agvc: string) {
   router.push('/AGVC')
 }
 function getBatteryColor(level: number) {
-  if (level > 60) return '#81c784';      // 綠色
-  if (level > 30) return '#ffe066';      // 黃色
-  return '#e57373';                      // 紅色
+  if (level > 60) return 'var(--color-ok)';      // 綠色
+  if (level > 30) return 'var(--color-warn)';    // 黃色
+  return 'var(--color-danger)';                  // 紅色
 }
 function getAgvStatusType(status) {
   switch (status) {
@@ -162,7 +162,7 @@ function getAgvStatusType(status) {
 }
 .zone-title {
   font-size: 18px;
-  color: #5a90bd;
+  color: var(--accent-color);
   font-weight: 600;
 }
 .zone-row {
@@ -172,12 +172,12 @@ function getAgvStatusType(status) {
 }
 .device-card {
   background-color: var(--card-bg);
-  border-radius: 12px;
+  border-radius: 18px;
   padding: 16px;
   width: 340px;
   color: var(--text-color);
-  border: 1px solid var(--border-color);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border: 1px solid var(--card-border-color);
+  box-shadow: var(--glass-shadow);
   max-height: 420px;         /* 你可以依需求調整高度 */
   overflow-y: auto; 
 }
@@ -192,7 +192,7 @@ function getAgvStatusType(status) {
 }
 .error-tag {
   font-size: 12px;
-  color: #ccc;
+  color: var(--text-muted);
   display: flex;
   gap: 4px;    
   align-items: center;
@@ -212,8 +212,8 @@ function getAgvStatusType(status) {
   margin-bottom: 4px;
 }
 .el-switch {
-  --el-switch-on-color: #52c41a;
-  --el-switch-off-color: #ff4d4f;
+  --el-switch-on-color: var(--el-color-success);
+  --el-switch-off-color: var(--el-color-danger);
 }
 .agv-status, .alarm-status {
   margin-top: 12px;
@@ -221,9 +221,8 @@ function getAgvStatusType(status) {
 }
 .device-card:hover {
   background-color: var(--surface-2);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
-  border-color: #409eff; 
-  box-shadow: 0 0 12px 0 #0d81f5b0;
+  border-color: color-mix(in srgb, var(--accent-color) 60%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-color) 40%, transparent), 0 0 24px color-mix(in srgb, var(--accent-color) 25%, transparent);
 }
 .device-card::-webkit-scrollbar {
   width: 2px;           /* 幾乎不佔空間 */
@@ -243,12 +242,12 @@ function getAgvStatusType(status) {
   color: var(--text-muted);
 }
 .device-card.has-alarm {
-  border-color: #ff4d4f !important;
-  box-shadow: 0 0 12px 0 #ff1d21b9;
+  border-color: color-mix(in srgb, var(--el-color-danger) 60%, transparent) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--el-color-danger) 60%, transparent), 0 0 28px color-mix(in srgb, var(--el-color-danger) 35%, transparent);
 }
 .device-card.not-alive:not(.has-alarm) {
-  border-color: #fdc84ca4 !important; /* 亮橘色 */
-  box-shadow: 0 0 16px 0 #ffcb5283;
+  border-color: color-mix(in srgb, var(--el-color-warning) 50%, transparent) !important; /* 亮橘色 */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--el-color-warning) 50%, transparent), 0 0 24px color-mix(in srgb, var(--el-color-warning) 22%, transparent);
 }
 .agv-status {
   margin-top: 12px;
@@ -259,11 +258,10 @@ function getAgvStatusType(status) {
 }
 .agv-card {
   background: var(--surface-2);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 12px 16px;
   margin-bottom: 8px;
   color: var(--text-color);
-  box-shadow: 0 1px 4px #0002;
   border: 1px solid var(--border-color);
   min-width: 220px;
 }
@@ -279,15 +277,14 @@ function getAgvStatusType(status) {
   border-radius: 50%;
   display: inline-block;
   margin-right: 4px;
-  border: 2px solid #222;
 }
 .agv-status-dot.online {
-  background: #52c41a;
-  box-shadow: 0 0 6px #52c41a99;
+  background: var(--el-color-success);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--el-color-success) 70%, transparent);
 }
 .agv-status-dot.offline {
-  background: #ff4d4f;
-  box-shadow: 0 0 6px #ff4d4f99;
+  background: var(--el-color-danger);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--el-color-danger) 70%, transparent);
 }
 .agv-name {
   font-weight: bold;
@@ -297,7 +294,7 @@ function getAgvStatusType(status) {
 .agv-state-text {
   margin-left: auto;
   font-size: 13px;
-  color: #90caf9;
+  color: var(--accent-color);
 }
 .agv-battery-row {
   display: flex;
@@ -307,22 +304,22 @@ function getAgvStatusType(status) {
 }
 .battery-text {
   font-size: 12px;
-  color: #fff200;
-  font-family: 'Consolas', 'Menlo', 'Monaco', monospace;
+  color: var(--el-color-warning);
+  font-variant-numeric: tabular-nums;
   letter-spacing: 1px;
   vertical-align: middle;
 }
 /* 綠色（高電量） */
 .battery-text.green {
-  color: #81c784;
+  color: var(--color-ok);
 }
 /* 黃色（中電量） */
 .battery-text.yellow {
-  color: #ffe066;
+  color: var(--color-warn);
 }
 /* 紅色（低電量） */
 .battery-text.red {
-  color: #e57373;
+  color: var(--color-danger);
 }
 
 .alarm-area {

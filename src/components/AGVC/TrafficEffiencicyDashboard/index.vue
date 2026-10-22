@@ -252,15 +252,15 @@ const carryStaticsBoxPlotData = computed(() => {
         background: transparent;
     }
     &::-webkit-scrollbar-thumb {
-        background: #444a;
+        background: var(--scrollbar-thumb);
         border-radius: 8px;
     }
     &::-webkit-scrollbar-thumb:hover {
-        background: #409effa0;
+        background: var(--border-strong);
     }
 
     scrollbar-width: thin; /* Firefox */
-    scrollbar-color: #444a transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 
     @media (max-width: 768px) {
         .cards-container {

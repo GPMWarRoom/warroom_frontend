@@ -217,7 +217,7 @@ watch(
     flex-direction: column;
     padding: 0;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(32, 40, 60, 0.08);
+    box-shadow: var(--glass-shadow);
 }
 
 .history-header {
@@ -243,15 +243,15 @@ watch(
     align-items: center;
     justify-content: center;
     gap: 8px;
-    color: #aaa;
+    color: var(--text-muted);
 }
 
 .history-placeholder.is-loading {
-    color: #409eff;
+    color: var(--accent-color);
 }
 
 .history-placeholder.is-empty {
-    color: #f56c6c;
+    color: var(--el-color-danger);
 }
 
 .history-content {
@@ -297,11 +297,11 @@ watch(
 
 .history-tasks :deep(.el-table__body td) {
     background: var(--table-row-bg) !important;
-    color: #e0e0e0 !important;
+    color: var(--text-color) !important;
 }
 
 .history-tasks :deep(.el-table__body tr:hover > td) {
-    background: #394150 !important;
+    background: var(--table-hover-bg) !important;
 }
 
 .history-map {

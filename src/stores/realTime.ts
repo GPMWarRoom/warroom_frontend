@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import dayjs from 'dayjs'
+import { readSession } from '@/composables/useSessionState'
 interface SysStatus {
     RunMode: boolean
     HostConnMode: boolean
@@ -8,6 +9,10 @@ interface SysStatus {
 interface Query {
     data: any[]
     total: number
+}
+export interface AgvcOption {
+    name: string
+    value: string
 }
 function calculateInitialDateRange(): [Date, Date] {
     // 使用 dayjs 直接處理本地時間
@@ -19,7 +24,8 @@ function calculateInitialDateRange(): [Date, Date] {
 export const realTimeStore = defineStore('realTime', {
     state: () => ({
         loading: false,
-        selectedAgvc: 'UMTC_YM_3F_ABF',
+        // 自動重新整理後回到原本的場域（AGVC.vue 切換場域時寫入）
+        selectedAgvc: readSession<string>('agvc-field', v => typeof v === 'string' && v !== '') ?? 'UMTC_YM_3F_ABF',
         MainEQList: [] as any[],
         AGVC_TrafficEfficiency_Selector: { unloadEQ:"all", source:"Rack", target:"" },
         AGVC_RealTimeDashboard_EQStatus_AGV: [] as any[],
@@ -80,6 +86,8 @@ export const realTimeStore = defineStore('realTime', {
         },
         AGVC_TrafficStats_mapModel: null as any,
         DateRange: calculateInitialDateRange() as [Date, Date],
+        // 場域清單（後端 ReceiveChannels 推來），場域資訊與 LOG 撈取共用
+        agvcList: [] as AgvcOption[],
     }),
 
     actions: {
@@ -97,6 +105,13 @@ export const realTimeStore = defineStore('realTime', {
             const end = dayjs(newRange[1]).endOf('day').toDate();
             
             this.DateRange = [start, end];
+        },
+        /** 存入後端回傳的場域清單；字串格式自動轉成 { name, value } */
+        setAgvcList(schemas: any[]): AgvcOption[] {
+            this.agvcList = (schemas || []).map((item: any) =>
+                typeof item === 'string' ? { name: item, value: item } : item
+            )
+            return this.agvcList
         },
         resetQueryData() {
             this.AGVC_RealTimeDashboard_Query_Tasks = {

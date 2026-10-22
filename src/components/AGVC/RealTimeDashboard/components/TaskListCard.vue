@@ -233,6 +233,7 @@
 
 <script setup lang="ts">
 import { computed, ref, reactive } from 'vue'
+import { useSessionRef, isOneOf } from '@/composables/useSessionState'
 import { realTimeStore } from '@/stores/realTime'
 import dayjs from 'dayjs'
 import { FullScreen } from '@element-plus/icons-vue'
@@ -240,7 +241,7 @@ import { FullScreen } from '@element-plus/icons-vue'
 const emit = defineEmits(['realtime-action'])
 const realTimeData = realTimeStore()
 const isExpanded = ref(false)
-const currentTab = ref<'current' | 'completed' | 'query'>('current')
+const currentTab = useSessionRef<'current' | 'completed' | 'query'>('monitor-task-tab', 'current', isOneOf(['current', 'completed', 'query']))
 const currentPage = ref(1)
 const pageSize = ref(20)
 
@@ -412,7 +413,7 @@ const applyFilters = () => {
 .divider {
     width: 1px;
     height: 20px;
-    background-color: #dcdfe6;
+    background-color: var(--border-color);
     margin: 0 4px;
 }
 
@@ -437,15 +438,15 @@ const applyFilters = () => {
 }
 
 .filter-active {
-    background-color: rgba(0, 150, 255, 0.15) !important; /* 很淡的科技藍 */
-    border-color: #0096ff !important;                     /* 明亮的邊框線 */
-    color: #80caff !important;                             /* 淺藍色文字 */
-    box-shadow: 0 0 8px rgba(0, 150, 255, 0.3);            /* 淡淡的外發光 */
+    background-color: color-mix(in srgb, var(--accent-color) 15%, transparent) !important;
+    border-color: var(--accent-color) !important;
+    color: var(--accent-color) !important;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent-color) 35%, transparent);
 }
 
 .filter-active:hover {
-    background-color: rgba(64, 158, 255, 0.3) !important;
-    box-shadow: 0 0 10px rgba(64, 158, 255, 0.5);
+    background-color: color-mix(in srgb, var(--accent-color) 28%, transparent) !important;
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-color) 50%, transparent);
 }
 
 .header-actions {

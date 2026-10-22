@@ -261,7 +261,7 @@ watch(
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #666;
+        color: var(--text-muted);
     }
 }
 .expanded-map-container {

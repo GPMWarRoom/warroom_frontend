@@ -102,7 +102,7 @@ function onBack() {
 .header-divider {
   width: 1px;
   height: 24px;
-  background: #4b5563; 
+  background: var(--border-color); 
   margin: 0 8px;
 }
 
@@ -116,10 +116,10 @@ function onBack() {
 
 :deep(.el-card) {
   background: var(--card-bg);
-  border: 1px solid #333;
+  border: 1px solid var(--card-border-color);
 
   .el-card__header {
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border-color);
   }
 }
 
@@ -132,7 +132,7 @@ function onBack() {
   padding: 10px 20px; 
   background: var(--surface-2);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  box-shadow: var(--glass-shadow);
   min-height: 10px; 
   margin: 5px 5px;
 }
@@ -169,15 +169,15 @@ function onBack() {
   background-color: var(--card-bg);
   height: 100%;       
   box-sizing: border-box;
-  border: 2px solid var(--border-color)44400;
+  border: 2px solid var(--card-border-color);
 }
 .rack-cell.has-alarm {
-  border-color: #ff4d4f !important;
-  box-shadow: 0 0 12px 0 #ff1d21b9;
+  border-color: color-mix(in srgb, var(--el-color-danger) 60%, transparent) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--el-color-danger) 60%, transparent), 0 0 28px color-mix(in srgb, var(--el-color-danger) 35%, transparent);
 }
 .rack-cell.has-warning:not(.has-alarm) {
-  border-color: #fdc84ca4 !important; /* 亮橘色 */
-  box-shadow: 0 0 12px 0 #ffcb5283;
+  border-color: color-mix(in srgb, var(--el-color-warning) 50%, transparent) !important; /* 亮橘色 */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--el-color-warning) 50%, transparent), 0 0 24px color-mix(in srgb, var(--el-color-warning) 22%, transparent);
 }
 .cell-header {
   display: flex;
@@ -216,7 +216,7 @@ function onBack() {
 }
 
 .cell-label {
-  color: #b3b3b3;
+  color: var(--text-muted);
   font-size: 0.98rem;
   text-align: left;
 }

@@ -349,7 +349,7 @@ const indexMethod = (index: number) => {
 .table-container {
   flex: 1;          /* 佔滿 content-body 的剩餘空間 */
   min-height: 0;    /* 確保表格能在此容器內縮放 */
-  border: 1px solid #333;
+  border: 1px solid var(--border-color);
 }
 
 .dashboard-grid {
@@ -367,8 +367,9 @@ const indexMethod = (index: number) => {
   }
 
   .card {
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid var(--card-border-color);
+    border-radius: var(--radius-card);
+    box-shadow: var(--glass-shadow);
     padding: 12px;
     background: var(--card-bg);
     min-height: 280px;
@@ -396,7 +397,7 @@ const indexMethod = (index: number) => {
 }
 
 .no-data-text {
-  color: #666;
+  color: var(--text-muted);
   &.mini {
     font-size: 12px;
     padding: 20px;
@@ -405,19 +406,19 @@ const indexMethod = (index: number) => {
 
 /* 讓 Element Plus 的 Empty 組件適應深色背景 */
 :deep(.el-empty__description p) {
-  color: #888;
+  color: var(--text-muted);
 }
 
 .table-container {
   height: 100%;
-  border: 1px solid #333;
+  border: 1px solid var(--border-color);
 }
 
 /* 深色模式覆蓋 */
 :deep(.el-input__wrapper),
 :deep(.el-range-editor.el-input__inner) {
   background-color: var(--card-bg) !important;
-  border: 1px solid #333 !important;
+  border: 1px solid var(--border-color) !important;
   box-shadow: none !important;
   .el-range-input {
     background: transparent;

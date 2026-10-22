@@ -69,7 +69,7 @@ const hasMap = computed(() => {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #909399;
+        color: var(--text-muted);
         font-size: 14px;
     }
 }

@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
-import { DataBoard, InfoFilled, Management, MapLocation } from '@element-plus/icons-vue'
+import { DataBoard, InfoFilled, Management, MapLocation, Setting } from '@element-plus/icons-vue'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -39,6 +39,16 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: '系統版本管理',
       icon: Management,
+      showInMenu: true
+    }
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: () => import('../views/SettingsView.vue'),
+    meta: {
+      title: '管理與設定',
+      icon: Setting,
       showInMenu: true
     }
   },

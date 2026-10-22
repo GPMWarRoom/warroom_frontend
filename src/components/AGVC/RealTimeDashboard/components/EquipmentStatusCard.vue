@@ -99,6 +99,7 @@
 </template>
 <script setup lang="ts">
 import { ref, onActivated, onDeactivated } from 'vue'
+import { useSessionRef, isOneOf } from '@/composables/useSessionState'
 import { realTimeStore } from '@/stores/realTime'
 
 const tableRowClassName = ({ row }) => {
@@ -111,7 +112,7 @@ const tableRowClassName = ({ row }) => {
     return ''
 }
 
-const currentTab = ref<'AGV' | 'mainEq' | 'chargingStation' | 'rack'>('AGV')
+const currentTab = useSessionRef<'AGV' | 'mainEq' | 'chargingStation' | 'rack'>('monitor-equipment-tab', 'AGV', isOneOf(['AGV', 'mainEq', 'chargingStation', 'rack']))
 const tableHeight = ref('300px')
 const realTimeData = realTimeStore()
 const MANUAL_TIMEOUT_SEC = 600

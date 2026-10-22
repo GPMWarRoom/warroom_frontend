@@ -183,10 +183,10 @@ function onBack() {
 // 暗色主題優化
 :deep(.el-card) {
     background: var(--card-bg);
-    border: 1px solid #333;
+    border: 1px solid var(--card-border-color);
 
     .el-card__header {
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid var(--border-color);
     }
 }
 
@@ -198,7 +198,7 @@ function onBack() {
     padding: 10px 20px; // 高度縮小
     background: var(--surface-2);
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    box-shadow: var(--glass-shadow);
     min-height: 10px; // 可視需要調整
 }
 
@@ -218,7 +218,7 @@ function onBack() {
 .header-divider {
   width: 1px;
   height: 24px;
-  background: #4b5563; 
+  background: var(--border-color); 
   margin: 0 8px;
 }
 

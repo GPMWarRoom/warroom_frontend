@@ -44,7 +44,7 @@ defineEmits(['show-equipment-status', 'realtime-action'])
     width: 100%;
     padding-top: 0.5rem;
     overflow-y: auto; /* 允許垂直捲動 */
-    background-color: var(--card-bg);
+    background-color: transparent;
 
     /* 美化 scrollbar (比照第一頁樣式) */
     &::-webkit-scrollbar {
@@ -52,27 +52,27 @@ defineEmits(['show-equipment-status', 'realtime-action'])
         background: transparent;
     }
     &::-webkit-scrollbar-thumb {
-        background: #444a;
+        background: var(--scrollbar-thumb);
         border-radius: 8px;
     }
     &::-webkit-scrollbar-thumb:hover {
-        background: #409effa0;
+        background: var(--border-strong);
     }
 
     scrollbar-width: thin;
-    scrollbar-color: #444a transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .agvc-info {
     /* 移除 h-100，改用 gap 控制間距 */
-    gap: 1px; 
+    gap: 10px;
 }
 
 /* 確保 Card 不會因為沒有固定高度而縮小 */
 .el-card {
     flex-shrink: 0;
     width: 100%;
-    --el-card-border-color: #333;
+    --el-card-border-color: var(--card-border-color);
     --el-card-bg-color: var(--card-bg);
 }
 
@@ -83,8 +83,8 @@ defineEmits(['show-equipment-status', 'realtime-action'])
 }
 
 :deep(.el-card__header) {
-    border-bottom: 1px solid #333;
-    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 16px;
     span {
         font-size: var(--card-header-font-size) !important;
         font-weight: bold;

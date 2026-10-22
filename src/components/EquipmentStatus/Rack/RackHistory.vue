@@ -220,8 +220,9 @@ const exportFilteredCsv = () => {
 
 .card {
     background: var(--card-bg);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid var(--card-border-color);
+    border-radius: var(--radius-card);
+    box-shadow: var(--glass-shadow);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -233,7 +234,7 @@ const exportFilteredCsv = () => {
         background: var(--surface-2);
         color: var(--text-color);
         font-size: 1.1rem;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid var(--border-color);
         flex-shrink: 0; // 標題高度固定
     }
 
@@ -279,15 +280,15 @@ const exportFilteredCsv = () => {
 // Table 樣式調整 (深色主題)
 :deep(.el-table) {
     background-color: transparent !important;
-    --el-table-border-color: #333;
+    --el-table-border-color: var(--border-color);
     --el-table-header-bg-color: var(--table-header-bg);
     --el-table-header-text-color: var(--text-color);
     --el-table-tr-bg-color: var(--card-bg);
-    --el-table-row-hover-bg-color: #2c2c2c;
+    --el-table-row-hover-bg-color: var(--table-hover-bg);
 }
 :deep(.el-table th.el-table__cell) {
     background-color: var(--surface-2) !important;
-    border-bottom: 1px solid #333 !important;
+    border-bottom: 1px solid var(--border-color) !important;
 }
 :deep(.el-table tr) {
     background-color: var(--card-bg) !important;
@@ -296,7 +297,7 @@ const exportFilteredCsv = () => {
     background: var(--surface-2) !important;
 }
 :deep(.el-table td.el-table__cell) {
-    border-bottom: 1px solid #333 !important;
+    border-bottom: 1px solid var(--border-color) !important;
     color: var(--text-color);
 }
 
@@ -305,14 +306,14 @@ const exportFilteredCsv = () => {
     --el-pagination-bg-color: transparent;
     --el-pagination-text-color: var(--text-color);
     --el-pagination-button-disabled-bg-color: transparent;
-    --el-pagination-hover-color: #409EFF;
+    --el-pagination-hover-color: var(--accent-color);
 }
 :deep(.el-pagination .el-pager li) {
     background-color: transparent !important;
     color: var(--text-color);
 }
 :deep(.el-pagination .el-pager li.is-active) {
-    color: #409EFF;
+    color: var(--accent-color);
     font-weight: bold;
 }
 :deep(.el-pagination button) {

@@ -130,7 +130,7 @@ watch(
                 }
             },
             axisLine: { lineStyle: { color: '#555' } },
-            splitLine: { lineStyle: { color: '#2a2a2a' } }
+            splitLine: { lineStyle: { color: 'rgba(128, 140, 180, 0.15)' } }
         }
         options.series = [{
             name: props.title,
@@ -155,7 +155,7 @@ watch(
     height: 100%;
     min-height: 0;
     background: var(--app-bg-color);
-    border: 1px solid #333;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     overflow: hidden;
 }
@@ -169,7 +169,7 @@ watch(
     flex-shrink: 0;
 
     .lv-title {
-        color: #bbb;
+        color: var(--text-muted);
         font-size: 12px;
         white-space: nowrap;
         overflow: hidden;
@@ -186,11 +186,11 @@ watch(
         small {
             font-size: 11px;
             font-weight: 400;
-            color: #999;
+            color: var(--text-muted);
         }
 
         &.warning {
-            color: #ff4757;
+            color: var(--el-color-danger);
         }
     }
 }

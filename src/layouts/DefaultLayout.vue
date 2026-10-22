@@ -77,7 +77,7 @@
         <!-- Main Container -->
         <div class="app-container">
             <!-- Side Menu -->
-            <el-menu class="side-menu" :collapse="isCollapse" :background-color="menuBg" :text-color="menuText" active-text-color="rgb(32, 160, 255)" :collapse-transition="true" :default-active="route.path" :key="uiStats.theme" @select="handleSelect">
+            <el-menu class="side-menu" :collapse="isCollapse" :collapse-transition="true" :default-active="route.path" :key="uiStats.theme" @select="handleSelect">
                 <el-menu-item v-for="item in menu" :index="item.path + ''" :route="item.path" @click="handleSelect(item?.path as string)">
                     <el-icon>
                         <component :is="item.icon" />
@@ -112,16 +112,17 @@ import AlarmMessage from "../components/Alarms/AlarmMessage.vue";
 import { useRoute } from "vue-router";
 import { BellFilled, ArrowDown, Fold, Expand, Moon, Sunny } from '@element-plus/icons-vue'
 import { useAlarmStore } from '@/stores/alert'
+import { useSessionRef } from '@/composables/useSessionState'
 
 const alarmStore = useAlarmStore()
 const route = useRoute();
 const router = useRouter();
 const user = userStore();
 const menu = menuRoutes as RouteMeta[];
-const isCollapse = ref(false);
+// 側邊選單收合狀態在自動重新整理後保留
+const isCollapse = useSessionRef('side-collapsed', false, v => typeof v === 'boolean');
 const uiStats = uiStatsStore();
-const menuBg = computed(() => uiStats.theme === 'dark' ? '#1e1e1e' : '#ffffff')
-const menuText = computed(() => uiStats.theme === 'dark' ? '#ffffff' : '#303133')
+uiStats.setCollapse(isCollapse.value);
 const toggleSideMenu = () => {
     isCollapse.value = !isCollapse.value;
     uiStats.setCollapse(isCollapse.value);
@@ -169,7 +170,9 @@ const login = () => {
 
 .header-left h1 {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     color: var(--text-color);
     white-space: nowrap;
 }
@@ -196,20 +199,44 @@ const login = () => {
 }
 
 .side-menu {
+    --el-menu-bg-color: transparent;
+    --el-menu-hover-bg-color: var(--hover-bg);
+    --el-menu-text-color: var(--text-color);
+    --el-menu-active-color: var(--accent-color);
+    --el-menu-item-height: 42px;
     height: calc(100vh - 40px);
+    padding-top: 8px;
     border-right: 1px solid var(--border-color);
-    background-color: var(--header-bg);
+    background-color: var(--side-bg);
 }
 
 .side-menu:not(.el-menu--collapse) {
     width: 150px;
 }
 
+.side-menu .el-menu-item {
+    margin: 0 8px 6px;
+    border-radius: 12px;
+}
+
+.side-menu:not(.el-menu--collapse) .el-menu-item {
+    padding-left: 14px !important;
+}
+
+.side-menu.el-menu--collapse .el-menu-item {
+    margin: 0 6px 6px;
+}
+
+.side-menu .el-menu-item.is-active {
+    background-color: var(--hover-bg);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
 .main-content {
     flex: 1;
     padding: 5px;
     overflow-y: auto;
-    height: calc(100vh - 60px);
+    height: calc(100vh - 40px);
 }
 
 /* 響應式設計 */
@@ -247,27 +274,31 @@ const login = () => {
 .theme-switch {
   display: flex;
   align-items: center;
+  gap: 2px;
   margin-right: 8px;
+  padding: 2px;
   border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
-  background: var(--card-bg);
+  background: transparent;
 }
 .theme-switch button {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 28px;
+  height: 24px;
   padding: 0 10px;
   border: none;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text-muted, var(--text-color));
   cursor: pointer;
   font-size: 13px;
 }
 .theme-switch button.active {
-  background: var(--accent-fill);
+  background: var(--accent-gradient);
   color: #fff;
+  box-shadow: var(--accent-glow);
 }
 .theme-switch .el-icon {
   font-size: 14px;

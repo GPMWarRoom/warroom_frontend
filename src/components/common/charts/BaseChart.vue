@@ -44,8 +44,8 @@ const initChart = () => {
 const chartPalette = () => {
     const dark = uiStats.theme !== 'light'
     return dark
-        ? { text: '#ffffff', axis: '#aaaaaa', split: '#333333', tipBg: 'rgba(50,50,50,0.92)', tipText: '#ffffff', border: '#333333' }
-        : { text: '#141414', axis: '#141414', split: '#dcdfe6', tipBg: '#ffffff', tipText: '#141414', border: '#dcdfe6' }
+        ? { text: '#eef2ff', axis: 'rgba(200,215,255,0.35)', split: 'rgba(255,255,255,0.08)', tipBg: 'rgba(20,27,52,0.92)', tipText: '#eef2ff', border: 'rgba(255,255,255,0.14)' }
+        : { text: '#141a33', axis: 'rgba(30,40,90,0.35)', split: 'rgba(30,40,90,0.08)', tipBg: 'rgba(255,255,255,0.95)', tipText: '#141a33', border: 'rgba(30,40,90,0.14)' }
 }
 
 const paintAxis = (axis, palette) => {

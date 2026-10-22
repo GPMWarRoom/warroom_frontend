@@ -244,7 +244,7 @@ watch(
             top: 4,
             textStyle: { color: '#fff', fontSize: props.compact ? 12 : 13 }
         }
-        options.backgroundColor = '#141414'
+        options.backgroundColor = 'rgba(10, 14, 30, 0.55)'
         // 多圖用固定像素邊距，避免 containLabel 依軸字寬擠壓導致各圖繪圖區大小不一
         options.grid = props.compact
             ? {

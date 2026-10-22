@@ -6,63 +6,211 @@
   --version-view-table-color: #0556a7;
   --base-view-height: calc(100vh - 70px);
   --base-view-padding: 6px 2px;
+
+  /* 玻璃極光主題：字體、圓角、模糊（黑暗／明亮共用） */
+  --app-font: "Sora", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "Heiti TC", sans-serif;
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+  /* 背景模糊只用在浮動層（對話框、下拉選單、抽屜），卡片本身只用半透明，避免大量 backdrop-filter 吃顯示卡效能 */
+  --glass-blur: blur(16px) saturate(140%);
 }
 
 html.dark {
-  --app-bg-color: #161616;
-  --header-bg: #1e1e1e;
-  --text-color: #fff;
-  --text-muted: #c0c4cc;
-  --card-bg: rgb(29, 30, 31);
-  --surface-2: #23272f;
-  --surface-3: #2e3440;
-  --card-border-color: rgb(51, 51, 51);
-  --border-color: #333;
-  --map-bg: #222;
-  --table-header-bg: #23272f;
-  --table-row-bg: #2e3440;
-  --table-hover-bg: #394150;
-  --scrollbar-thumb: #4a4a4a;
-  --scrollbar-track: #1e1e1e;
-  --el-bg-color: #1e1e1e;
-  --el-bg-color-overlay: #1d1e1f;
-  --el-text-color-primary: #fff;
-  --el-text-color-regular: #e5eaf3;
-  --el-fill-color-blank: #1e1e1e;
-  --el-border-color: #333;
-  /* 強調色：accent-color 用於文字（hover/選中），accent-fill 用於白字的填色背景；皆符合 WCAG AA 4.5:1 */
-  --accent-color: #409eff;
-  --accent-fill: #1d6ad0;
-  --tab-border-color: #6c6e72;
+  --app-bg-color: #090d1b;
+  --app-bg-image:
+    radial-gradient(1200px 700px at 8% -8%, rgba(56, 120, 255, 0.38), transparent 62%),
+    radial-gradient(1100px 760px at 102% 108%, rgba(140, 80, 255, 0.32), transparent 60%),
+    radial-gradient(760px 520px at 68% 28%, rgba(30, 200, 190, 0.14), transparent 60%);
+  --header-bg: rgba(255, 255, 255, 0.04);
+  --side-bg: rgba(255, 255, 255, 0.03);
+  --text-color: #eef2ff;
+  --text-muted: #a6b2cc;
+  --card-bg: rgba(255, 255, 255, 0.055);
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --surface-3: rgba(255, 255, 255, 0.09);
+  --overlay-bg: rgba(20, 27, 52, 0.88);
+  --card-border-color: rgba(255, 255, 255, 0.11);
+  --border-color: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --map-bg: rgba(0, 0, 0, 0.18);
+  --table-header-bg: rgba(255, 255, 255, 0.04);
+  --table-row-bg: transparent;
+  --table-hover-bg: rgba(255, 255, 255, 0.07);
+  --hover-bg: rgba(255, 255, 255, 0.07);
+  --seg-track: rgba(255, 255, 255, 0.06);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.16);
+  --scrollbar-track: transparent;
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  /* 強調色：accent-color 用於文字（hover/選中），accent-fill 為白字可用的實色，accent-gradient 用於選取中的頁籤與按鈕 */
+  --accent-color: #6fe6dc;
+  --accent-fill: #3b4fc0;
+  --accent-gradient: linear-gradient(135deg, #1a6c92, #5040c6);
+  --accent-gradient-h: linear-gradient(90deg, #3aa0ff, #8b6bff);
+  --accent-glow: 0 6px 18px rgba(80, 64, 198, 0.4);
+  --tab-border-color: rgba(255, 255, 255, 0.12);
+  --color-ok: #4ade80;
+  --color-warn: #fbbf24;
+  --color-danger: #fb7185;
+  --mix-base: #0c1226;
+  --mix-contrast: #ffffff;
+
+  --el-color-primary: #7f9bff;
+  --el-color-success: #4ade80;
+  --el-color-warning: #fbbf24;
+  --el-color-danger: #fb7185;
+  --el-color-error: #fb7185;
+  --el-color-info: #94a3b8;
+  --el-bg-color-page: #090d1b;
+  --el-bg-color: rgba(18, 24, 46, 0.86);
+  --el-bg-color-overlay: var(--overlay-bg);
+  --el-text-color-primary: #eef2ff;
+  --el-text-color-regular: #dfe5f5;
+  --el-text-color-secondary: #a6b2cc;
+  --el-text-color-placeholder: #7d89a6;
+  --el-text-color-disabled: #5f6a85;
+  --el-border-color: rgba(255, 255, 255, 0.16);
+  --el-border-color-light: rgba(255, 255, 255, 0.12);
+  --el-border-color-lighter: rgba(255, 255, 255, 0.09);
+  --el-border-color-extra-light: rgba(255, 255, 255, 0.06);
+  --el-border-color-dark: rgba(255, 255, 255, 0.22);
+  --el-border-color-darker: rgba(255, 255, 255, 0.28);
+  --el-fill-color: rgba(255, 255, 255, 0.10);
+  --el-fill-color-light: rgba(255, 255, 255, 0.07);
+  --el-fill-color-lighter: rgba(255, 255, 255, 0.04);
+  --el-fill-color-extra-light: rgba(255, 255, 255, 0.025);
+  --el-fill-color-dark: rgba(255, 255, 255, 0.14);
+  --el-fill-color-darker: rgba(255, 255, 255, 0.18);
+  --el-fill-color-blank: rgba(255, 255, 255, 0.04);
+  --el-mask-color: rgba(6, 9, 20, 0.55);
+  --el-box-shadow-light: var(--glass-shadow);
   color-scheme: dark;
 }
 
 html:not(.dark) {
-  --app-bg-color: #f5f7fa;
-  --header-bg: #ffffff;
-  --text-color: #141414;
-  --text-muted: #141414;
-  --el-text-color-primary: #141414;
-  --el-text-color-regular: #141414;
-  --el-text-color-secondary: #141414;
-  --el-text-color-placeholder: #303133;
-  --card-bg: #ffffff;
-  --surface-2: #f5f7fa;
-  --surface-3: #eef1f6;
-  --card-border-color: #e4e7ed;
-  --border-color: #dcdfe6;
-  --map-bg: #eef2f7;
-  --table-header-bg: #f5f7fa;
-  --table-row-bg: #ffffff;
-  --table-hover-bg: #ecf5ff;
-  --scrollbar-thumb: #c0c4cc;
-  --scrollbar-track: #f2f3f5;
-  --accent-color: #1d6ad0;
-  --accent-fill: #1d6ad0;
-  --tab-border-color: #333333;
+  --app-bg-color: #edf1fb;
+  --app-bg-image:
+    radial-gradient(1200px 700px at 6% -10%, rgba(99, 140, 255, 0.32), transparent 62%),
+    radial-gradient(1100px 760px at 104% 110%, rgba(170, 120, 255, 0.28), transparent 60%),
+    radial-gradient(760px 520px at 66% 26%, rgba(60, 210, 200, 0.16), transparent 60%);
+  --header-bg: rgba(255, 255, 255, 0.55);
+  --side-bg: rgba(255, 255, 255, 0.45);
+  --text-color: #141a33;
+  --text-muted: #4b5677;
+  --card-bg: rgba(255, 255, 255, 0.62);
+  --surface-2: rgba(255, 255, 255, 0.6);
+  --surface-3: rgba(255, 255, 255, 0.75);
+  --overlay-bg: rgba(255, 255, 255, 0.9);
+  --card-border-color: rgba(255, 255, 255, 0.9);
+  --border-color: rgba(30, 40, 90, 0.1);
+  --border-strong: rgba(30, 40, 90, 0.18);
+  --map-bg: rgba(255, 255, 255, 0.35);
+  --table-header-bg: rgba(255, 255, 255, 0.45);
+  --table-row-bg: transparent;
+  --table-hover-bg: rgba(255, 255, 255, 0.75);
+  --hover-bg: rgba(255, 255, 255, 0.65);
+  --seg-track: rgba(30, 40, 90, 0.06);
+  --scrollbar-thumb: rgba(30, 40, 90, 0.18);
+  --scrollbar-track: transparent;
+  --glass-shadow: 0 8px 28px rgba(50, 70, 150, 0.1);
+  --accent-color: #3146c8;
+  --accent-fill: #3146c8;
+  --accent-gradient: linear-gradient(135deg, #1d5cc2, #5a3bcb);
+  --accent-gradient-h: linear-gradient(90deg, #2f6fe0, #6a48d6);
+  --accent-glow: 0 6px 16px rgba(70, 60, 200, 0.25);
+  --tab-border-color: rgba(30, 40, 90, 0.14);
+  --color-ok: #15803d;
+  --color-warn: #b45309;
+  --color-danger: #be123c;
+  --mix-base: #ffffff;
+  --mix-contrast: #000000;
+
+  --el-color-primary: #3a52d0;
+  --el-color-success: #15803d;
+  --el-color-warning: #b45309;
+  --el-color-danger: #be123c;
+  --el-color-error: #be123c;
+  --el-color-info: #64748b;
+  --el-bg-color-page: #edf1fb;
+  --el-bg-color: rgba(255, 255, 255, 0.86);
+  --el-bg-color-overlay: var(--overlay-bg);
+  --el-text-color-primary: #141a33;
+  --el-text-color-regular: #252c48;
+  --el-text-color-secondary: #4b5677;
+  --el-text-color-placeholder: #6b7493;
+  --el-text-color-disabled: #9aa2bb;
+  --el-border-color: rgba(30, 40, 90, 0.16);
+  --el-border-color-light: rgba(30, 40, 90, 0.12);
+  --el-border-color-lighter: rgba(30, 40, 90, 0.09);
+  --el-border-color-extra-light: rgba(30, 40, 90, 0.06);
+  --el-border-color-dark: rgba(30, 40, 90, 0.22);
+  --el-border-color-darker: rgba(30, 40, 90, 0.28);
+  --el-fill-color: rgba(30, 40, 90, 0.07);
+  --el-fill-color-light: rgba(30, 40, 90, 0.05);
+  --el-fill-color-lighter: rgba(30, 40, 90, 0.03);
+  --el-fill-color-extra-light: rgba(30, 40, 90, 0.02);
+  --el-fill-color-dark: rgba(30, 40, 90, 0.1);
+  --el-fill-color-darker: rgba(30, 40, 90, 0.14);
+  --el-fill-color-blank: rgba(255, 255, 255, 0.55);
+  --el-mask-color: rgba(237, 241, 251, 0.6);
+  --el-box-shadow-light: var(--glass-shadow);
   color-scheme: light;
 }
 
+/* Element Plus 的衍生色由主色混出，兩種模式共用同一組公式（選擇器需高於 element 的 html.dark） */
+html.dark,
+html:not(.dark) {
+  --el-font-family: var(--app-font);
+  --el-border-radius-base: var(--radius-control);
+  --el-border-radius-small: 8px;
+  --el-border-radius-round: 20px;
+  --el-popper-border-radius: 12px;
+
+  --el-color-primary-light-3: color-mix(in srgb, var(--el-color-primary) 70%, var(--mix-base));
+  --el-color-primary-light-5: color-mix(in srgb, var(--el-color-primary) 50%, var(--mix-base));
+  --el-color-primary-light-7: color-mix(in srgb, var(--el-color-primary) 30%, var(--mix-base));
+  --el-color-primary-light-8: color-mix(in srgb, var(--el-color-primary) 20%, var(--mix-base));
+  --el-color-primary-light-9: color-mix(in srgb, var(--el-color-primary) 10%, var(--mix-base));
+  --el-color-primary-dark-2: color-mix(in srgb, var(--el-color-primary) 80%, var(--mix-contrast));
+  --el-color-success-light-3: color-mix(in srgb, var(--el-color-success) 70%, var(--mix-base));
+  --el-color-success-light-5: color-mix(in srgb, var(--el-color-success) 50%, var(--mix-base));
+  --el-color-success-light-7: color-mix(in srgb, var(--el-color-success) 30%, var(--mix-base));
+  --el-color-success-light-8: color-mix(in srgb, var(--el-color-success) 20%, var(--mix-base));
+  --el-color-success-light-9: color-mix(in srgb, var(--el-color-success) 10%, var(--mix-base));
+  --el-color-success-dark-2: color-mix(in srgb, var(--el-color-success) 80%, var(--mix-contrast));
+  --el-color-warning-light-3: color-mix(in srgb, var(--el-color-warning) 70%, var(--mix-base));
+  --el-color-warning-light-5: color-mix(in srgb, var(--el-color-warning) 50%, var(--mix-base));
+  --el-color-warning-light-7: color-mix(in srgb, var(--el-color-warning) 30%, var(--mix-base));
+  --el-color-warning-light-8: color-mix(in srgb, var(--el-color-warning) 20%, var(--mix-base));
+  --el-color-warning-light-9: color-mix(in srgb, var(--el-color-warning) 10%, var(--mix-base));
+  --el-color-warning-dark-2: color-mix(in srgb, var(--el-color-warning) 80%, var(--mix-contrast));
+  --el-color-danger-light-3: color-mix(in srgb, var(--el-color-danger) 70%, var(--mix-base));
+  --el-color-danger-light-5: color-mix(in srgb, var(--el-color-danger) 50%, var(--mix-base));
+  --el-color-danger-light-7: color-mix(in srgb, var(--el-color-danger) 30%, var(--mix-base));
+  --el-color-danger-light-8: color-mix(in srgb, var(--el-color-danger) 20%, var(--mix-base));
+  --el-color-danger-light-9: color-mix(in srgb, var(--el-color-danger) 10%, var(--mix-base));
+  --el-color-danger-dark-2: color-mix(in srgb, var(--el-color-danger) 80%, var(--mix-contrast));
+  --el-color-error-light-3: var(--el-color-danger-light-3);
+  --el-color-error-light-5: var(--el-color-danger-light-5);
+  --el-color-error-light-7: var(--el-color-danger-light-7);
+  --el-color-error-light-8: var(--el-color-danger-light-8);
+  --el-color-error-light-9: var(--el-color-danger-light-9);
+  --el-color-error-dark-2: var(--el-color-danger-dark-2);
+  --el-color-info-light-3: color-mix(in srgb, var(--el-color-info) 70%, var(--mix-base));
+  --el-color-info-light-5: color-mix(in srgb, var(--el-color-info) 50%, var(--mix-base));
+  --el-color-info-light-7: color-mix(in srgb, var(--el-color-info) 30%, var(--mix-base));
+  --el-color-info-light-8: color-mix(in srgb, var(--el-color-info) 20%, var(--mix-base));
+  --el-color-info-light-9: color-mix(in srgb, var(--el-color-info) 10%, var(--mix-base));
+  --el-color-info-dark-2: color-mix(in srgb, var(--el-color-info) 80%, var(--mix-contrast));
+}
+
+/* 漸層背景放在 html，會延伸到整個視窗；body 與 #app 透明 */
+html {
+  background-color: var(--app-bg-color);
+  background-image: var(--app-bg-image);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
 
 html,
 body,
@@ -70,8 +218,16 @@ body,
   height: calc(100vh - 60px);
   margin: 0;
   padding: 0;
-  background-color: var(--app-bg-color);
   color: var(--text-color);
+}
+
+body,
+#app {
+  background: transparent;
+}
+
+body {
+  font-family: var(--app-font);
 }
 
 /* Reset */
@@ -81,14 +237,8 @@ body,
   box-sizing: border-box;
 }
 
-html.dark .el-menu {
-  --el-menu-bg-color: #1e1e1e !important;
-  --el-menu-text-color: #fff !important;
-  --el-menu-hover-bg-color: #2c2c2c !important;
-}
-
 html.dark .el-button--text {
-  color: #fff !important;
+  color: var(--text-color) !important;
 }
 
 html:not(.dark) .hint,
@@ -96,30 +246,15 @@ html:not(.dark) .source-hint,
 html:not(.dark) .status-label,
 html:not(.dark) .status-desc {
   opacity: 1;
-  color: #141414;
-}
-
-html:not(.dark) .el-menu {
-  --el-menu-bg-color: #ffffff !important;
-  --el-menu-text-color: #303133 !important;
-  --el-menu-hover-bg-color: #ecf5ff !important;
-}
-
-html:not(.dark) .el-dropdown-menu__item {
-  color: #333333 !important;
-}
-
-html:not(.dark) .el-dropdown-menu__item:hover {
-  color: var(--accent-color) !important;
-  background-color: rgba(64, 158, 255, 0.12) !important;
+  color: var(--text-muted);
 }
 
 /* 修復明亮模式下的硬編碼灰色顏色，確保可讀性 */
 html:not(.dark) {
-  --color-text-muted: #333333;
-  --color-text-light: #555555;
-  --color-text-lighter: #666666;
-  --color-text-warn: #c87f0a;
+  --color-text-muted: #333a55;
+  --color-text-light: #4b5677;
+  --color-text-lighter: #5d6786;
+  --color-text-warn: #b45309;
 }
 
 /* 針對特定組件的顏色修複 */
@@ -155,46 +290,180 @@ html:not(.dark) :deep(.el-pagination button) {
   color: #333333 !important;
 }
 
-.el-card,
+/* ---------- 卡片 ---------- */
+.el-card {
+  --el-card-bg-color: var(--card-bg);
+  --el-card-border-color: var(--card-border-color);
+  --el-card-border-radius: var(--radius-card);
+  color: var(--text-color);
+}
+
+.el-card.is-always-shadow,
+.el-card.is-hover-shadow:hover {
+  box-shadow: var(--glass-shadow);
+}
+
+.el-card__header {
+  border-bottom-color: var(--border-color);
+}
+
+/* ---------- 浮動層：對話框、抽屜、下拉選單 ---------- */
 .el-dialog,
 .el-drawer,
-.el-popover,
+.el-message-box,
+.el-notification,
+.el-popper.is-light,
+.el-popover.el-popper {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  color: var(--text-color);
+}
+
+.el-dialog {
+  --el-dialog-border-radius: var(--radius-card);
+  border: 1px solid var(--card-border-color);
+}
+
+.el-drawer {
+  --el-drawer-bg-color: var(--overlay-bg);
+  border-left: 1px solid var(--card-border-color);
+}
+
+.el-message-box,
+.el-notification {
+  border-color: var(--card-border-color);
+  border-radius: var(--radius-card);
+}
+
 .el-dropdown-menu,
 .el-select-dropdown,
 .el-picker-panel {
-  background-color: var(--card-bg);
+  background-color: transparent;
   color: var(--text-color);
   border-color: var(--border-color);
 }
 
+.el-dropdown-menu__item:not(.is-disabled):hover,
+.el-dropdown-menu__item:not(.is-disabled):focus {
+  color: var(--accent-color);
+  background-color: var(--hover-bg);
+}
+
+html:not(.dark) .el-dropdown-menu__item {
+  color: var(--text-color);
+}
+
+/* ---------- 表格 ---------- */
 .el-table {
-  --el-table-bg-color: var(--card-bg);
-  --el-table-tr-bg-color: var(--card-bg);
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
   --el-table-header-bg-color: var(--table-header-bg);
-  --el-table-header-text-color: var(--text-color);
+  --el-table-header-text-color: var(--text-muted);
   --el-table-text-color: var(--text-color);
   --el-table-row-hover-bg-color: var(--table-hover-bg);
   --el-table-border-color: var(--border-color);
   --el-table-current-row-bg-color: var(--table-hover-bg);
+  --el-table-expanded-cell-bg-color: transparent;
+  /* Sora 字寬較大，表格用 13px 讓欄位可顯示的字數與原本 14px 微軟正黑體相同 */
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
-/* 卡片內的子頁籤（el-button-group：選中 primary／未選 info），白字對比度 ≥ 4.5:1 */
-.el-button-group > .el-button--primary {
-  --el-button-bg-color: var(--accent-fill);
-  --el-button-border-color: var(--accent-fill);
-  --el-button-hover-bg-color: #1a5fb8;
-  --el-button-hover-border-color: #1a5fb8;
-  --el-button-active-bg-color: #1a5fb8;
-  --el-button-active-border-color: #1a5fb8;
+.el-table th.el-table__cell {
+  font-weight: 600;
+}
+
+/* ---------- 標籤：膠囊形，實心標籤改為半透明色底＋彩色字 ---------- */
+.el-tag {
+  --el-tag-border-radius: var(--radius-pill);
+}
+
+.el-tag.el-tag--dark,
+.el-tag.el-tag--dark.el-tag--primary {
+  --el-tag-bg-color: color-mix(in srgb, var(--el-color-primary) 20%, transparent);
+  --el-tag-border-color: color-mix(in srgb, var(--el-color-primary) 45%, transparent);
+  --el-tag-hover-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+  --el-tag-text-color: var(--el-color-primary);
+}
+
+.el-tag.el-tag--dark.el-tag--success {
+  --el-tag-bg-color: color-mix(in srgb, var(--el-color-success) 20%, transparent);
+  --el-tag-border-color: color-mix(in srgb, var(--el-color-success) 45%, transparent);
+  --el-tag-hover-color: color-mix(in srgb, var(--el-color-success) 30%, transparent);
+  --el-tag-text-color: var(--el-color-success);
+}
+
+.el-tag.el-tag--dark.el-tag--warning {
+  --el-tag-bg-color: color-mix(in srgb, var(--el-color-warning) 20%, transparent);
+  --el-tag-border-color: color-mix(in srgb, var(--el-color-warning) 45%, transparent);
+  --el-tag-hover-color: color-mix(in srgb, var(--el-color-warning) 30%, transparent);
+  --el-tag-text-color: var(--el-color-warning);
+}
+
+.el-tag.el-tag--dark.el-tag--danger {
+  --el-tag-bg-color: color-mix(in srgb, var(--el-color-danger) 20%, transparent);
+  --el-tag-border-color: color-mix(in srgb, var(--el-color-danger) 45%, transparent);
+  --el-tag-hover-color: color-mix(in srgb, var(--el-color-danger) 30%, transparent);
+  --el-tag-text-color: var(--el-color-danger);
+}
+
+.el-tag.el-tag--dark.el-tag--info {
+  --el-tag-bg-color: color-mix(in srgb, var(--el-color-info) 20%, transparent);
+  --el-tag-border-color: color-mix(in srgb, var(--el-color-info) 45%, transparent);
+  --el-tag-hover-color: color-mix(in srgb, var(--el-color-info) 30%, transparent);
+  --el-tag-text-color: var(--el-color-info);
+}
+
+/* ---------- 按鈕 ---------- */
+.el-button--primary:not(.is-plain):not(.is-link):not(.is-text):not(.is-disabled) {
+  background-image: var(--accent-gradient);
+  border-color: transparent;
+  color: #fff;
+}
+
+.el-button--primary:not(.is-plain):not(.is-link):not(.is-text):not(.is-disabled):hover {
+  filter: brightness(1.12);
+}
+
+/* 卡片內的子頁籤（el-button-group：選中 primary／未選 info）改為膠囊式分段選單 */
+.el-button-group {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  background: var(--seg-track);
+  border-radius: var(--radius-pill);
+}
+
+.el-button-group > .el-button,
+.el-button-group > .el-button:first-child,
+.el-button-group > .el-button:last-child,
+.el-button-group > .el-button:not(:first-child):not(:last-child) {
+  --el-button-divide-border-color: transparent;
+  border-radius: var(--radius-pill);
+  margin: 0;
 }
 
 .el-button-group > .el-button--info {
-  --el-button-bg-color: #6b6e75;
-  --el-button-border-color: #6b6e75;
-  --el-button-hover-bg-color: #5d6068;
-  --el-button-hover-border-color: #5d6068;
-  --el-button-active-bg-color: #5d6068;
-  --el-button-active-border-color: #5d6068;
+  --el-button-bg-color: transparent;
+  --el-button-border-color: transparent;
+  --el-button-text-color: var(--text-muted);
+  --el-button-hover-bg-color: var(--hover-bg);
+  --el-button-hover-border-color: transparent;
+  --el-button-hover-text-color: var(--text-color);
+  --el-button-active-bg-color: var(--hover-bg);
+  --el-button-active-border-color: transparent;
+}
+
+.el-button-group > .el-button--primary {
+  --el-button-border-color: transparent;
+  --el-button-hover-border-color: transparent;
+  --el-button-active-border-color: transparent;
+  box-shadow: var(--accent-glow);
+}
+
+/* ---------- 進度條：未指定顏色時使用漸層 ---------- */
+.el-progress-bar__inner:not([style*="background-color"]) {
+  background-image: var(--accent-gradient-h);
 }
 
 /* 滾動條樣式 */
@@ -215,8 +484,9 @@ html:not(.dark) :deep(.el-pagination button) {
 .card {
   height: 100%;
   background: var(--card-bg);
-  border-radius: 4px;
+  border-radius: var(--radius-card);
   border: 1px solid var(--card-border-color);
+  box-shadow: var(--glass-shadow);
   padding: 0rem;
   display: flex;
   flex-direction: column;
@@ -224,10 +494,11 @@ html:not(.dark) :deep(.el-pagination button) {
   h3 {
     color: var(--text-color);
     margin: 0;
-    padding: 0.55rem 0.55rem;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    padding: 0.7rem 1rem;
     font-size: var(--card-header-font-size);
-    font-weight: bold;
-    border-bottom: 1px solid var(--card-border-color);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
 
   }
 
@@ -246,6 +517,5 @@ html:not(.dark) :deep(.el-pagination button) {
       font-size: 1.2rem;
     }
   }
-  
-}
 
+}

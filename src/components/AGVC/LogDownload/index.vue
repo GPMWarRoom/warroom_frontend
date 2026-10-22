@@ -9,6 +9,11 @@
 
             <el-form label-position="top" class="log-form">
                 <div class="field-grid">
+                    <el-form-item label="場域" class="span-2">
+                        <el-select v-model="schema" placeholder="選擇場域" style="width: 100%">
+                            <el-option v-for="item in realTimeData.agvcList" :key="item.value" :label="item.name" :value="item.value" />
+                        </el-select>
+                    </el-form-item>
                     <el-form-item label="LOG 種類">
                         <el-select v-model="selectedKind" style="width: 100%">
                             <el-option v-for="t in logKinds" :key="t.key" :label="t.name" :value="t.key" />
@@ -132,8 +137,8 @@ const statusText = ref('')
 const isError = ref(false)
 const lastResult = ref<DownloadResult | null>(null)
 
-/** 場域跟著 AGVC 頁面上方的場域選單走 */
-const schema = computed(() => realTimeData.selectedAgvc)
+/** 場域在表單內用下拉選單選擇（選項與場域資訊相同），選擇結果交由「管理與設定」頁保存 */
+const schema = defineModel<string>('schema', { required: true })
 const schemaLabel = computed(() => schema.value || '未選擇場域')
 
 const currentKind = computed<LogKindInfo>(
@@ -174,8 +179,9 @@ function stopElapsed() {
     }
 }
 
-/** 該場域目前的車輛名稱（即時監控推播來的），用來決定有幾台車 */
+/** 該場域目前的車輛名稱（即時監控推播來的），用來決定有幾台車；推播資料屬於場域資訊選的場域，不同場域時不採用 */
 const realtimeAgvNames = computed<string[]>(() => {
+    if (schema.value !== realTimeData.selectedAgvc) return []
     const eqStatus = realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV || []
     const agvStates = (realTimeData as any).AGVC_RealTimeDashboard_AgvStates || []
     const names = [...eqStatus, ...agvStates]

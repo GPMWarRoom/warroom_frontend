@@ -165,9 +165,9 @@ defineExpose({
     flex-wrap: wrap;
     flex-shrink: 0;
     padding: 8px 16px;
-    background: var(--surface-2);
-    border: 1px solid #333;
-    border-radius: 8px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border-color);
+    border-radius: 12px;
     position: relative;
     z-index: 6;
 }

@@ -109,8 +109,8 @@ const batteryHealthStatus = computed(() => {
 .battery-body {
     width: 100%;
     height: 30px;
-    border: 2px solid #fff;
-    border-radius: 4px;
+    border: 2px solid var(--text-color);
+    border-radius: 6px;
     overflow: hidden;
     background: var(--surface-2);
 }
@@ -123,7 +123,7 @@ const batteryHealthStatus = computed(() => {
 .battery-cap {
     width: 3px;
     height: 15px;
-    background: #fff;
+    background: var(--text-color);
     margin-left: 3px;
     border-radius: 0 2px 2px 0;
 }
@@ -155,12 +155,12 @@ const batteryHealthStatus = computed(() => {
 .detail-item .el-icon {
     font-size: 1.5em;
     margin-bottom: 5px;
-    color: #409EFF;
+    color: var(--accent-color);
 }
 
 .label {
     font-size: 0.8em;
-    color: #909399;
+    color: var(--text-muted);
     margin-bottom: 3px;
 }
 
@@ -169,10 +169,10 @@ const batteryHealthStatus = computed(() => {
 }
 
 .value.warning {
-    color: #E6A23C;
+    color: var(--el-color-warning);
 }
 
 .warning {
-    color: #E6A23C;
+    color: var(--el-color-warning);
 }
 </style>

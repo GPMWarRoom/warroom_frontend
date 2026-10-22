@@ -51,8 +51,10 @@ onDeactivated(async () => {
   align-items: center;
   /* justify-content: space-between;  // 移除這行 */
   gap: 16px; /* 增加間距 */
-  background: var(--surface-2);
-  border-radius: 12px 12px 0 0;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border-color);
+  border-bottom: none;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
   padding: 18px 24px 18px 24px;
   margin-bottom: 0;
 }
@@ -75,13 +77,15 @@ onDeactivated(async () => {
   margin-left: 0; /* 移除多餘間距 */
 }
 .header-divider {
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-color);
   margin: 0 0 0 0;
 }
 .info-content {
   min-height: 200px;
-  background: var(--surface-2);
-  border-radius: 0 0 12px 12px;
+  background: color-mix(in srgb, var(--card-bg) 50%, transparent);
+  border: 1px solid var(--card-border-color);
+  border-top: none;
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
   padding: 32px 24px;
   font-size: 18px;
   color: var(--text-color);

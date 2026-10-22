@@ -117,7 +117,7 @@ const formatDate = (date: Date) => {
 }
 
 .icon-wrapper {
-    background: #409EFF;
+    background: var(--accent-gradient);
     border-radius: 50%;
     width: 50px;
     height: 50px;
@@ -136,7 +136,7 @@ const formatDate = (date: Date) => {
 }
 
 .info .label {
-    color: #909399;
+    color: var(--text-muted);
     font-size: 0.9em;
     margin-bottom: 5px;
 }
@@ -163,12 +163,12 @@ const formatDate = (date: Date) => {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #909399;
+    color: var(--text-muted);
     margin-bottom: 10px;
 }
 
 .stat-header .el-icon {
-    color: #409EFF;
+    color: var(--accent-color);
 }
 
 .stat-value {
@@ -179,7 +179,7 @@ const formatDate = (date: Date) => {
 }
 
 .stat-value.warning {
-    color: #E6A23C;
+    color: var(--el-color-warning);
 }
 
 :deep(.el-progress-bar__inner) {

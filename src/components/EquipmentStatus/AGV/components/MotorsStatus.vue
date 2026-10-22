@@ -130,7 +130,7 @@ const motorHealthStatus = computed(() => {
 }
 
 .motor-title .el-icon {
-    color: #409EFF;
+    color: var(--accent-color);
 }
 
 .motor-stats {
@@ -149,13 +149,13 @@ const motorHealthStatus = computed(() => {
     display: flex;
     align-items: center;
     gap: 5px;
-    color: #909399;
+    color: var(--text-muted);
     font-size: 0.9em;
     margin-bottom: 5px;
 }
 
 .stat-label .el-icon {
-    color: #409EFF;
+    color: var(--accent-color);
 }
 
 .stat-value {
@@ -166,7 +166,7 @@ const motorHealthStatus = computed(() => {
 }
 
 .stat-value.warning {
-    color: #E6A23C;
+    color: var(--el-color-warning);
 }
 
 :deep(.el-progress-bar__inner) {

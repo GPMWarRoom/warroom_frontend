@@ -82,7 +82,7 @@ defineEmits(['toggle-maintenance'])
 }
 
 .status-label {
-    color: #909399;
+    color: var(--text-muted);
     font-size: 13px; /* 略微縮小字體 */
 }
 
@@ -93,6 +93,7 @@ defineEmits(['toggle-maintenance'])
 }
 
 :deep(.el-tag) {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--el-tag-text-color) 35%, transparent);
     min-width: 90px;
     height: 24px;
     line-height: 24px;

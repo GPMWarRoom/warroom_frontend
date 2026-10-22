@@ -39,10 +39,6 @@
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
-                <button type="button" class="agvc-tab" :class="{ 'is-active': activeTab === 'log-download' }" @click="selectTab('log-download')">
-                    <el-icon><Download /></el-icon>
-                    <span>LOG撈取</span>
-                </button>
             </div>
             <el-tabs v-model="activeTab" class="agvc-tabs" type="card" v-loading="loading" @tab-change="handleTabChange">
                 <el-tab-pane label="即時監控" name="monitor">
@@ -73,9 +69,6 @@
                 </el-tab-pane>
                 <el-tab-pane name="utilizationEQ" label="周邊設備" :lazy="true">
                     <UtilizationEQDashboard class="tab-content-component" @realtime-action="handleUtilizationEQRealtimeAction"/>
-                </el-tab-pane>
-                <el-tab-pane name="log-download" label="LOG撈取" :lazy="true">
-                    <LogDownloadPanel class="tab-content-component" />
                 </el-tab-pane>
                 
                 <!-- <el-tab-pane label="任務管理" name="tasks">
@@ -109,7 +102,7 @@
                 <RackStatus v-else-if="equipmentType === 'rack'" :id="selectedEquipmentId" @back="showEquipmentDrawer = false"/>
             </el-drawer>
 
-            <div class="date-select" v-if="!['monitor', 'utilizationEQ', 'battery-records', 'charge-station', 'log-download'].includes(activeTab)">
+            <div class="date-select" v-if="!['monitor', 'utilizationEQ', 'battery-records', 'charge-station'].includes(activeTab)">
                 <el-date-picker v-model="localDateRange" type="daterange" range-separator="至" start-placeholder="開始日期" end-placeholder="結束日期" @change="handleDateRangeChange"/>
                 <el-button style="margin: 0px 2px" @click="() => _Init()">查詢</el-button>
             </div>
@@ -117,8 +110,8 @@
     </content-container>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, markRaw, nextTick } from 'vue'
-import { Monitor, LocationFilled, Download, ArrowDown } from '@element-plus/icons-vue'
+import { ref, computed, onMounted, onUnmounted, watch, markRaw, nextTick } from 'vue'
+import { Monitor, LocationFilled, ArrowDown } from '@element-plus/icons-vue'
 import { ElNotification, ElMessage } from 'element-plus'
 import ContentContainer from '../components/ContentContainer.vue'
 import RealTimeDashboard from '../components/AGVC/RealTimeDashboard/index.vue'
@@ -127,13 +120,13 @@ import TrafficEfficiencyDashboard from '../components/AGVC/TrafficEffiencicyDash
 import HistoryTaskRoute from '../components/AGVC/HistoryTaskRoute/index.vue'
 import UtilizationDashboard from '../components/AGVC/UtilizationDashboard/index.vue'
 import UtilizationEQDashboard from '../components/AGVC/UtilizationEQDashboard/index.vue'
-import LogDownloadPanel from '../components/AGVC/LogDownload/index.vue'
 import RackHistory from '@/components/EquipmentStatus/Rack/RackHistory.vue'
 import BatteryRecords from '@/components/EquipmentStatus/AGV/BatteryRecords.vue'
 import ChargeStationDashboard from '@/components/EquipmentStatus/ChargeStation/index.vue'
 import { uiStatsStore } from '../stores/UiStats'
 import { realTimeStore } from '../stores/realTime'
 import { useSignalR } from '@/composables/useSignalR'
+import { useSessionRef, writeSession, isOneOf } from '@/composables/useSessionState'
 import { getMap } from '@/api/map'
 import AgvStatus from '@/components/EquipmentStatus/AGV/index.vue'
 import RackStatus from '@/components/EquipmentStatus/Rack/index.vue'
@@ -155,7 +148,9 @@ const ChargeStationRef = ref()
 const HistoryTaskRouteRef = ref()
 const realTimeData = realTimeStore()
 const loading = ref(realTimeData.loading)
-const activeTab = ref('monitor')
+const TAB_NAMES = ['monitor', 'traffic-stats', 'traffic-efficiency', 'history-task-route', 'utilization', 'RackHistory', 'battery-records', 'charge-station', 'utilizationEQ'] as const
+// 自動重新整理後回到原本的頁籤
+const activeTab = useSessionRef<string>('agvc-tab', 'monitor', isOneOf(TAB_NAMES))
 const tabGroups = [
     {
         label: '搬運統計資料',
@@ -210,7 +205,7 @@ async function selectTab(name: string) {
     if (!name || activeTab.value === name) return
     const seq = ++selectSeq
     const revisit = readyTabs.has(tabCacheKey(name))
-    const instant = revisit || ['log-download', 'history-task-route', 'battery-records', 'utilizationEQ', 'charge-station'].includes(name)
+    const instant = revisit || ['history-task-route', 'battery-records', 'utilizationEQ', 'charge-station'].includes(name)
 
     if (instant) {
         activeTab.value = name
@@ -234,7 +229,7 @@ async function selectTab(name: string) {
     }
 }
 const uiStats = uiStatsStore()
-const agvcList = ref([])
+const agvcList = computed(() => realTimeData.agvcList)
 watch(isConnected, async (newVal) => {
     if (newVal && realTimeData.selectedAgvc) {
         console.log('🔗 SignalR 已連線，開始自動訂閱場域...');
@@ -256,15 +251,8 @@ watch(
 function handleReceiveChannels(schemas: any) {
     if (!schemas || schemas.length === 0) return;
 
-    // 自動判斷並轉換格式
-    const formattedSchemas = schemas.map((item: any) => {
-        if (typeof item === 'string') {
-            return { name: item, value: item };
-        }
-        return item; 
-    });
-
-    agvcList.value = formattedSchemas;
+    // 自動判斷並轉換格式，存進 store 讓 LOG 撈取共用同一份場域清單
+    const formattedSchemas = realTimeData.setAgvcList(schemas);
     
     // 1. 優先使用目前 Store 中的場域 (從 InfoCard 點擊帶過來的)
     let targetAgvc = realTimeData.selectedAgvc;
@@ -576,6 +564,7 @@ async function _Init(tab?: string, options?: { showLoading?: boolean }) {
 }
 async function handleAgvcChange(value: string) {
     localStorage.setItem('agvc_selected_field', value);
+    writeSession('agvc-field', value);
     
     // 切換場域時立刻清空舊地圖；進行中的請求由 fetchMapForAgvc 的序號自動作廢
     realTimeData.updateRealTimeData('AGVC_TrafficStats_mapModel', null);
@@ -625,8 +614,8 @@ const tabStoreMap: Record<string, Record<string, string>> = {
 let currentSubscribedSchema: string | null = null
 let currentTab: string | null = null
 
-/** 不需要即時推播的頁籤（例如 LOG 撈取、歷史任務路線） */
-const NO_SUBSCRIBE_TABS = ['log-download', 'history-task-route']
+/** 不需要即時推播的頁籤（例如歷史任務路線） */
+const NO_SUBSCRIBE_TABS = ['history-task-route']
 
 async function subscribeToSchema(schema: string, tab: string) {
     if (NO_SUBSCRIBE_TABS.includes(tab)) return
@@ -953,15 +942,20 @@ watch(
 
 
 <style scoped>
+/* 頁籤列固定高度，下方內容以 flex 填滿剩餘空間，避免底部留白 */
 .h-100 {
-  border: 2px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 2px solid transparent;
   border-radius: 12px;
   padding: 4px;
 }
 .agvc-tabbar {
     display: flex;
+    flex: none;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     padding: 0 10px;
     min-height: 36px;
 }
@@ -992,10 +986,12 @@ watch(
     color: var(--text-color);
     background: transparent;
     border: 1px solid var(--tab-border-color);
-    border-radius: 0;
+    border-radius: var(--radius-pill);
     cursor: pointer;
     font-size: 14px;
     line-height: 32px;
+    white-space: nowrap;
+    transition: color 0.2s, box-shadow 0.2s;
 }
 
 .agvc-tab .el-icon {
@@ -1013,20 +1009,22 @@ watch(
 
 .agvc-tab.is-active,
 .agvc-tab.is-active:hover {
-    background-color: var(--accent-fill);
-    border-color: var(--accent-fill);
+    background: var(--accent-gradient);
+    border-color: transparent;
     color: #fff;
+    box-shadow: var(--accent-glow);
 }
 
 .agvc-tabs {
-    --tab-offset-top: 147px;
+    flex: 1;
+    min-height: 0;
     padding: 0 10px;
-    margin-bottom: 10px;
+    margin-top: 6px;
 }
 
 
 .agvc-tabs .tab-content-component {
-    height: calc(100vh - var(--tab-offset-top) - 20px);
+    height: 100%;
 }
 
 .agvc-tabs :deep(.el-tabs__header) {
@@ -1034,9 +1032,13 @@ watch(
 }
 
 .agvc-tabs :deep(.el-tabs__content) {
-    height: calc(100vh - var(--tab-offset-top) + 200px);
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    /* border: 4px solid #cc00ff; */
+}
+
+.agvc-tabs :deep(.el-tab-pane) {
+    height: 100%;
 }
 
 .agvc-tabs :deep(.el-tabs__nav) {
@@ -1086,11 +1088,11 @@ watch(
 .agvc-tab-dropdown .el-dropdown-menu__item.is-current {
     color: var(--accent-color) !important;
     font-weight: 700;
-    background: rgba(64, 158, 255, 0.12);
+    background: var(--hover-bg);
 }
 
 .agvc-tab-dropdown .el-dropdown-menu__item:hover {
     color: var(--accent-color);
-    background-color: rgba(64, 158, 255, 0.12);
+    background-color: var(--hover-bg);
 }
 </style>

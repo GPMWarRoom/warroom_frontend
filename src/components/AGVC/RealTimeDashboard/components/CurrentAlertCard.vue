@@ -96,19 +96,25 @@ watch(() => filteredAlarms.value.length, (newLen) => {
 }
 
 .alert-message {
-  width: 100%;
-  border-left: 4px solid #f56c6c; /* 加個邊框色塊更像警報 */
-  background-color: #f73f3f1a;
+  width: calc(100% - 24px);
+  margin: 0 12px;
+  border-left: 4px solid var(--el-color-danger); /* 加個邊框色塊更像警報 */
+  border-radius: 12px;
+  background-color: color-mix(in srgb, var(--el-color-danger) 12%, transparent);
   padding: 15px;
   font-size: 0.95rem;
   word-break: break-all;
+}
+
+.alert-message.text-danger {
+  color: var(--el-color-danger) !important;
 }
 
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #67c23a; 
+  color: var(--el-color-success); 
   gap: 8px;
 }
 

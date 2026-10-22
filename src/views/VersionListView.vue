@@ -238,9 +238,10 @@ onUnmounted(() => {
 }
 
 .tree-wrapper {
-    background: #3030307e;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border-color);
+    border-radius: var(--radius-card);
+    box-shadow: var(--glass-shadow);
     padding: 10px;
     margin-bottom: 10px;
 }
@@ -261,8 +262,10 @@ onUnmounted(() => {
 }
 
 .table-wrapper {
-    background: #3030307e;
-    border-radius: 8px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border-color);
+    border-radius: var(--radius-card);
+    box-shadow: var(--glass-shadow);
     padding: 20px;
     margin-bottom: 20px;
 }
@@ -272,23 +275,23 @@ onUnmounted(() => {
 }
 
 :deep(.el-table th) {
-    background: var(--version-view-table-color);
-    color: white;
+    background: var(--table-header-bg);
+    color: var(--text-muted);
 }
 
 
 :deep(.el-table td) {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: transparent;
+    color: var(--text-color);
 }
 
 :deep(.el-table--border) {
-    border-color: var(--version-view-table-color);
+    border-color: var(--border-color);
 }
 
 
 :deep(.el-table--border th),
 :deep(.el-table--border td) {
-    border-color: var(--version-view-table-color);
+    border-color: var(--border-color);
 }
 </style>
