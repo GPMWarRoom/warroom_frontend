@@ -3,7 +3,7 @@
         <el-card class="bird-view-card-wrapper">
             <template #header>
                 <div class="d-flex justify-content-between align-items-center">
-                    <span>Bird's Eye View</span>
+                    <span>AGVS Layout</span>
                     <el-tooltip content="放大檢視" placement="top">
                         <el-icon style="cursor: pointer;" @click="isExpanded = true"><FullScreen /></el-icon>
                     </el-tooltip>

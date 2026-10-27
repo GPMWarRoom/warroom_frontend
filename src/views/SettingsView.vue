@@ -2,28 +2,44 @@
     <content-container>
         <div class="h-100">
             <div class="settings-tabbar">
-                <span class="settings-tab is-active">
-                    <el-icon><Download /></el-icon>
-                    <span>LOG撈取</span>
-                </span>
+                <button v-for="tab in TABS" :key="tab.name" type="button" class="settings-tab"
+                    :class="{ 'is-active': activeTab === tab.name }" @click="activeTab = tab.name">
+                    <el-icon><component :is="tab.icon" /></el-icon>
+                    <span>{{ tab.label }}</span>
+                </button>
             </div>
             <div class="settings-content">
-                <LogDownloadPanel v-model:schema="logField" />
+                <!-- 用 v-show：LOG 撈取可能還在等 API 回應，切換頁籤時不能卸載 -->
+                <LogDownloadPanel v-show="activeTab === 'log'" v-model:schema="logField" />
+                <DatabaseManager v-show="activeTab === 'database'" :active="pageActive && activeTab === 'database'" />
             </div>
         </div>
     </content-container>
 </template>
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from 'vue'
-import { Download } from '@element-plus/icons-vue'
+import { ref, onMounted, onUnmounted, onActivated, onDeactivated, watch } from 'vue'
+import { Download, Coin } from '@element-plus/icons-vue'
 import ContentContainer from '../components/ContentContainer.vue'
 import LogDownloadPanel from '../components/AGVC/LogDownload/index.vue'
+import DatabaseManager from '../components/DatabaseManager/index.vue'
 import { realTimeStore } from '../stores/realTime'
 import { useSignalR } from '@/composables/useSignalR'
-import { useSessionRef } from '@/composables/useSessionState'
+import { useSessionRef, isOneOf } from '@/composables/useSessionState'
 
 const realTimeData = realTimeStore()
 const { on, off, connection, isConnected } = useSignalR()
+
+const TABS = [
+    { name: 'log', label: 'LOG撈取', icon: Download },
+    { name: 'database', label: '資料庫管理', icon: Coin },
+] as const
+// 自動重新整理後回到原本的頁籤
+const activeTab = useSessionRef<string>('settings-tab', 'log', isOneOf(TABS.map(t => t.name)))
+
+// 頁面被 keep-alive 快取：離開再回來時資料庫管理要重新向後端取一次
+const pageActive = ref(true)
+onActivated(() => { pageActive.value = true })
+onDeactivated(() => { pageActive.value = false })
 
 // LOG 撈取的場域與場域資訊分開：預設帶入場域資訊目前的場域，之後各自切換互不影響
 const logField = useSessionRef<string>('log-field', realTimeData.selectedAgvc, v => typeof v === 'string' && v !== '')
@@ -87,18 +103,26 @@ onUnmounted(() => {
     height: 32px;
     padding: 0 12px;
     color: var(--text-color);
+    background: transparent;
     border: 1px solid var(--tab-border-color);
     border-radius: var(--radius-pill);
+    cursor: pointer;
     font-size: 14px;
     line-height: 32px;
     white-space: nowrap;
+    transition: color 0.2s, box-shadow 0.2s;
 }
 
 .settings-tab .el-icon {
     margin-right: 4px;
 }
 
-.settings-tab.is-active {
+.settings-tab:hover {
+    color: var(--accent-color);
+}
+
+.settings-tab.is-active,
+.settings-tab.is-active:hover {
     background: var(--accent-gradient);
     border-color: transparent;
     color: #fff;

@@ -175,7 +175,7 @@ const emit = defineEmits(['realtime-action'])
 
 const dataType = ref('EQUtilization')
 const showFilterDialog = ref(false)
-const selectedDevice = ref('')
+const selectedDevice = ref('all')
 
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -213,13 +213,10 @@ const filteredDeviceEntries = computed(() => {
 })
 
 watch(deviceNameList, (names) => {
-  if (!names.length) {
-    selectedDevice.value = ''
-    return
-  }
-  // 有資料時預設選第一台，避免設備過多一次塞滿畫面
-  if (!selectedDevice.value || (selectedDevice.value !== 'all' && !names.includes(selectedDevice.value))) {
-    selectedDevice.value = names[0]
+  if (!names.length) return
+  // 預設顯示全部設備；原本選的設備在新資料中不存在時（例如切換場域）也回到全部
+  if (selectedDevice.value !== 'all' && !names.includes(selectedDevice.value)) {
+    selectedDevice.value = 'all'
   }
 })
 

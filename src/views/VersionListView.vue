@@ -3,24 +3,28 @@
         <div class="header">
             <h1 class="title">版本管理</h1>
             <div class="view-switch">
+                <span class="floor-label">樓層</span>
+                <el-select v-model="selectedFloor" placeholder="選擇樓層" size="large" class="floor-select">
+                    <el-option v-for="floor in versionList" :key="floor.floor" :label="`${floor.floor} F`" :value="floor.floor" />
+                </el-select>
                 <el-radio-group v-model="viewType" size="large">
                     <el-radio-button label="tree">樹狀圖</el-radio-button>
                     <el-radio-button label="table">表格</el-radio-button>
                 </el-radio-group>
             </div>
         </div>
-        <!-- 樹狀圖視圖 -->
+        <!-- 樹狀圖視圖：一次只顯示下拉選單選的樓層 -->
         <div v-if="viewType === 'tree'" class="trees-container">
-            <div v-for="floor in versionList" :key="floor.floor" class="tree-wrapper">
-                <h2 class="floor-title">{{ floor.floor }} F</h2>
-                <div :ref="el => setChartRef(el as Element, floor.floor)" class="tree-chart"></div>
+            <div v-show="selectedFloorData" class="tree-wrapper">
+                <h2 class="floor-title">{{ selectedFloorData?.floor }} F</h2>
+                <div ref="treeChartRef" class="tree-chart"></div>
             </div>
         </div>
-        <!-- 表格視圖 -->
+        <!-- 表格視圖：與樹狀圖共用同一個樓層選單 -->
         <div v-else class="tables-container">
-            <div v-for="floor in versionList" :key="floor.floor" class="table-wrapper">
-                <h2 class="floor-title">{{ floor.floor }} F</h2>
-                <el-table :data="getTableData(floor)" border>
+            <div v-if="selectedFloorData" class="table-wrapper">
+                <h2 class="floor-title">{{ selectedFloorData.floor }} F</h2>
+                <el-table :data="getTableData(selectedFloorData)" border>
                     <el-table-column prop="fieldName" label="場域名稱" />
                     <el-table-column prop="fieldVersion" label="派車系統版本" />
                     <el-table-column label="車輛版本">
@@ -38,24 +42,27 @@
 </template>
 <script setup lang="ts">
 import { systemApi } from '@/api'
-import { ref, onMounted, onUnmounted, watch, nextTick, onActivated, onDeactivated } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, onActivated, onDeactivated } from 'vue'
 import type { FloorVersions } from '@api/system'
 import * as echarts from 'echarts'
 import { useSignalR } from '@/composables/useSignalR'
+import { useSessionRef } from '@/composables/useSessionState'
 import { uiStatsStore } from '@/stores/UiStats'
 const { on, off, connection } = useSignalR()
 
 const viewType = ref<'tree' | 'table'>('tree')
 const versionList = ref<FloorVersions[]>([])
-const chartInstances = new Map<number, echarts.ECharts>()
+// 樹狀圖與表格共用選的樓層，自動重新整理後保留
+const selectedFloor = useSessionRef<number | null>('version-floor', null, v => typeof v === 'number')
+const selectedFloorData = computed(() => versionList.value.find(floor => floor.floor === selectedFloor.value))
+const treeChartRef = ref<HTMLElement | null>(null)
+let treeChart: echarts.ECharts | null = null
 
 function handleReceiveVersion(result: FloorVersions[]) {
     versionList.value = result
-    if (viewType.value === 'tree') {
-        nextTick(() => {
-            initCharts()
-            handleResize()
-        })
+    // 沒選過或選的樓層已不存在時，預設第一個樓層
+    if (result.length && !result.some(floor => floor.floor === selectedFloor.value)) {
+        selectedFloor.value = result[0].floor
     }
 }
 
@@ -67,17 +74,6 @@ onActivated(async () => {
 onDeactivated(() => {
     off('ReceiveVersion', handleReceiveVersion)
 })
-
-const setChartRef = (el: Element | null, floor: number) => {
-    if (el && el instanceof HTMLElement) {
-        let chart = echarts.getInstanceByDom(el)
-        if (chart) {
-            chart.dispose()
-        }
-        chart = echarts.init(el)
-        chartInstances.set(floor, chart)
-    }
-}
 
 const uiStats = uiStatsStore()
 const chartTextColor = () => uiStats.theme === 'light' ? '#141414' : '#ffffff'
@@ -150,21 +146,29 @@ const createChartOption = (floorData: FloorVersions) => {
     }
 }
 
-watch(() => uiStats.theme, () => nextTick(() => initCharts()))
-
-const initCharts = () => {
-    versionList.value.forEach(floor => {
-        const chart = chartInstances.get(floor.floor)
-        if (chart) {
-            chart.setOption(createChartOption(floor))
-        }
-    })
+/** 畫出目前選的樓層；換樓層時整份取代，不與上一個樓層的節點合併 */
+const renderTree = () => {
+    const el = treeChartRef.value
+    const floor = selectedFloorData.value
+    if (viewType.value !== 'tree' || !el || !floor) return
+    if (!treeChart || treeChart.getDom() !== el) {
+        treeChart?.dispose()
+        treeChart = echarts.init(el)
+    }
+    treeChart.setOption(createChartOption(floor), true)
+    treeChart.resize()
 }
 
+const disposeTree = () => {
+    treeChart?.dispose()
+    treeChart = null
+}
+
+watch(selectedFloorData, () => nextTick(renderTree))
+watch(() => uiStats.theme, () => nextTick(renderTree))
+
 const handleResize = () => {
-    chartInstances.forEach(chart => {
-        chart.resize()
-    })
+    treeChart?.resize()
 }
 
 // 表格數據轉換
@@ -180,37 +184,22 @@ const getTableData = (floor: FloorVersions) => {
 }
 
 onMounted(() => {
-    if (viewType.value === 'tree') {
-        setTimeout(initCharts, 200)
-        setTimeout(handleResize, 200)
-        window.addEventListener('resize', handleResize)
-    }
+    window.addEventListener('resize', handleResize)
+    nextTick(renderTree)
 })
 
 // 監聽視圖類型變化
 watch(viewType, (newType) => {
     if (newType === 'tree') {
-        nextTick(() => {
-            initCharts()
-            handleResize()
-            window.addEventListener('resize', handleResize)
-        })
+        nextTick(renderTree)
     } else {
-        window.removeEventListener('resize', handleResize)
-        chartInstances.forEach(chart => {
-            chart.dispose()
-        })
-        chartInstances.clear()
+        disposeTree()
     }
 })
 
 onUnmounted(() => {
-    if (viewType.value === 'tree') {
-        window.removeEventListener('resize', handleResize)
-        chartInstances.forEach(chart => {
-            chart.dispose()
-        })
-    }
+    window.removeEventListener('resize', handleResize)
+    disposeTree()
 })
 </script>
 <style scoped>
@@ -226,6 +215,24 @@ onUnmounted(() => {
     align-items: center;
     margin-bottom: 30px;
     padding: 0 20px;
+}
+
+.view-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.floor-label {
+    color: var(--text-color);
+    font-weight: bold;
+    letter-spacing: 2px;
+    white-space: nowrap;
+}
+
+.floor-select {
+    width: 140px;
+    margin-right: 10px;
 }
 
 .title {
@@ -254,7 +261,9 @@ onUnmounted(() => {
 
 .tree-chart {
     width: 100%;
-    height: 400px;
+    /* 一次只顯示一個樓層，圖表撐滿可視高度 */
+    height: calc(100vh - 260px);
+    min-height: 400px;
 }
 
 .tables-container {
