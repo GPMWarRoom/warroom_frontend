@@ -27,9 +27,9 @@
                 </el-button-group>
             </div>
         </template>
-        <div v-if="currentTab==='AGV' "style="max-height: 300px; overflow-y: auto;">
+        <div v-if="currentTab==='AGV'">
             <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV" stripe 
-                        :style="{ height: tableHeight }"
+                        :height="tableHeight"
                         @row-click="(row) => handleRowClick(row.Name, 'agv')">
                 <el-table-column align="center" prop="Name" label="ID" width="90" />
                 <el-table-column align="center" prop="MainStatus" label="狀態" width="110">
@@ -49,8 +49,8 @@
                 </el-table-column>
             </el-table>
         </div>
-        <div v-if="currentTab==='mainEq' "style="max-height: 300px; overflow-y: auto;">
-            <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_MainEQ" stripe :style="{ height: tableHeight }">
+        <div v-if="currentTab==='mainEq'">
+            <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_MainEQ" stripe :height="tableHeight">
                 <el-table-column align="center" prop="Name" label="ID" width="160" />
                 <el-table-column align="center" prop="MainStatus" label="狀態" width="110">
                     <template #default="{ row }">
@@ -60,8 +60,8 @@
                 <<el-table-column align="center" prop="MaterialID" label="Material ID" />
             </el-table>
         </div>
-        <div v-if="currentTab==='chargingStation' "style="max-height: 300px; overflow-y: auto;">
-            <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV" stripe :style="{ height: tableHeight }">
+        <div v-if="currentTab==='chargingStation'">
+            <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV" stripe :height="tableHeight">
                 <el-table-column align="center" prop="Name" label="ID" width="110" />
                 <el-table-column align="center" prop="MainStatus" label="狀態" width="100">
                     <template #default="{ row }">
@@ -75,9 +75,9 @@
                 </el-table-column>
             </el-table>
         </div>
-        <div v-if="currentTab==='rack' "style="max-height: 300px; overflow-y: auto;">
+        <div v-if="currentTab==='rack'">
             <el-table :data="realTimeData.AGVC_RealTimeDashboard_EQStatus_Rack" stripe 
-                :style="{ height: tableHeight }"
+                :height="tableHeight"
                 :row-class-name="tableRowClassName"
                 @row-click="(row) => handleRowClick(row.rack_name, 'rack')">
                 <el-table-column align="center" prop="rack_name" label="ID" width="100" />
@@ -113,7 +113,8 @@ const tableRowClassName = ({ row }) => {
 }
 
 const currentTab = useSessionRef<'AGV' | 'mainEq' | 'chargingStation' | 'rack'>('monitor-equipment-tab', 'AGV', isOneOf(['AGV', 'mainEq', 'chargingStation', 'rack']))
-const tableHeight = ref('300px')
+// 表格固定顯示 4 筆：表頭 40px＋每列 41px（AGV／主要設備／Rack 列高相同），超過 4 筆在表格內捲動，表頭固定
+const tableHeight = ref('204px')
 const realTimeData = realTimeStore()
 const MANUAL_TIMEOUT_SEC = 600
 

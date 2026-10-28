@@ -45,13 +45,13 @@
                 </div>
             </el-col>
             <el-col :lg="12" class="cards-container d-flex flex-column justify-content-between "  style="height: 100%;">
-                <div class="card ">
+                <div class="card from-to-card">
                     <h3>From-To 統計數據</h3>
                     <div class="h-100 text-light d-flex flex-column justify-content-between" >
                         <FromToTransportStas @selector-change="handleSelectorChange"/>
                     </div>
                 </div>
-                <div class="card my-1" style="flex: 1 1 0; min-height: 180px;">
+                <div class="card my-1 path-box-plot-card">
                     <h3>啟終點執行時間 Box Plot</h3>
                     <div class="h-100">
                         <BoxPlotChart :useGradient="true" :datas="{
@@ -261,6 +261,18 @@ const carryStaticsBoxPlotData = computed(() => {
 
     scrollbar-width: thin; /* Firefox */
     scrollbar-color: var(--scrollbar-thumb) transparent;
+
+    /* 右欄高度分配：先保留各卡片的標題、選單等固定區塊（flex-basis），
+       剩餘高度再以 2:1 分給 From-To（兩張圖）與起終點 Box Plot（一張圖），三張圖因此等高 */
+    .from-to-card {
+        flex: 2 1 170px;
+        min-height: 0;
+    }
+
+    .path-box-plot-card {
+        flex: 1 1 42px;
+        min-height: 200px;
+    }
 
     @media (max-width: 768px) {
         .cards-container {

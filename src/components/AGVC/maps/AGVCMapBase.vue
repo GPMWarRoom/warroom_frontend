@@ -369,6 +369,8 @@ const createMapPointFeatures = (mapData: any) => {
         const pY = point.Y ?? point.y ?? 0;
         const stationType = point.StationType ?? point.stationType ?? 0;
         const displayName = point.Graph?.Display ?? point.Name ?? point.name ?? '';
+        // 未啟用的點位（Enable = false）畫成紅色叉叉；沒有這個欄位的視為啟用
+        const isEnabled = (point.Enable ?? point.enable) !== false;
 
         const feature = new Feature({
             geometry: new Point([pX, pY]),
@@ -393,7 +395,7 @@ const createMapPointFeatures = (mapData: any) => {
 
         // 原本的點位顏色邏輯
         styles.push(new Style({
-            image: new Circle({
+            image: isEnabled ? new Circle({
                 radius: 6,
                 fill: new Fill({
                     color: getPointColor(stationType)
@@ -402,7 +404,7 @@ const createMapPointFeatures = (mapData: any) => {
                     color: '#ffffff',
                     width: 2
                 })
-            }),
+            }) : createDisabledPointImage(),
             text: new Text({
                 text: displayName,
                 offsetY: -15,
@@ -419,6 +421,20 @@ const createMapPointFeatures = (mapData: any) => {
         return feature;
     });
 };
+
+// 未啟用點位：紅色叉叉（四角星把內徑設為 0 即為十字，旋轉 45 度成 X）
+const DISABLED_POINT_COLOR = '#ff3b30';
+const createDisabledPointImage = () => new RegularShape({
+    points: 4,
+    radius: 8,
+    radius2: 0,
+    angle: Math.PI / 4,
+    stroke: new Stroke({
+        color: DISABLED_POINT_COLOR,
+        width: 3,
+        lineCap: 'round'
+    })
+});
 
 // 站點類型顏色對應表
 const getPointColor = (stationType: number) => {

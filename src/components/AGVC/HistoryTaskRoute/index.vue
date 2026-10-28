@@ -46,8 +46,8 @@
                                 <el-checkbox v-model="scope.row.isSelected" />
                             </template>
                         </el-table-column>
-                        <el-table-column show-overflow-tooltip align="center" prop="StartTime" label="開始時間" width="120" />
-                        <el-table-column show-overflow-tooltip align="center" prop="FinishTime" label="結束時間" width="120" />
+                        <el-table-column show-overflow-tooltip align="center" prop="StartTime" label="開始時間" :formatter="taskTimeColumnFormatter" width="120" />
+                        <el-table-column show-overflow-tooltip align="center" prop="FinishTime" label="結束時間" :formatter="taskTimeColumnFormatter" width="120" />
                         <el-table-column show-overflow-tooltip align="center" prop="DesignatedAGVName" label="AGV" width="80" />
                         <el-table-column show-overflow-tooltip prop="TaskName" label="任務名稱" min-width="120" />
                         <el-table-column show-overflow-tooltip prop="FromName" label="起點" min-width="90" />
@@ -89,6 +89,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { realTimeStore } from '@/stores/realTime'
+import { taskTimeColumnFormatter } from '@/utils/taskTime'
 import TasksPathMap from '@/components/AGVC/maps/TasksPathMap.vue'
 import { RefreshRight } from '@element-plus/icons-vue'
 
@@ -225,7 +226,7 @@ watch(
     justify-content: space-between;
     align-items: center;
     gap: 12px;
-    padding: 12px 430px 12px 16px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
     flex: 0 0 auto;
 }

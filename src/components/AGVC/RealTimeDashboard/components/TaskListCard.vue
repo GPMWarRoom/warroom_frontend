@@ -65,8 +65,8 @@
             <div class="table-container">
                 <el-table :data="filteredTasks" stripe height="100%">
                     <el-table-column show-overflow-tooltip prop="DesignatedAGVName" label="AGV" width="auto" align="center"/>
-                    <el-table-column show-overflow-tooltip prop="StartTime" label="開始時間" width="auto" align="center" />
-                    <el-table-column show-overflow-tooltip prop="FinishTime" label="結束時間" width="auto" align="center" />
+                    <el-table-column show-overflow-tooltip prop="StartTime" label="開始時間" :formatter="taskTimeColumnFormatter" width="auto" align="center" />
+                    <el-table-column show-overflow-tooltip prop="FinishTime" label="結束時間" :formatter="taskTimeColumnFormatter" width="auto" align="center" />
                     <el-table-column show-overflow-tooltip prop="TaskName" label="任務ID" width="120" align="center" />
                     <el-table-column show-overflow-tooltip prop="Action" label="類型" width="auto" align="center">
                         <template #default="{ row }">
@@ -147,8 +147,8 @@
                 <div class="table-container">
                     <el-table :data="filteredTasks" stripe height="100%">
                         <el-table-column show-overflow-tooltip prop="DesignatedAGVName" label="AGV" align="center"/>
-                        <el-table-column show-overflow-tooltip prop="StartTime" label="開始時間" align="center" />
-                        <el-table-column show-overflow-tooltip prop="FinishTime" label="結束時間" align="center" />
+                        <el-table-column show-overflow-tooltip prop="StartTime" label="開始時間" :formatter="taskTimeColumnFormatter" align="center" />
+                        <el-table-column show-overflow-tooltip prop="FinishTime" label="結束時間" :formatter="taskTimeColumnFormatter" align="center" />
                         <el-table-column show-overflow-tooltip prop="TaskName" label="任務ID" min-width="140" align="center" />
                         <el-table-column show-overflow-tooltip prop="Action" label="類型" align="center">
                             <template #default="{ row }">{{ actionMap[row.Action] }}</template>
@@ -235,6 +235,7 @@
 import { computed, ref, reactive } from 'vue'
 import { useSessionRef, isOneOf } from '@/composables/useSessionState'
 import { realTimeStore } from '@/stores/realTime'
+import { taskTimeColumnFormatter } from '@/utils/taskTime'
 import dayjs from 'dayjs'
 import { FullScreen } from '@element-plus/icons-vue'
 

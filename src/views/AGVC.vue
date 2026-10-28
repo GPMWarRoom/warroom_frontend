@@ -61,7 +61,7 @@
                 <el-tab-pane name="RackHistory" label="Rack水位紀錄" :lazy="true">
                     <RackHistory class="tab-content-component" />
                 </el-tab-pane>
-                <el-tab-pane name="battery-records" label="電池紀錄" :lazy="true">
+                <el-tab-pane name="battery-records" label="AGV電池紀錄" :lazy="true">
                     <BatteryRecords class="tab-content-component" ref="BatteryRecordsRef" />
                 </el-tab-pane>
                 <el-tab-pane name="charge-station" label="充電站資訊" :lazy="true">
@@ -165,13 +165,13 @@ const tabGroups = [
         label: '設備統計資料',
         items: [
             { name: 'RackHistory', label: 'Rack水位紀錄' },
-            { name: 'utilizationEQ', label: '周邊設備' },
+            { name: 'utilizationEQ', label: '設備狀態統計' },
         ],
     },
     {
         label: '能源統計',
         items: [
-            { name: 'battery-records', label: '電池紀錄' },
+            { name: 'battery-records', label: 'AGV電池紀錄' },
             { name: 'charge-station', label: '充電站資訊' },
         ],
     },

@@ -43,6 +43,11 @@ const props = defineProps({
     tooltipFormatter: {
         type: [Function, String],
         default: null
+    },
+    // 次數類資料：y 軸刻度只顯示整數
+    integerYAxis: {
+        type: Boolean,
+        default: false
     }
 })
   
@@ -70,6 +75,11 @@ watch(
         options.title.text = props.title
         options.xAxis.name = props.xAxisName
         options.yAxis.name = props.yAxisName
+        if (props.integerYAxis) {
+            options.yAxis.minInterval = 1
+        } else {
+            delete options.yAxis.minInterval
+        }
         options.xAxis.data = newDatas[0].xData
 
         options.series = newDatas.map((item, index) => {

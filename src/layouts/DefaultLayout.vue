@@ -57,6 +57,7 @@
                         <span>明亮</span>
                     </button>
                 </div>
+                <time class="system-clock" :datetime="nowText">{{ nowText }}</time>
                 <el-dropdown v-if="false">
                     <span class="user-profile"> {{ userName }} <el-icon>
                             <ArrowDown />
@@ -100,7 +101,8 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import dayjs from 'dayjs'
 import { useRouter } from "vue-router";
 import { menuRoutes } from "../router";
 import ContentContainer from "../components/ContentContainer.vue";
@@ -132,6 +134,17 @@ const handleSelect = (Path: string) => {
     router.push(Path);
     uiStats.setRouteSelected(Path);
 };
+
+// 系統時間（瀏覽器時間），對齊整秒更新，避免 setInterval 漂移造成跳秒
+const nowText = ref(dayjs().format('YYYY-MM-DD HH:mm:ss'))
+let clockTimer: number | undefined
+const tickClock = () => {
+    const now = dayjs()
+    nowText.value = now.format('YYYY-MM-DD HH:mm:ss')
+    clockTimer = window.setTimeout(tickClock, 1000 - now.millisecond())
+}
+onMounted(tickClock)
+onUnmounted(() => window.clearTimeout(clockTimer))
 
 const isLogin = computed(() => {
     return user.getIsLogin
@@ -294,11 +307,21 @@ const login = () => {
   color: var(--text-muted, var(--text-color));
   cursor: pointer;
   font-size: 13px;
+  white-space: nowrap;
 }
 .theme-switch button.active {
   background: var(--accent-gradient);
   color: #fff;
   box-shadow: var(--accent-glow);
+}
+.system-clock {
+  margin-left: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-color);
 }
 .theme-switch .el-icon {
   font-size: 14px;

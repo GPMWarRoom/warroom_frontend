@@ -1,7 +1,8 @@
 <template>
     <div class="utilization-dashboard d-flex flex-column pt-2">
+        <!-- 第一列：兩個圓餅圖縮窄，右邊放 AGV上線率 -->
         <el-row class="my-1" :gutter="8">
-            <el-col :lg="12" :md="12" :sm="12">
+            <el-col :lg="6" :md="6" :sm="12">
                 <div class="card">
                     <h3>命令來源</h3>
                     <div class="content">
@@ -9,7 +10,7 @@
                     </div>
                 </div>
             </el-col>
-            <el-col :lg="12" :md="12" :sm="12">
+            <el-col :lg="6" :md="6" :sm="12">
                 <div class="card">
                     <h3>運載方式</h3>
                     <div class="content">
@@ -17,92 +18,69 @@
                     </div>
                 </div>
             </el-col>
+            <el-col :lg="12" :md="12" :sm="24">
+                <ExpandableCard title="AGV上線率 (Remote)">
+                    <LineChart class=" w-100" :yAxisName="'上線率'" :datas="realTimeData.AGVC_Utilization_RemoteRate"></LineChart>
+                </ExpandableCard>
+            </el-col>
         </el-row>
         <el-row class="my-1" :gutter="8">
             <el-col :lg="12" :md="12" :sm="24">
-                <div class="card">
-                    <h3 class="d-flex justify-content-between">AGV稼動率
-                        <div class="d-flex justify-content-end">
-                            <el-select v-if="selectedAgvUtilizationType === 'status'" v-model="agvUtilizationIndex" size="small" style="width:120px">
-                                <el-option v-for="(g, i) in agvUtilizationGroups" :key="g" :label="g" :value="i" />
-                            </el-select>
-                            <el-radio-group v-model="selectedAgvUtilizationType" size="small" style="margin-left: 8px;">
-                                <el-radio-button value="status" type="primary">依狀態</el-radio-button>
-                                <el-radio-button value="odometer" type="primary">依里程</el-radio-button>
-                            </el-radio-group>
-                        </div>
-                    </h3>
-                    <div class="content">
-                        <AgvUtilization :selectedUtilizationType="selectedAgvUtilizationType" class="w-100"
-                            :currentIndex="agvUtilizationIndex"
-                        />
-                    </div>
-                </div>
+                <ExpandableCard title="AGV稼動率">
+                    <template #actions>
+                        <el-select v-if="selectedAgvUtilizationType === 'status'" v-model="agvUtilizationIndex" size="small" style="width:120px">
+                            <el-option v-for="(g, i) in agvUtilizationGroups" :key="g" :label="g" :value="i" />
+                        </el-select>
+                        <el-radio-group v-model="selectedAgvUtilizationType" size="small">
+                            <el-radio-button value="status" type="primary">依狀態</el-radio-button>
+                            <el-radio-button value="odometer" type="primary">依里程</el-radio-button>
+                        </el-radio-group>
+                    </template>
+                    <AgvUtilization :selectedUtilizationType="selectedAgvUtilizationType" class="w-100"
+                        :currentIndex="agvUtilizationIndex"
+                    />
+                </ExpandableCard>
             </el-col>
             <el-col :lg="12" :md="12" :sm="24">
-                <div class="card">
-                    <h3 class="d-flex justify-content-between">AGV MTBF
-                        <div class="d-flex justify-content-end">
-                            <span style="margin-right:8px;margin-top: 2.5px;">計算週期:</span>
-                            <el-input-number v-model="mtbfPeriod" :min="1" :max="30" size="small" style="width:80px" />
-                            <span style="margin-left:8px;margin-top: 2.5px;">天</span>
-                        </div>
-                    </h3>
-                    <div class="content">
-                        <LineChart :useGradient="true" :yAxisName="'小時'"
-                            :datas="[{
-                                name: 'MTBF',
-                                xData: filteredMTBFList.xData,
-                                yData: filteredMTBFList.yData
-                            }]"/>
-                    </div>
-                </div>
+                <ExpandableCard title="AGV MTBF">
+                    <template #actions>
+                        <span>計算週期:</span>
+                        <el-input-number v-model="mtbfPeriod" :min="1" :max="30" size="small" style="width:80px" />
+                        <span>天</span>
+                    </template>
+                    <LineChart :useGradient="true" :yAxisName="'小時'"
+                        :datas="[{
+                            name: 'MTBF',
+                            xData: filteredMTBFList.xData,
+                            yData: filteredMTBFList.yData
+                        }]"/>
+                </ExpandableCard>
                 </el-col>
         </el-row>
         <el-row class="my-1" :gutter="8">
-            <el-col :lg="8" :md="12" :sm="24">
-                <div class="card">
-                    <h3>AGV任務數</h3>
-                    <div class="content">
-                        <LineChart class=" w-100" :yAxisName="'任務數(件)'" :datas="realTimeData.AGVC_Utilization_NoAGVTasks"></LineChart>
-                    </div>
-                </div>
+            <el-col :lg="12" :md="12" :sm="24">
+                <ExpandableCard title="AGV任務數">
+                    <LineChart class=" w-100" :yAxisName="'任務數(件)'" :integerYAxis="true" :datas="realTimeData.AGVC_Utilization_NoAGVTasks"></LineChart>
+                </ExpandableCard>
             </el-col>
-            <el-col :lg="8" :md="12" :sm="24">
-                <div class="card">
-                    <h3>AGV上線率 (Remote)</h3>
-                    <div class="content">
-                        <LineChart class=" w-100" :yAxisName="'上線率'" :datas="realTimeData.AGVC_Utilization_RemoteRate"></LineChart>
-                    </div>
-                </div>
-            </el-col>
-            <el-col :lg="8" :md="12" :sm="24">
-                <div class="card">
-                    <h3>AGV 警報次數</h3>
-                    <div class="content">
-                        <LineChart class=" w-100" :yAxisName="'次數'" :datas="[{ name:'警報次數', 
-                            xData:realTimeData.AGVC_Utilization_NoAGVAlarm.map(item => item.Date),
-                            yData:realTimeData.AGVC_Utilization_NoAGVAlarm.map(item => item.Count) }]"></LineChart>
-                    </div>
-                </div>
+            <el-col :lg="12" :md="12" :sm="24">
+                <ExpandableCard title="AGV 警報次數">
+                    <LineChart class=" w-100" :yAxisName="'次數'" :integerYAxis="true" :datas="[{ name:'警報次數', 
+                        xData:realTimeData.AGVC_Utilization_NoAGVAlarm.map(item => item.Date),
+                        yData:realTimeData.AGVC_Utilization_NoAGVAlarm.map(item => item.Count) }]"></LineChart>
+                </ExpandableCard>
             </el-col>
         </el-row>
         <el-row class="my-1" :gutter="8">
             <el-col :lg="12" :md="12" :sm="12">
-                <div class="card">
-                    <h3>設備狀態異常而拒絕任務數</h3>
-                    <div class="content">
-                        <LineChart class="w-100" :yAxisName="'次數'" :datas="realTimeData.AGVC_Utilization_NoReject" />
-                    </div>
-                </div>
+                <ExpandableCard title="設備狀態異常而拒絕任務數">
+                    <LineChart class="w-100" :yAxisName="'次數'" :integerYAxis="true" :datas="realTimeData.AGVC_Utilization_NoReject" />
+                </ExpandableCard>
             </el-col>
             <el-col :lg="12" :md="12" :sm="12">
-                <div class="card">
-                    <h3>AGV交換命令次數</h3>
-                    <div class="content">
-                        <LineChart class="w-100" :yAxisName="'次數'" :datas="realTimeData.AGVC_Utilization_ExchangeCount" />
-                    </div>
-                </div>
+                <ExpandableCard title="AGV交換命令次數">
+                    <LineChart class="w-100" :yAxisName="'次數'" :integerYAxis="true" :datas="realTimeData.AGVC_Utilization_ExchangeCount" />
+                </ExpandableCard>
             </el-col>
         </el-row>
         <el-row class="my-1" :gutter="8" v-if="false">
@@ -120,6 +98,7 @@
 <script setup>
 import LineChart from '../../common/charts/LineChart.vue'
 import PieChart from '../../common/charts/PieChart.vue'
+import ExpandableCard from '../../common/ExpandableCard.vue'
 import AgvUtilization from './components/AgvUtilization.vue'
 import { ref, computed } from 'vue'
 import { realTimeStore } from '@/stores/realTime'
@@ -226,7 +205,8 @@ const filteredMTBFList = computed(() => {
     width: 100%;
     overflow-y: auto;
 
-    .card .content {
+    /* .content 可能在 ExpandableCard 內（子元件），所以用 :deep */
+    .card :deep(.content) {
         min-height: 160px;
         display: flex;
         align-items: center;
@@ -238,13 +218,30 @@ const filteredMTBFList = computed(() => {
             width: 100%;
             height: 160px;
         }
-        .card .content {
+        .card :deep(.content) {
             min-height: 160px;
         }
     }
     .my-1 {
         margin-top: 4px !important;
         margin-bottom: 4px !important;
+    }
+
+    /* 寬螢幕（左右並排）時與即時監控相同：四列卡片平分畫面高度，不需往下捲；畫面太矮時保留最小高度改由外層捲動 */
+    @media (min-width: 1200px) {
+        > .el-row {
+            flex: 1 1 0;
+            min-height: 140px;
+        }
+
+        .el-col {
+            height: 100%;
+        }
+
+        .card :deep(.content) {
+            flex: 1;
+            min-height: 0;
+        }
     }
 }
 </style>

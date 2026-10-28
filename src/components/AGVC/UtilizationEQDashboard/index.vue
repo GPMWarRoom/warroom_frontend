@@ -49,6 +49,15 @@
         </div>
         <div v-if="dataType === 'EQUtilization'" class="divider"></div>
 
+        <div v-if="dataType === 'EQUtilization'" class="query-item">
+          <span class="label">顯示:</span>
+          <el-radio-group v-model="viewMode" size="small">
+            <el-radio-button value="pie">圓餅圖</el-radio-button>
+            <el-radio-button value="bar">橫向直條圖</el-radio-button>
+          </el-radio-group>
+        </div>
+        <div v-if="dataType === 'EQUtilization'" class="divider"></div>
+
         <el-button 
           v-if="dataType === 'EQAlarms'" 
           @click="showFilterDialog = true" 
@@ -68,8 +77,16 @@
 
     <div class="content-body">
       <template v-if="dataType === 'EQUtilization'">
+        <!-- 橫向直條圖：Y 軸為設備、X 軸為百分比 -->
+        <div v-if="filteredDeviceEntries.length > 0 && viewMode === 'bar'" class="bar-view">
+          <div class="card bar-card">
+            <h3>設備稼動狀態（%）</h3>
+            <EQUtilizationBarChart :entries="filteredDeviceEntries" />
+          </div>
+        </div>
+
         <div 
-          v-if="filteredDeviceEntries.length > 0" 
+          v-else-if="filteredDeviceEntries.length > 0" 
           class="dashboard-grid"
           :class="{ 'single-device': !!selectedDevice && selectedDevice !== 'all' }"
         >
@@ -109,8 +126,15 @@
             align="center" 
           />
           <el-table-column prop="FormattedTime" label="時間" width="180" align="center" />
-          <el-table-column prop="Level" label="等級" width="100" align="center" />
-          <el-table-column prop="Name" label="設備" width="150" align="center" />
+          <el-table-column prop="Level" label="等級" width="110" align="center">
+            <template #default="{ row }">
+              <!-- Level：1 = ALARM、其他（0）= WARNING，與即時監控的歷史警報相同 -->
+              <el-tag :type="row.Level === 1 ? 'danger' : 'warning'" size="small" effect="dark" class="level-tag">
+                {{ row.Level === 1 ? 'ALARM' : 'WARNING' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="Equipment_Name" label="設備" width="150" align="center" show-overflow-tooltip />
           <el-table-column prop="AlarmCode" label="異常碼" width="100" align="center" />
           <el-table-column prop="Description_Zh" label="描述" align="left" />
           
@@ -166,8 +190,10 @@
 
 <script setup lang="ts">
 import PieChart from '../../common/charts/PieChart.vue'
+import EQUtilizationBarChart from './components/EQUtilizationBarChart.vue'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { realTimeStore } from '@/stores/realTime'
+import { useSessionRef, isOneOf } from '@/composables/useSessionState'
 import dayjs from 'dayjs'
 
 const realTimeData = realTimeStore()
@@ -176,6 +202,8 @@ const emit = defineEmits(['realtime-action'])
 const dataType = ref('EQUtilization')
 const showFilterDialog = ref(false)
 const selectedDevice = ref('all')
+// 稼動率的顯示方式：圓餅圖（每台一張）或橫向直條圖（所有設備一張），重新整理後保留
+const viewMode = useSessionRef<'pie' | 'bar'>('eq-utilization-view', 'pie', isOneOf(['pie', 'bar']))
 
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -304,14 +332,19 @@ const indexMethod = (index: number) => {
 .query-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: nowrap;
+  gap: 8px 12px;
+  flex-wrap: wrap; /* 寬度不夠時換行，避免整頁被撐寬 */
 }
 
 .query-item {
   display: flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
+
+  :deep(.el-radio-group) {
+    flex-wrap: nowrap;
+  }
 }
 
 .label {
@@ -343,10 +376,37 @@ const indexMethod = (index: number) => {
   min-height: 0;    /* 關鍵：允許 Flex 子項目縮小，不撐開父層 */
 }
 
+.level-tag {
+  min-width: 80px;
+}
+
 .table-container {
   flex: 1;          /* 佔滿 content-body 的剩餘空間 */
   min-height: 0;    /* 確保表格能在此容器內縮放 */
   border: 1px solid var(--border-color);
+}
+
+.bar-view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.bar-card {
+  border: 1px solid var(--card-border-color);
+  border-radius: var(--radius-card);
+  box-shadow: var(--glass-shadow);
+  padding: 12px;
+  background: var(--card-bg);
+  height: auto;
+
+  h3 {
+    margin: 0 0 8px;
+    padding: 0;
+    font-size: 14px;
+    color: var(--text-color);
+    border-bottom: none;
+  }
 }
 
 .dashboard-grid {

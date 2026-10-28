@@ -2,7 +2,14 @@
   <el-card class="my-2 alarm-card">
     <template #header>
       <div class="d-flex justify-content-between align-items-center">
-        <span>歷史警報</span>
+        <div class="d-flex align-items-center title-group">
+          <span>歷史警報</span>
+          <el-button-group class="level-filter">
+            <el-button :type="levelFilter === 'all' ? 'primary' : 'info'" size="small" @click="setLevelFilter('all')">All</el-button>
+            <el-button :type="levelFilter === 'alarm' ? 'primary' : 'info'" size="small" @click="setLevelFilter('alarm')">Alarm</el-button>
+            <el-button :type="levelFilter === 'warning' ? 'primary' : 'info'" size="small" @click="setLevelFilter('warning')">Warning</el-button>
+          </el-button-group>
+        </div>
         <div class="d-flex align-items-center header-actions">
         <el-button-group>
           <el-button
@@ -104,7 +111,14 @@
     >
       <template #header>
         <div class="d-flex justify-content-between align-items-center expand-dialog-header">
-          <span>歷史警報</span>
+          <div class="d-flex align-items-center title-group">
+            <span>歷史警報</span>
+            <el-button-group class="level-filter">
+              <el-button :type="levelFilter === 'all' ? 'primary' : 'info'" size="small" @click="setLevelFilter('all')">All</el-button>
+              <el-button :type="levelFilter === 'alarm' ? 'primary' : 'info'" size="small" @click="setLevelFilter('alarm')">Alarm</el-button>
+              <el-button :type="levelFilter === 'warning' ? 'primary' : 'info'" size="small" @click="setLevelFilter('warning')">Warning</el-button>
+            </el-button-group>
+          </div>
           <el-button-group>
             <el-button :type="currentTab === 'list' ? 'primary' : 'info'" size="small" @click="currentTab = 'list'">歷史列表</el-button>
             <el-button :type="currentTab === 'query' ? 'primary' : 'info'" size="small" @click="currentTab = 'query'">查詢/匯出</el-button>
@@ -200,7 +214,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, watch } from 'vue'
 import { useSessionRef, isOneOf } from '@/composables/useSessionState'
 import { realTimeStore } from '@/stores/realTime'
 import dayjs from 'dayjs'
@@ -237,9 +251,22 @@ const resetFilters = () => {
   showFilterDialog.value = false;
 };
 
+// 等級篩選（標題旁的 All／Alarm／Warning）：歷史列表直接在畫面上篩，查詢/匯出則帶入查詢條件
+type LevelFilter = 'all' | 'alarm' | 'warning'
+const LEVEL_FILTERS: LevelFilter[] = ['all', 'alarm', 'warning']
+const levelFilter = useSessionRef<LevelFilter>('monitor-alarm-level', 'all', isOneOf(LEVEL_FILTERS))
+// 後端的 Level：1 = ALARM、0 = WARNING（與進階條件的「異常等級」選單相同）
+const LEVEL_QUERY_VALUE: Record<LevelFilter, string> = { all: 'all', alarm: '1', warning: '0' }
+
+const matchesLevel = (item: any) => {
+  if (levelFilter.value === 'alarm') return item.Level === 1
+  if (levelFilter.value === 'warning') return item.Level !== 1
+  return true
+}
+
 const displayData = computed(() => {
   if (currentTab.value === 'list') {
-    return (realTimeData.AGVC_RealTimeDashboard_SystemAlarms || []).filter(item => item.Checked === true)
+    return (realTimeData.AGVC_RealTimeDashboard_SystemAlarms || []).filter(item => item.Checked === true && matchesLevel(item))
   } else {
     return realTimeData.AGVC_RealTimeDashboard_Query_Alarms.data || []
   }
@@ -256,6 +283,26 @@ const queryParams = reactive({
     alarmCode: '',
     description:''
   }
+})
+
+// 按鈕與進階條件的「異常等級」選單共用同一個條件；重新整理後沿用上次選的等級
+queryParams.alarms.level = LEVEL_QUERY_VALUE[levelFilter.value]
+
+function setLevelFilter(value: LevelFilter) {
+  if (levelFilter.value === value) return
+  levelFilter.value = value
+  queryParams.alarms.level = LEVEL_QUERY_VALUE[value]
+  // 查詢模式下切換等級，直接重新查詢第一頁
+  if (currentTab.value === 'query') {
+    currentPage.value = 1
+    handleQuery()
+  }
+}
+
+// 在進階條件改了異常等級（或按重置）時，按鈕跟著切換
+watch(() => queryParams.alarms.level, (level) => {
+  const matched = LEVEL_FILTERS.find(key => LEVEL_QUERY_VALUE[key] === String(level ?? 'all'))
+  levelFilter.value = matched ?? 'all'
 })
 
 const handleQuery = () => {
@@ -396,6 +443,10 @@ const applyFilters = () => {
 
 .header-actions {
   gap: 8px;
+}
+
+.title-group {
+  gap: 12px;
 }
 
 .expand-icon {
