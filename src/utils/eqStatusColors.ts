@@ -3,8 +3,8 @@ export const STATUS_COLORS: Record<string, string> = {
     Run: '#2ecc71',
     Down: '#c62828',
     Alarm: '#e53935',
-    Idle: '#2196f3',
-    PM: '#f6b93d',
+    Idle: '#fadb14',
+    PM: '#ff0088',
     Unknown: '#616161'
 }
 

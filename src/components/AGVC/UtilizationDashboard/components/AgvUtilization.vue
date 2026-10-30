@@ -3,7 +3,7 @@
     <!-- 狀態堆疊柱狀圖 -->
     <StackedBarChart
         v-if="selectedUtilizationType === 'status'"
-        :yAxisName="'時間(時)'"
+        :yAxisName="'百分比(%)'"
         :datas="currentChartData"
         :barWidth="8"
     />

@@ -18,6 +18,14 @@ const props = defineProps<{
 const ROW_HEIGHT = 34
 const chartHeight = computed(() => `${Math.max(240, props.entries.length * ROW_HEIGHT + 80)}px`)
 
+// 淺色區塊（例如黃色的 Idle）用深色字，其餘用白字，確保百分比看得清楚
+const labelColorFor = (hex: string) => {
+    const m = /^#([0-9a-f]{6})$/i.exec(hex)
+    if (!m) return '#fff'
+    const [r, g, b] = [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16) / 255)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.6 ? '#1f2329' : '#fff'
+}
+
 const percentOf = (list: StatusCount[], status: string) => {
     const total = (list || []).reduce((sum, item) => sum + (item.Count || 0), 0)
     const hit = (list || []).find(item => item.Status === status)
@@ -53,22 +61,25 @@ const options = computed(() => {
             data: devices,
             inverse: true // 第一台設備在最上面
         },
-        series: statuses.map(status => ({
-            name: status,
-            type: 'bar',
-            stack: 'percent',
-            barMaxWidth: 22,
-            emphasis: { focus: 'series' },
-            itemStyle: { color: STATUS_COLORS[status] ?? FALLBACK_COLORS[fallbackIndex++ % FALLBACK_COLORS.length] },
-            // 區段太窄時不顯示數字，避免擠在一起
-            label: {
-                show: true,
-                color: '#fff',
-                fontSize: 11,
-                formatter: (params: { value: number }) => (params.value >= 8 ? `${params.value}%` : '')
-            },
-            data: props.entries.map(([, list]) => percentOf(list, status))
-        }))
+        series: statuses.map(status => {
+            const color = STATUS_COLORS[status] ?? FALLBACK_COLORS[fallbackIndex++ % FALLBACK_COLORS.length]
+            return {
+                name: status,
+                type: 'bar',
+                stack: 'percent',
+                barMaxWidth: 22,
+                emphasis: { focus: 'series' },
+                itemStyle: { color },
+                // 區段太窄時不顯示數字，避免擠在一起
+                label: {
+                    show: true,
+                    color: labelColorFor(color),
+                    fontSize: 11,
+                    formatter: (params: { value: number }) => (params.value >= 8 ? `${params.value}%` : '')
+                },
+                data: props.entries.map(([, list]) => percentOf(list, status))
+            }
+        })
     }
 })
 </script>
