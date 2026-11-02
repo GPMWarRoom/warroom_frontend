@@ -53,8 +53,8 @@
 import BirdViewMap from '../../maps/BirdViewMap.vue'
 import { realTimeStore } from '@/stores/realTime'
 import { ref, watch, computed } from 'vue'
-import agvImg from '@/AGV.png'
 import { FullScreen } from '@element-plus/icons-vue'
+import { formatTaskTime, UNKNOWN_TIME_TEXT } from '@/utils/taskTime'
 
 const isExpanded = ref(false)
 const realTimeData = realTimeStore()
@@ -109,96 +109,138 @@ const getAgvStateNumber = (status: any) => {
     return 0; 
 };
 
+// 起點是 AGV：From_Station 為車名，或動作為 Load（7）/ LoadAndPark（2），貨在車上，只需標示終點設備（與 AGVS 的 IsFromAGV 判斷相同）
+const isFromAgv = (task: any) =>
+    String(task.From_Station ?? '').toUpperCase().includes('AGV') || [2, 7].includes(task.Action)
+
+// 已取貨：UnloadTime（AGVS 的取料時間）有值且不是 1970 年以前的預設時間
+const hasPickedUp = (task: any) => formatTaskTime(task.UnloadTime) !== UNKNOWN_TIME_TEXT
+
+// 充電中：充電任務（Action 8），或負責的車輛狀態為充電（3）
+const ACTION_CHARGE = 8
+const AGV_STATE_CHARGING = 3
+const isCharging = (task: any) => {
+    if (task.Action === ACTION_CHARGE) return true
+    const agvName = String(task.DesignatedAGVName ?? '').trim().toLowerCase()
+    return !!agvName && vehicles.value.some((v: any) => String(v.id).trim().toLowerCase() === agvName && v.state === AGV_STATE_CHARGING)
+}
+
+// 未完成任務的起訖站點（Tag）：執行中（State 1）標藍色、待執行（其餘未完成）標橘黃色；同一站點兩種都有時以執行中為準
+// 執行中的充電任務／充電中的車輛改寫「充電中」
+// 起點設備只在還沒取貨時標示：執行中且已取貨、或起點是 AGV，就只標終點
+const taskStations = computed(() => {
+    const result: Record<string, { state: 'running' | 'charging' | 'waiting'; agv: string }> = {}
+    for (const task of realTimeData.AGVC_RealTimeDashboard_Tasks || []) {
+        if (task.IsCompleted === 1 || [4, 6, 7].includes(task.State)) continue
+        const state = task.State !== 1 ? 'waiting' : isCharging(task) ? 'charging' : 'running'
+        const skipSource = isFromAgv(task) || (state !== 'waiting' && hasPickedUp(task))
+        const tags = skipSource ? [task.To_Station] : [task.From_Station, task.To_Station]
+        for (const tag of tags) {
+            const key = String(tag ?? '').trim()
+            if (!key || key === '-1') continue
+            if (state !== 'waiting' || !result[key]) {
+                result[key] = { state, agv: task.DesignatedAGVName || '' }
+            }
+        }
+    }
+    return result
+})
+
+// 車輛另外算，任務推播時不必重組車輛（地圖也就不會重畫車輛層）
+const vehicles = computed(() => {
+    const mapModel = realTimeData.AGVC_TrafficStats_mapModel;
+    const points = mapModel?.Map?.Points || mapModel?.Points || {};
+
+    const agvList = realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV || [];
+    const agvStates = (realTimeData as any).AGVC_RealTimeDashboard_AgvStates || [];
+
+    return agvList.map((item: any) => {
+        const itemName = String(item.Name || item.AGV_ID || item.AGVID || '').trim().toLowerCase();
+        const stateItem = agvStates.find((s: any) => {
+            const sName = String(s.AGV_Name || s.agV_Name || s.agv_Name || s.AGV_ID || s.AGVID || s.Name || '').trim().toLowerCase();
+            return sName === itemName && sName !== '';
+        }) || {};
+
+        // 1. 座標解析
+        let exactX = item.CoordinateX ?? item.coordinateX ?? stateItem.CoordinateX ?? stateItem.coordinateX;
+        let exactY = item.CoordinateY ?? item.coordinateY ?? stateItem.CoordinateY ?? stateItem.coordinateY;
+        let theta = item.Theta ?? item.theta ?? stateItem.Theta ?? stateItem.theta ?? 0;
+
+        let x = exactX !== undefined ? exactX : 0;
+        let y = exactY !== undefined ? exactY : 0;
+
+        if (exactX === undefined && exactY === undefined) {
+            const currentTag = stateItem.CurrentLocation || stateItem.currentLocation || item.CurrentNode || item.CurrentTag || item.Tag;
+            if (currentTag) {
+                const pointInfo = Object.values(points).find((p: any) => 
+                    String(p.TagNumber) === String(currentTag) || 
+                    String(p.Name) === String(currentTag)
+                ) as { X?: number; Y?: number } | undefined;
+                if (pointInfo) {
+                    x = pointInfo.X !== undefined ? pointInfo.X : x;
+                    y = pointInfo.Y !== undefined ? pointInfo.Y : y;
+                }
+            }
+        }
+
+        // 2. 終極狀態解析池：窮舉所有可能的後端欄位命名
+        const possibleStatusFields = [
+            'StatusText', 'statusText', 
+            'Main_Status', 'main_status', 'MainStatus', 'mainStatus', 
+            'AGV_State', 'AGVState', 'VehicleState', 'ActionState', 
+            'State', 'state', 'Status', 'status', 'StatusCode', 'OnlineStatus', 'Mode'
+        ];
+
+        let currentStatus: any = undefined;
+
+        // 優先找 AgvStates (通常包含即時業務邏輯)，再找 EQStatus_AGV (通常只有連線狀態)
+        for (const field of possibleStatusFields) {
+            if (stateItem[field] !== undefined && stateItem[field] !== null && stateItem[field] !== '') {
+                currentStatus = stateItem[field];
+                break;
+            }
+        }
+        if (currentStatus === undefined) {
+            for (const field of possibleStatusFields) {
+                if (item[field] !== undefined && item[field] !== null && item[field] !== '') {
+                    currentStatus = item[field];
+                    break;
+                }
+            }
+        }
+
+        const finalColor = getAgvColor(currentStatus);
+        const stateNumber = getAgvStateNumber(currentStatus);
+        
+        // 重要：這行可以讓你在 F12 Console 清楚看到抓到了什麼值
+        console.log(`[AGV: ${item.Name || item.AGV_ID || 'Unknown'}] 提取到原始狀態值:`, currentStatus, `判定顏色: ${finalColor}`);
+
+        return {
+            id: item.Name || 'AGV',
+            x: x,
+            y: y,
+            theta: theta,     
+            status: stateNumber,
+            Status: stateNumber,
+            state: stateNumber,
+            State: stateNumber,
+            color: finalColor, 
+            Color: finalColor,
+            width: 50,
+            height: 50
+        }
+    })
+})
+
 const mapModelWithVehicles = computed(() => {
     const mapModel = realTimeData.AGVC_TrafficStats_mapModel;
     // 無有效地圖時不組車輛資料，避免沿用上一場域圖層
     if (!mapModel || !(mapModel.Map || mapModel.Points)) return null;
 
-    const points = mapModel.Map?.Points || mapModel.Points || {};
-    
-    const agvList = realTimeData.AGVC_RealTimeDashboard_EQStatus_AGV || [];
-    const agvStates = (realTimeData as any).AGVC_RealTimeDashboard_AgvStates || [];
-
     return {
         ...mapModel,
-        Vehicles: agvList.map((item: any) => {
-            const itemName = String(item.Name || item.AGV_ID || item.AGVID || '').trim().toLowerCase();
-            const stateItem = agvStates.find((s: any) => {
-                const sName = String(s.AGV_Name || s.agV_Name || s.agv_Name || s.AGV_ID || s.AGVID || s.Name || '').trim().toLowerCase();
-                return sName === itemName && sName !== '';
-            }) || {};
-
-            // 1. 座標解析
-            let exactX = item.CoordinateX ?? item.coordinateX ?? stateItem.CoordinateX ?? stateItem.coordinateX;
-            let exactY = item.CoordinateY ?? item.coordinateY ?? stateItem.CoordinateY ?? stateItem.coordinateY;
-            let theta = item.Theta ?? item.theta ?? stateItem.Theta ?? stateItem.theta ?? 0;
-
-            let x = exactX !== undefined ? exactX : 0;
-            let y = exactY !== undefined ? exactY : 0;
-
-            if (exactX === undefined && exactY === undefined) {
-                const currentTag = stateItem.CurrentLocation || stateItem.currentLocation || item.CurrentNode || item.CurrentTag || item.Tag;
-                if (currentTag) {
-                    const pointInfo = Object.values(points).find((p: any) => 
-                        String(p.TagNumber) === String(currentTag) || 
-                        String(p.Name) === String(currentTag)
-                    ) as { X?: number; Y?: number } | undefined;
-                    if (pointInfo) {
-                        x = pointInfo.X !== undefined ? pointInfo.X : x;
-                        y = pointInfo.Y !== undefined ? pointInfo.Y : y;
-                    }
-                }
-            }
-
-            // 2. 終極狀態解析池：窮舉所有可能的後端欄位命名
-            const possibleStatusFields = [
-                'StatusText', 'statusText', 
-                'Main_Status', 'main_status', 'MainStatus', 'mainStatus', 
-                'AGV_State', 'AGVState', 'VehicleState', 'ActionState', 
-                'State', 'state', 'Status', 'status', 'StatusCode', 'OnlineStatus', 'Mode'
-            ];
-
-            let currentStatus: any = undefined;
-
-            // 優先找 AgvStates (通常包含即時業務邏輯)，再找 EQStatus_AGV (通常只有連線狀態)
-            for (const field of possibleStatusFields) {
-                if (stateItem[field] !== undefined && stateItem[field] !== null && stateItem[field] !== '') {
-                    currentStatus = stateItem[field];
-                    break;
-                }
-            }
-            if (currentStatus === undefined) {
-                for (const field of possibleStatusFields) {
-                    if (item[field] !== undefined && item[field] !== null && item[field] !== '') {
-                        currentStatus = item[field];
-                        break;
-                    }
-                }
-            }
-
-            const finalColor = getAgvColor(currentStatus);
-            const stateNumber = getAgvStateNumber(currentStatus);
-            
-            // 重要：這行可以讓你在 F12 Console 清楚看到抓到了什麼值
-            console.log(`[AGV: ${item.Name || item.AGV_ID || 'Unknown'}] 提取到原始狀態值:`, currentStatus, `判定顏色: ${finalColor}`);
-
-            return {
-                id: item.Name || 'AGV',
-                x: x,
-                y: y,
-                img: agvImg,      
-                image: agvImg,    
-                theta: theta,     
-                status: stateNumber,
-                Status: stateNumber,
-                state: stateNumber,
-                State: stateNumber,
-                color: finalColor, 
-                Color: finalColor,
-                width: 50,        
-                height: 50        
-            }
-        })
+        TaskStations: taskStations.value,
+        Vehicles: vehicles.value
     }
 })
 

@@ -26,6 +26,45 @@ const props = defineProps<{
     taskPath?: number[]
 }>()
 
+// 即時監控的 AGVS Layout（birdView）字體稍大，其他地圖維持原樣
+const isBirdView = props.showMode === 'birdView';
+const labelFontSize = isBirdView ? 13 : 11;
+const MAP_FONT_FAMILY = '"Sora", "Microsoft JhengHei", sans-serif';
+
+// AGV 狀態 DOWN（與即時監控傳入的 state 相同：0 idle、1 run、2 down、3 charging）與錯誤標籤底色（白字對比 ≥ 4.5:1）
+const AGV_STATE_DOWN = 2;
+const AGV_ERROR_COLOR = '#d62828';
+
+// 任務起訖站點的標示顏色
+type TaskStationState = 'running' | 'charging' | 'waiting';
+const TASK_STATION_COLORS: Record<TaskStationState, string> = {
+    running: '#2f88ff',  // 執行中：藍色
+    charging: '#2f88ff', // 充電中：與執行中同色，只換文字
+    waiting: '#ffb020'   // 待執行：橘黃色
+};
+const TASK_STATION_TEXT: Record<TaskStationState, string> = {
+    running: '執行中',
+    charging: '充電中',
+    waiting: '待執行'
+};
+
+// AGV 圖示：俯視的小車（車身為狀態色、白框、左右各兩個輪子、中間淺色載台），比點位略大；依顏色快取
+const agvIconCache: Record<string, string> = {};
+const getAgvIconSrc = (color: string) => {
+    if (!agvIconCache[color]) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="22" viewBox="0 0 26 22">
+            <rect x="0.5" y="3" width="4" height="6" rx="1.5" fill="#1f2329"/>
+            <rect x="0.5" y="13" width="4" height="6" rx="1.5" fill="#1f2329"/>
+            <rect x="21.5" y="3" width="4" height="6" rx="1.5" fill="#1f2329"/>
+            <rect x="21.5" y="13" width="4" height="6" rx="1.5" fill="#1f2329"/>
+            <rect x="3" y="1" width="20" height="20" rx="5" fill="${color}" stroke="#ffffff" stroke-width="2"/>
+            <rect x="8" y="6" width="10" height="10" rx="2" fill="#ffffff" fill-opacity="0.85"/>
+        </svg>`;
+        agvIconCache[color] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+    return agvIconCache[color];
+};
+
 const tooltip = document.createElement('div');
 tooltip.style.position = 'fixed';
 tooltip.style.pointerEvents = 'none';
@@ -241,32 +280,50 @@ function updateVehicleMarkers() {
         const vX = vehicle.x ?? vehicle.X ?? 0;
         const vY = vehicle.y ?? vehicle.Y ?? 0;
         const vId = vehicle.id ?? vehicle.Id ?? vehicle.AGV_Name ?? 'Unknown';
-        const vImg = vehicle.image ?? vehicle.img ?? '/AGV.png';
 
+        // 淡淡的狀態色光暈，讓車輛在點位之間容易找到
         const glowFeature = new Feature({ geometry: new Point([vX, vY]) })
         glowFeature.setStyle(new Style({
             image: new Circle({
-                radius: 22,
-                fill: new Fill({ color: hexToRgba(vehicleColor, 0.35) }), 
-                stroke: new Stroke({ color: hexToRgba(vehicleColor, 0.6), width: 0 })
+                radius: 16,
+                fill: new Fill({ color: hexToRgba(vehicleColor, 0.25) })
             }),
             zIndex: 2000,
         }))
         
         const iconFeature = new Feature({ geometry: new Point([vX, vY]) })
         iconFeature.setStyle(new Style({
-            image: new Icon({ src: vImg, scale: 0.9 }),
+            image: new Icon({ src: getAgvIconSrc(vehicleColor), scale: 1 }),
             text: new Text({
                 text: String(vId),
-                offsetY: -30,
-                font: 'bold 14px Arial',
+                offsetY: -21,
+                font: `700 ${labelFontSize + 1}px ${MAP_FONT_FAMILY}`,
                 fill: new Fill({ color: vehicleColor }), 
-                stroke: new Stroke({ color: '#333', width: 2 })
+                stroke: new Stroke({ color: '#111827', width: 3 })
             }),
             zIndex: 999999,
         }))
         source.addFeature(glowFeature)
         source.addFeature(iconFeature)
+
+        // AGV 狀態為 DOWN（車身已是紅色）時，在車輛下方加上「AGV Error」標籤
+        if (vehicle.state === AGV_STATE_DOWN) {
+            const errorFeature = new Feature({ geometry: new Point([vX, vY]) })
+            errorFeature.setStyle(new Style({
+                text: new Text({
+                    text: 'AGV Error',
+                    offsetY: 16,
+                    textBaseline: 'top',
+                    font: `700 ${labelFontSize}px ${MAP_FONT_FAMILY}`,
+                    fill: new Fill({ color: '#ffffff' }),
+                    backgroundFill: new Fill({ color: AGV_ERROR_COLOR }),
+                    backgroundStroke: new Stroke({ color: '#ffffff', width: 1 }),
+                    padding: [2, 6, 2, 6]
+                }),
+                zIndex: 1000000,
+            }))
+            source.addFeature(errorFeature)
+        }
     })
 }
 
@@ -278,29 +335,61 @@ const clearAllLayers = () => {
     taskPathLayer.value?.getSource()?.clear();
 }
 
-// 監聽完整地圖資料變動，觸發重繪
-watch(
-    () => props.mapModel,
-    (newMapModel) => {
-        const hasMapData = !!(newMapModel?.Map || newMapModel?.Points);
-        if (hasMapData) {
-            renderMapAll();
-        } else {
-            // 當地圖資料為 null 或空時，清除所有圖層，避免顯示舊地圖。
-            clearAllLayers();
-        }
-    },
-    { deep: true, immediate: true }
-)
+if (isBirdView) {
+    // 即時監控每次 AGV／任務推播都會組出新的 mapModel，若整張重畫（路段、點位、車輛）會拖慢更新。
+    // 改成只在圖資（點位、路段）換掉時整張重畫；任務站點有變才重畫點位層，車輛有變只重畫車輛層。
+    watch(
+        [() => getMapData()?.Points, () => getMapData()?.Segments],
+        () => {
+            if (getMapData()) {
+                renderMapAll();
+            } else {
+                clearAllLayers();
+            }
+        },
+        { immediate: true }
+    )
 
-// 監聽車輛資料變動
-watch(
-    () => props.mapModel?.Vehicles || props.mapModel?.Map?.Vehicles,
-    () => {
-        updateVehicleMarkers()
-    },
-    { deep: true }
-)
+    // 站點標示內容沒變（例如只有任務時間更新）就不重畫
+    watch(
+        () => JSON.stringify(props.mapModel?.TaskStations || {}),
+        () => {
+            const mapData = getMapData();
+            if (mapData) updatePoints(mapData);
+        }
+    )
+
+    watch(
+        () => props.mapModel?.Vehicles || props.mapModel?.Map?.Vehicles,
+        () => {
+            updateVehicleMarkers()
+        }
+    )
+} else {
+    // 監聽完整地圖資料變動，觸發重繪（交管統計會直接改點位上的 TagStopColor，需要 deep）
+    watch(
+        () => props.mapModel,
+        (newMapModel) => {
+            const hasMapData = !!(newMapModel?.Map || newMapModel?.Points);
+            if (hasMapData) {
+                renderMapAll();
+            } else {
+                // 當地圖資料為 null 或空時，清除所有圖層，避免顯示舊地圖。
+                clearAllLayers();
+            }
+        },
+        { deep: true, immediate: true }
+    )
+
+    // 監聽車輛資料變動
+    watch(
+        () => props.mapModel?.Vehicles || props.mapModel?.Map?.Vehicles,
+        () => {
+            updateVehicleMarkers()
+        },
+        { deep: true }
+    )
+}
 
 watch(
   () => props.pathUseStats,
@@ -364,6 +453,7 @@ const updatePoints = (mapData: any) => {
 }
 
 const createMapPointFeatures = (mapData: any) => {
+    const taskStations = props.mapModel?.TaskStations || {};
     return Object.values(mapData.Points).map((point: any) => {
         const pX = point.X ?? point.x ?? 0;
         const pY = point.Y ?? point.y ?? 0;
@@ -371,6 +461,8 @@ const createMapPointFeatures = (mapData: any) => {
         const displayName = point.Graph?.Display ?? point.Name ?? point.name ?? '';
         // 未啟用的點位（Enable = false）畫成紅色叉叉；沒有這個欄位的視為啟用
         const isEnabled = (point.Enable ?? point.enable) !== false;
+        // 任務起訖站點（由即時監控傳入）：執行中藍色、待執行橘黃色
+        const taskStation = taskStations[String(point.TagNumber ?? point.tagNumber ?? '')];
 
         const feature = new Feature({
             geometry: new Point([pX, pY]),
@@ -393,6 +485,27 @@ const createMapPointFeatures = (mapData: any) => {
             }))
         }
 
+        if (taskStation) {
+            const color = TASK_STATION_COLORS[taskStation.state as TaskStationState];
+            const stateText = TASK_STATION_TEXT[taskStation.state as TaskStationState];
+            styles.push(new Style({
+                image: new Circle({
+                    radius: 12,
+                    fill: new Fill({ color: hexToRgba(color, 0.25) }),
+                    stroke: new Stroke({ color, width: 3 })
+                }),
+                text: new Text({
+                    // 執行中／充電中帶上負責的車號，待執行只寫狀態
+                    text: taskStation.state !== 'waiting' && taskStation.agv ? `${stateText} ${taskStation.agv}` : stateText,
+                    offsetY: 22,
+                    font: `700 ${labelFontSize}px ${MAP_FONT_FAMILY}`,
+                    fill: new Fill({ color }),
+                    stroke: new Stroke({ color: '#111827', width: 3 })
+                }),
+                zIndex: 1
+            }))
+        }
+
         // 原本的點位顏色邏輯
         styles.push(new Style({
             image: isEnabled ? new Circle({
@@ -407,7 +520,8 @@ const createMapPointFeatures = (mapData: any) => {
             }) : createDisabledPointImage(),
             text: new Text({
                 text: displayName,
-                offsetY: -15,
+                offsetY: isBirdView ? -17 : -15,
+                font: isBirdView ? `600 ${labelFontSize}px ${MAP_FONT_FAMILY}` : undefined,
                 fill: new Fill({
                     color: getTextColor(stationType)
                 }),
