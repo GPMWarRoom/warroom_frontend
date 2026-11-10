@@ -270,10 +270,15 @@ const resetFilters = () => {
     showFilterDialog.value = false;
 };
 
+const TASK_STATE_PROCESSING = 1
+
 const filteredTasks = computed(() => {
     switch (currentTab.value) {
         case 'current':
-            return (realTimeData.AGVC_RealTimeDashboard_Tasks || []).filter(task => task.IsCompleted === 0);
+            // 執行中的任務置頂，其餘維持後端原本的順序（sort 為穩定排序）
+            return (realTimeData.AGVC_RealTimeDashboard_Tasks || [])
+                .filter(task => task.IsCompleted === 0)
+                .sort((a, b) => Number(b.State === TASK_STATE_PROCESSING) - Number(a.State === TASK_STATE_PROCESSING));
         case 'completed':
             return (realTimeData.AGVC_RealTimeDashboard_Tasks || []).filter(task => task.IsCompleted === 1);
         case 'query':
