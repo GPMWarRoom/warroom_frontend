@@ -28,14 +28,21 @@
                 <div class="card">
                     <h3 class="flex-header">
                         <span>Rack水位紀錄列表</span>
-                        <div>
-                            <el-button size="small" type="primary" @click="exportTodayCsv">匯出當日紀錄CSV</el-button>
+                        <div class="header-actions">
+                            <el-input
+                                v-model="cstKeyword"
+                                size="small"
+                                placeholder="輸入貨物ID查詢"
+                                :prefix-icon="Search"
+                                clearable
+                                style="width: 180px"
+                            />
                             <el-button size="small" type="success" @click="exportFilteredCsv">按照篩選時間匯出CSV</el-button>
                         </div>
                     </h3>
                     <div class="content">
                         <div class="table-wrapper">
-                            <el-table :data="paginatedData" height="100%" stripe style="width: 100%">
+                            <el-table :data="paginatedData" height="100%" stripe style="width: 100%" :empty-text="cstKeyword ? '篩選時間內查無此貨物ID的紀錄' : '無資料'">
                                 <el-table-column prop="wipName" label="Rack 名稱" />
                                 <el-table-column prop="level" label="水位%" />
                                 <el-table-column label="異動CSTID">
@@ -68,6 +75,7 @@
 import { ref, computed } from 'vue'
 import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
 import LineChart from '@/components/common/charts/LineChart.vue'
 import { realTimeStore } from '@/stores/realTime'
 
@@ -116,15 +124,30 @@ const filteredData = computed(() => {
     return timeFilteredData.value.filter(item => item.wipName === selectedWip.value)
 })
 
+// 依貨物ID查詢：在篩選時間內已載入的紀錄中，找異動CSTID含有輸入文字的筆數（不分大小寫，可只輸入部分ID）
+const cstKeyword = ref('')
+const listData = computed(() => {
+    const keyword = cstKeyword.value.trim().toLowerCase()
+    if (!keyword) return timeFilteredData.value
+    return timeFilteredData.value.filter(item =>
+        String(item.cstId).split(',').some(id => id.trim().toLowerCase().includes(keyword))
+    )
+})
+
 // 2. 分頁邏輯
 const currentPage = ref(1)
 const pageSize = ref(15)
-const total = computed(() => timeFilteredData.value.length)
+const total = computed(() => listData.value.length)
 
 const paginatedData = computed(() => {
     const start = (currentPage.value - 1) * pageSize.value
     const end = start + pageSize.value
-    return timeFilteredData.value.slice(start, end)
+    return listData.value.slice(start, end)
+})
+
+// 換了查詢的貨物ID就回到第一頁
+watch(cstKeyword, () => {
+    currentPage.value = 1
 })
 
 const handleCurrentChange = (val: number) => {
@@ -169,14 +192,6 @@ const downloadCsv = (data: any[], filename: string) => {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-}
-
-// 匯出當日紀錄CSV
-const exportTodayCsv = () => {
-    const startOfToday = dayjs().startOf('day').valueOf()
-    const endOfToday = dayjs().endOf('day').valueOf()
-    const todayData = allData.value.filter(item => item.timestamp >= startOfToday && item.timestamp <= endOfToday)
-    downloadCsv(todayData, `AllRack_TodayData_${dayjs().format('YYYYMMDD')}.csv`)
 }
 
 // 按照篩選時間匯出CSV (使用 AGVC.vue 的 DateRange)
@@ -243,6 +258,12 @@ const exportFilteredCsv = () => {
         justify-content: space-between;
         align-items: center;
         padding: 8px 16px;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .content {

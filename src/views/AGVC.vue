@@ -276,7 +276,11 @@ function handleShowEquipmentStatus({ id, type }) {
   selectedEquipmentId.value = id
   showEquipmentDrawer.value = true
 }
-async function handleExportAction(actionName: string, {type, target, dateRange, params}: any) {
+// 每種查詢（scope + target）各自的請求序號：只採用最後一次請求的回應，
+// 避免翻頁、自動更新或切換場域時，較慢回來的舊回應蓋掉新的結果
+const querySeq: Record<string, number> = {}
+
+async function handleExportAction(actionName: string, {type, target, dateRange, params, scope}: any) {
     if (type === 'query') {
         // 動態決定要呼叫哪個 SignalR 方法
         try {
@@ -286,20 +290,24 @@ async function handleExportAction(actionName: string, {type, target, dateRange, 
                 dayjs(dateRange[1]).format('YYYY-MM-DD HH:mm:ss')
             ] : [];
 
+            // post 已回傳 response body（後端格式為 { target, data: { data, total } }），直接交給處理函式；
+            // 不可再多取一層 .data，否則會拿到當頁陣列而遺失 total，分頁永遠只剩一頁
             if (actionName === 'InitUtilizationEQ') {
                 const res = await queryUtilizationEQ(realTimeData.selectedAgvc, target, formattedDateRange, params);
-                const data = res?.data || res;
-                if (data) {
-                    data.target = data.target || target; // 確保 target 不會因為 HTTP 傳輸而遺失
-                    handleUtilizationEQ(data);
+                if (res) {
+                    res.target = res.target || target; // 確保 target 不會因為 HTTP 傳輸而遺失
+                    handleUtilizationEQ(res);
                 }
-            } 
+            }
             else if (actionName === 'AGVC_Realtime_Action') {
-                const res = await queryHistoryAction(realTimeData.selectedAgvc, target, formattedDateRange, params);
-                const data = res?.data || res;
-                if (data) {
-                    data.target = data.target || target;
-                    handleReceiveRealtimeAction(data);
+                const seqKey = `${scope || 'query'}:${target}`;
+                const seq = (querySeq[seqKey] = (querySeq[seqKey] || 0) + 1);
+                const requestedAgvc = realTimeData.selectedAgvc;
+                const res = await queryHistoryAction(requestedAgvc, target, formattedDateRange, params);
+                if (seq !== querySeq[seqKey] || realTimeData.selectedAgvc !== requestedAgvc) return;
+                if (res) {
+                    res.target = res.target || target;
+                    handleReceiveRealtimeAction(res, scope);
                 }
             }
         } catch (err) {
@@ -662,6 +670,8 @@ function handleNotification(result: any) {
     }
 }
 
+const FINISHED_TASK_STATES = [4, 6, 7]
+
 function handleAGVEfficiency(result: any, includeTaskList = false) {
     if (!result) return;
     realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_TaskSuccess', result.TaskSuccess || result.taskSuccess || 0)
@@ -669,7 +679,9 @@ function handleAGVEfficiency(result: any, includeTaskList = false) {
     realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_UnloadWaitTime', result.UnloadWaitTime || result.unloadWaitTime || [])
     realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStatics', result.CarryStatics || result.carryStatics || [])
     if (includeTaskList) {
-        realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_TaskList', result.TaskList || result.taskList || [])
+        // 歷史任務路線只列已結束（完成 4／失敗 6／取消 7）的任務，排除待執行與執行中的（後端也已過濾，這裡再保險一次）
+        const taskList = (result.TaskList || result.taskList || []) as any[]
+        realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_TaskList', taskList.filter(task => FINISHED_TASK_STATES.includes(Number(task.State))))
     }
     realTimeData.updateRealTimeData('AGVC_TrafficEfficiency_CarryStaticsByPath', result.CarryStaticsByPath || result.carryStaticsByPath || [])
 }
@@ -765,7 +777,8 @@ function handleReceiveTrafficStats(result: any) {
     realTimeData.updateRealTimeData('AGVC_TrafficStats_pathUseStats', pathUseStatsMap)
 }
 
-function handleReceiveRealtimeAction(result: any) {
+/** scope 為 'history' 時存到即時監控「歷史記錄／歷史列表」分頁，其餘存到查詢/匯出分頁 */
+function handleReceiveRealtimeAction(result: any, scope?: string) {
     if (!result) return;
     const target = result.target || result.Target;
     const payload = result.data || result.Data || result;
@@ -779,10 +792,13 @@ function handleReceiveRealtimeAction(result: any) {
         total: payload.total || payload.Total || dataArr.length || 0
     };
     
+    const isHistory = scope === 'history';
     if (target === 'tasks') {
-        realTimeData.AGVC_RealTimeDashboard_Query_Tasks = newData;
+        if (isHistory) realTimeData.AGVC_RealTimeDashboard_History_Tasks = newData;
+        else realTimeData.AGVC_RealTimeDashboard_Query_Tasks = newData;
     } else if (target === 'alarms') {
-        realTimeData.AGVC_RealTimeDashboard_Query_Alarms = newData;
+        if (isHistory) realTimeData.AGVC_RealTimeDashboard_History_Alarms = newData;
+        else realTimeData.AGVC_RealTimeDashboard_Query_Alarms = newData;
     }
 }
 

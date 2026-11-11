@@ -40,6 +40,15 @@ export const realTimeStore = defineStore('realTime', {
             data: [],
             total: 0
         } as Query,
+        // 即時監控「歷史記錄／歷史列表」分頁：最近 24 小時、後端分頁（與查詢/匯出的結果分開存）
+        AGVC_RealTimeDashboard_History_Tasks: {
+            data: [],
+            total: 0
+        } as Query,
+        AGVC_RealTimeDashboard_History_Alarms: {
+            data: [],
+            total: 0
+        } as Query,
         AGVC_RealTimeDashboard_SysStatus: [] as SysStatus[],
         AGVC_RealTimeDashboard_SystemAlarms: [] as any[],
         AGVC_RealTimeDashboard_NoRealTimeTask: [] as any[],
@@ -121,7 +130,8 @@ export const realTimeStore = defineStore('realTime', {
             this.AGVC_RealTimeDashboard_Query_Alarms = {
                 data: [],
                 total: 0
-            }; 
+            };
+            // 歷史記錄／歷史列表不在這裡清：切換場域時由各自的卡片清空並重新查詢
         }
     },
     getters: {

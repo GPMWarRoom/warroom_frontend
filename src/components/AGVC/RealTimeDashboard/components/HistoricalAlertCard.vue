@@ -58,9 +58,16 @@
           </el-button>
           <div class="divider"></div>
           <div class="action-group">
-            <el-button @click="handleQuery" icon="Search" size="small">查詢</el-button>
+            <el-button @click="searchFirstPage" icon="Search" size="small">查詢</el-button>
             <el-button @click="handleExport" icon="Download" size="small">匯出</el-button>
           </div>
+        </div>
+      </div>
+      <div v-else class="query-section">
+        <div class="query-bar">
+          <span class="label">最近 24 小時</span>
+          <div class="divider"></div>
+          <el-button @click="showFilterDialog = true" icon="Filter" size="small" :class="{ 'filter-active': isFiltered }">篩選</el-button>
         </div>
       </div>
 
@@ -84,22 +91,21 @@
         </el-table>
       </div>
 
-      <div v-if="currentTab === 'query'" class="pagination-container">
+      <div class="pagination-container">
         <el-pagination
-          v-model:current-page="currentPage"
-          @current-change="handleQuery"
+          v-model:current-page="activePage"
+          @current-change="queryActiveTab"
           :page-size="pageSize"
-          :total="realTimeData.AGVC_RealTimeDashboard_Query_Alarms.total"
+          :total="activeResult.total"
           layout="slot, prev, pager, next"
           background
           size="small"
         >
           <span class="el-pagination__total">
-            總筆數: {{ realTimeData.AGVC_RealTimeDashboard_Query_Alarms.total }}
+            總筆數: {{ activeResult.total }}
           </span>
         </el-pagination>
       </div>
-      <div v-else class="pagination-placeholder"></div>
     </div>
 
     <el-dialog
@@ -146,9 +152,16 @@
             <el-button @click="showFilterDialog = true" icon="Filter" size="small" :class="{ 'filter-active': isFiltered }">進階條件</el-button>
             <div class="divider"></div>
             <div class="action-group">
-              <el-button @click="handleQuery" icon="Search" size="small">查詢</el-button>
+              <el-button @click="searchFirstPage" icon="Search" size="small">查詢</el-button>
               <el-button @click="handleExport" icon="Download" size="small">匯出</el-button>
             </div>
+          </div>
+        </div>
+        <div v-else class="query-section">
+          <div class="query-bar">
+            <span class="label">最近 24 小時</span>
+            <div class="divider"></div>
+            <el-button @click="showFilterDialog = true" icon="Filter" size="small" :class="{ 'filter-active': isFiltered }">篩選</el-button>
           </div>
         </div>
         <div class="table-container">
@@ -168,17 +181,17 @@
             </el-table-column>
           </el-table>
         </div>
-        <div v-if="currentTab === 'query'" class="pagination-container">
+        <div class="pagination-container">
           <el-pagination
-            v-model:current-page="currentPage"
-            @current-change="handleQuery"
+            v-model:current-page="activePage"
+            @current-change="queryActiveTab"
             :page-size="pageSize"
-            :total="realTimeData.AGVC_RealTimeDashboard_Query_Alarms.total"
+            :total="activeResult.total"
             layout="slot, prev, pager, next"
             background
             size="small"
           >
-            <span class="el-pagination__total">總筆數: {{ realTimeData.AGVC_RealTimeDashboard_Query_Alarms.total }}</span>
+            <span class="el-pagination__total">總筆數: {{ activeResult.total }}</span>
           </el-pagination>
         </div>
       </div>
@@ -246,27 +259,20 @@ const resetFilters = () => {
     alarmCode: '',
     description: ''
   };
-  currentPage.value = 1;
-  handleQuery(); // 重置後自動重新查詢
+  searchFirstPage(); // 重置後自動重新查詢
   showFilterDialog.value = false;
 };
 
-// 等級篩選（標題旁的 All／Alarm／Warning）：歷史列表直接在畫面上篩，查詢/匯出則帶入查詢條件
+// 等級篩選（標題旁的 All／Alarm／Warning）：歷史列表與查詢/匯出都帶入查詢條件
 type LevelFilter = 'all' | 'alarm' | 'warning'
 const LEVEL_FILTERS: LevelFilter[] = ['all', 'alarm', 'warning']
 const levelFilter = useSessionRef<LevelFilter>('monitor-alarm-level', 'all', isOneOf(LEVEL_FILTERS))
 // 後端的 Level：1 = ALARM、0 = WARNING（與進階條件的「異常等級」選單相同）
 const LEVEL_QUERY_VALUE: Record<LevelFilter, string> = { all: 'all', alarm: '1', warning: '0' }
 
-const matchesLevel = (item: any) => {
-  if (levelFilter.value === 'alarm') return item.Level === 1
-  if (levelFilter.value === 'warning') return item.Level !== 1
-  return true
-}
-
 const displayData = computed(() => {
   if (currentTab.value === 'list') {
-    return (realTimeData.AGVC_RealTimeDashboard_SystemAlarms || []).filter(item => item.Checked === true && matchesLevel(item))
+    return realTimeData.AGVC_RealTimeDashboard_History_Alarms.data || []
   } else {
     return realTimeData.AGVC_RealTimeDashboard_Query_Alarms.data || []
   }
@@ -292,11 +298,8 @@ function setLevelFilter(value: LevelFilter) {
   if (levelFilter.value === value) return
   levelFilter.value = value
   queryParams.alarms.level = LEVEL_QUERY_VALUE[value]
-  // 查詢模式下切換等級，直接重新查詢第一頁
-  if (currentTab.value === 'query') {
-    currentPage.value = 1
-    handleQuery()
-  }
+  // 切換等級後，直接重新查詢目前分頁的第一頁
+  searchFirstPage()
 }
 
 // 在進階條件改了異常等級（或按重置）時，按鈕跟著切換
@@ -304,6 +307,49 @@ watch(() => queryParams.alarms.level, (level) => {
   const matched = LEVEL_FILTERS.find(key => LEVEL_QUERY_VALUE[key] === String(level ?? 'all'))
   levelFilter.value = matched ?? 'all'
 })
+
+// 歷史列表：最近 24 小時的已確認警報，由後端分頁；等級與進階條件和查詢/匯出共用
+const HISTORY_HOURS = 24
+const historyPage = ref(1)
+
+const fetchHistory = () => {
+  emit('realtime-action', {
+    type: 'query',
+    target: 'alarms',
+    scope: 'history',
+    dateRange: [
+      dayjs().subtract(HISTORY_HOURS, 'hour').format('YYYY-MM-DD HH:mm:ss'),
+      dayjs().format('YYYY-MM-DD HH:mm:ss')
+    ],
+    params: {
+      ...queryParams.alarms,
+      page: historyPage.value,
+      pageSize: pageSize.value
+    },
+  })
+}
+
+// 歷史列表與查詢/匯出各有自己的頁碼與結果，分頁元件依目前分頁切換
+const activeResult = computed(() => currentTab.value === 'list'
+  ? realTimeData.AGVC_RealTimeDashboard_History_Alarms
+  : realTimeData.AGVC_RealTimeDashboard_Query_Alarms)
+const activePage = computed({
+  get: () => currentTab.value === 'list' ? historyPage.value : currentPage.value,
+  set: (page: number) => {
+    if (currentTab.value === 'list') historyPage.value = page
+    else currentPage.value = page
+  }
+})
+const queryActiveTab = () => {
+  if (currentTab.value === 'list') fetchHistory()
+  else handleQuery()
+}
+
+// 按查詢或改了條件時從第一頁開始，避免停在新結果沒有的頁數
+const searchFirstPage = () => {
+  activePage.value = 1
+  queryActiveTab()
+}
 
 const handleQuery = () => {
   emit('realtime-action', {
@@ -329,9 +375,27 @@ const handleExport = () => {
 
 const applyFilters = () => {
   showFilterDialog.value = false
-  currentPage.value = 1
-  handleQuery()
+  searchFirstPage()
 }
+
+// 切到歷史列表時查詢；切換場域時回到第一頁重查；有新的已確認警報推播進來時更新目前這頁
+watch(currentTab, (tab) => {
+  if (tab === 'list') fetchHistory()
+}, { immediate: true })
+
+watch(() => realTimeData.selectedAgvc, () => {
+  realTimeData.AGVC_RealTimeDashboard_History_Alarms = { data: [], total: 0 }
+  historyPage.value = 1
+  if (currentTab.value === 'list') fetchHistory()
+})
+
+const checkedAlarmsKey = computed(() => (realTimeData.AGVC_RealTimeDashboard_SystemAlarms || [])
+  .filter(item => item.Checked === true)
+  .map(item => `${item.Time}:${item.AlarmCode}:${item.Equipment_Name}`)
+  .join('|'))
+watch(checkedAlarmsKey, () => {
+  if (currentTab.value === 'list') fetchHistory()
+})
 </script>
 
 <style scoped>

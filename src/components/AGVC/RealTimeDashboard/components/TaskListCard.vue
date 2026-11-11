@@ -56,9 +56,16 @@
                     </el-button>
                     <div class="divider"></div>
                     <div class="action-group">
-                        <el-button @click="handleQuery" icon="Search" size="small">查詢</el-button>
+                        <el-button @click="searchFirstPage" icon="Search" size="small">查詢</el-button>
                         <el-button @click="handleExport" icon="Download" size="small">匯出</el-button>
                     </div>
+                </div>
+            </div>
+            <div v-else-if="currentTab === 'completed'" class="query-section">
+                <div class="query-bar">
+                    <span class="label">最近 24 小時</span>
+                    <div class="divider"></div>
+                    <el-button @click="showFilterDialog = true" size="small" icon="Filter" :class="{ 'filter-active': isFiltered }">篩選</el-button>
                 </div>
             </div>
 
@@ -83,18 +90,18 @@
                 </el-table>
             </div>
 
-            <div v-if="currentTab === 'query'" class="pagination-container">
+            <div v-if="currentTab !== 'current'" class="pagination-container">
                 <el-pagination
-                    v-model:current-page="currentPage"
-                    @current-change="handleQuery"
+                    v-model:current-page="activePage"
+                    @current-change="queryActiveTab"
                     :page-size="pageSize"
-                    :total="realTimeData.AGVC_RealTimeDashboard_Query_Tasks.total"
-                    layout="slot, prev, pager, next" 
+                    :total="activeResult.total"
+                    layout="slot, prev, pager, next"
                     background
                     size="small"
                 >
                     <span class="el-pagination__total">
-                        總筆數: {{ realTimeData.AGVC_RealTimeDashboard_Query_Tasks.total }}
+                        總筆數: {{ activeResult.total }}
                     </span>
                 </el-pagination>
             </div>
@@ -139,9 +146,16 @@
                         <el-button @click="showFilterDialog = true" size="small" icon="Filter" :class="{ 'filter-active': isFiltered }">其他條件</el-button>
                         <div class="divider"></div>
                         <div class="action-group">
-                            <el-button @click="handleQuery" icon="Search" size="small">查詢</el-button>
+                            <el-button @click="searchFirstPage" icon="Search" size="small">查詢</el-button>
                             <el-button @click="handleExport" icon="Download" size="small">匯出</el-button>
                         </div>
+                    </div>
+                </div>
+                <div v-else-if="currentTab === 'completed'" class="query-section">
+                    <div class="query-bar">
+                        <span class="label">最近 24 小時</span>
+                        <div class="divider"></div>
+                        <el-button @click="showFilterDialog = true" size="small" icon="Filter" :class="{ 'filter-active': isFiltered }">篩選</el-button>
                     </div>
                 </div>
                 <div class="table-container">
@@ -162,17 +176,17 @@
                         </el-table-column>
                     </el-table>
                 </div>
-                <div v-if="currentTab === 'query'" class="pagination-container">
+                <div v-if="currentTab !== 'current'" class="pagination-container">
                     <el-pagination
-                        v-model:current-page="currentPage"
-                        @current-change="handleQuery"
+                        v-model:current-page="activePage"
+                        @current-change="queryActiveTab"
                         :page-size="pageSize"
-                        :total="realTimeData.AGVC_RealTimeDashboard_Query_Tasks.total"
+                        :total="activeResult.total"
                         layout="slot, prev, pager, next"
                         background
                         size="small"
                     >
-                        <span class="el-pagination__total">總筆數: {{ realTimeData.AGVC_RealTimeDashboard_Query_Tasks.total }}</span>
+                        <span class="el-pagination__total">總筆數: {{ activeResult.total }}</span>
                     </el-pagination>
                 </div>
             </div>
@@ -192,7 +206,7 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item label="任務ID">
-                    <el-input v-model="queryParams.tasks.taskName" placeholder="輸入任務ID" clearable @keyup.enter="handleQuery" />
+                    <el-input v-model="queryParams.tasks.taskName" placeholder="輸入任務ID" clearable @keyup.enter="searchFirstPage" />
                 </el-form-item>
                 <el-form-item label="類型">
                     <el-select v-model="queryParams.tasks.action" placeholder="請選擇" style="width: 100%" clearable>
@@ -207,11 +221,7 @@
                 <el-form-item label="狀態">
                     <el-select v-model="queryParams.tasks.state" placeholder="請選擇" style="width: 100%" clearable>
                         <el-option label="全部" value="all" />
-                        <el-option label="processing" :value="1" />
-                        <el-option label="completed" :value="4" />
-                        <el-option label="waiting" :value="5" />
-                        <el-option label="failed" :value="6" />
-                        <el-option label="canceled" :value="7" />
+                        <el-option v-for="(label, value) in stateMap" :key="value" :label="label" :value="Number(value)" />
                     </el-select>
                 </el-form-item>
                 <el-form-item label="起點">
@@ -232,7 +242,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive } from 'vue'
+import { computed, ref, reactive, watch } from 'vue'
 import { useSessionRef, isOneOf } from '@/composables/useSessionState'
 import { realTimeStore } from '@/stores/realTime'
 import { taskTimeColumnFormatter } from '@/utils/taskTime'
@@ -266,7 +276,7 @@ const resetFilters = () => {
         fromStation: '',
         toStation: ''
     };
-    handleQuery(); // 重置後自動查一次
+    searchFirstPage(); // 重置後自動查一次
     showFilterDialog.value = false;
 };
 
@@ -280,7 +290,7 @@ const filteredTasks = computed(() => {
                 .filter(task => task.IsCompleted === 0)
                 .sort((a, b) => Number(b.State === TASK_STATE_PROCESSING) - Number(a.State === TASK_STATE_PROCESSING));
         case 'completed':
-            return (realTimeData.AGVC_RealTimeDashboard_Tasks || []).filter(task => task.IsCompleted === 1);
+            return realTimeData.AGVC_RealTimeDashboard_History_Tasks.data || [];
         case 'query':
             return realTimeData.AGVC_RealTimeDashboard_Query_Tasks.data || [];
         default:
@@ -303,8 +313,9 @@ const actionMap: Record<number, string> = {
     0: '移動', 1: '取貨', 7: '放貨', 8: '充電', 9: '搬運', 
 }
 
+// 任務狀態（列表的狀態欄與查詢條件的下拉選單共用）
 const stateMap: Record<number, string> = {
-    1: 'processing', 4: 'completed', 5: 'waiting', 6: 'failed', 7: 'canceled', 
+    1: '執行中', 4: '已完成', 5: '待執行', 6: '失敗', 7: '已取消',
 }
 
 const showFilterDialog = ref(false)
@@ -346,10 +357,73 @@ const handleExport = () => {
     })
 }
 
+// 歷史記錄：最近 24 小時已結束（完成／失敗／取消）的任務，由後端分頁；篩選條件與查詢/匯出共用「其他條件」
+const HISTORY_HOURS = 24
+const historyPage = ref(1)
+
+const fetchHistory = () => {
+    emit('realtime-action', {
+        type: 'query',
+        target: 'tasks',
+        scope: 'history',
+        dateRange: [
+            dayjs().subtract(HISTORY_HOURS, 'hour').format('YYYY-MM-DD HH:mm:ss'),
+            dayjs().format('YYYY-MM-DD HH:mm:ss')
+        ],
+        params: {
+            ...queryParams.tasks,
+            completedOnly: true,
+            page: historyPage.value,
+            pageSize: pageSize.value
+        },
+    })
+}
+
+// 歷史記錄與查詢/匯出各有自己的頁碼與結果，分頁元件依目前分頁切換
+const activeResult = computed(() => currentTab.value === 'completed'
+    ? realTimeData.AGVC_RealTimeDashboard_History_Tasks
+    : realTimeData.AGVC_RealTimeDashboard_Query_Tasks)
+const activePage = computed({
+    get: () => currentTab.value === 'completed' ? historyPage.value : currentPage.value,
+    set: (page: number) => {
+        if (currentTab.value === 'completed') historyPage.value = page
+        else currentPage.value = page
+    }
+})
+const queryActiveTab = () => {
+    if (currentTab.value === 'completed') fetchHistory()
+    else handleQuery()
+}
+
+// 按查詢或改了條件時從第一頁開始，避免停在新結果沒有的頁數
+const searchFirstPage = () => {
+    activePage.value = 1
+    queryActiveTab()
+}
+
 const applyFilters = () => {
     showFilterDialog.value = false
-    handleQuery();
+    searchFirstPage();
 }
+
+// 切到歷史記錄時查詢；切換場域時回到第一頁重查；有任務結束（推播的已結束任務有變化）時更新目前這頁
+watch(currentTab, (tab) => {
+    if (tab === 'completed') fetchHistory()
+}, { immediate: true })
+
+watch(() => realTimeData.selectedAgvc, () => {
+    realTimeData.AGVC_RealTimeDashboard_History_Tasks = { data: [], total: 0 }
+    historyPage.value = 1
+    if (currentTab.value === 'completed') fetchHistory()
+})
+
+const finishedTasksKey = computed(() => (realTimeData.AGVC_RealTimeDashboard_Tasks || [])
+    .filter(task => task.IsCompleted === 1)
+    .map(task => `${task.TaskName}:${task.State}`)
+    .join('|'))
+watch(finishedTasksKey, () => {
+    if (currentTab.value === 'completed') fetchHistory()
+})
 </script>
 
 <style scoped>

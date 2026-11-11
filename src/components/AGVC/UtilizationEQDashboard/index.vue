@@ -69,7 +69,7 @@
         <div v-if="dataType === 'EQAlarms'" class="divider"></div>
 
         <div class="action-group">
-          <el-button @click="handleQuery" icon="Search" size="small">查詢</el-button>
+          <el-button @click="searchFirstPage" icon="Search" size="small">查詢</el-button>
           <el-button @click="handleExport" icon="Download" size="small">匯出</el-button>
         </div>
       </div>
@@ -297,9 +297,15 @@ const handleExport = () => {
   })
 }
 
+// 按查詢或改了條件時從第一頁開始，避免停在新結果沒有的頁數
+const searchFirstPage = () => {
+  currentPage.value = 1
+  handleQuery()
+}
+
 const applyFilters = () => {
   showFilterDialog.value = false
-  handleQuery()
+  searchFirstPage()
 }
 
 onMounted(() => {
