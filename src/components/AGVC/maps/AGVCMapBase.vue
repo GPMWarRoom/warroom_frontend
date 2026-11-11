@@ -12,12 +12,16 @@ import { createCustomMap, createLayerWithFeatures, addLayerToMap } from '@/utils
 import type { MapModel } from '@/models/MapModel'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
+import Control from 'ol/control/Control'
+import { showTagOnly, hideVehicles, hideGrid } from './layoutDisplayOptions'
+import { uiStatsStore } from '@/stores/UiStats'
 
 const map = ref<Map | undefined>()
 const vehicleLayer = ref<VectorLayer<VectorSource>>()
 const pointLayer = ref<VectorLayer<VectorSource>>()
 const pathLayer = ref<VectorLayer<VectorSource>>()
 const taskPathLayer = ref<VectorLayer<VectorSource>>()
+const gridLayer = ref<VectorLayer<VectorSource>>()
 const props = defineProps<{
     mapId: string
     mapModel: any
@@ -47,6 +51,10 @@ const TASK_STATION_TEXT: Record<TaskStationState, string> = {
     charging: '充電中',
     waiting: '待執行'
 };
+
+// 黑暗主題的路線顏色
+const uiStats = uiStatsStore();
+const DARK_THEME_PATH_COLOR = '#ffffff';
 
 // AGV 圖示：俯視的小車（車身為狀態色、白框、左右各兩個輪子、中間淺色載台），比點位略大；依顏色快取
 const agvIconCache: Record<string, string> = {};
@@ -160,6 +168,88 @@ const initLayers = () => {
     map.value.addLayer(taskPathLayer.value);
     map.value.addLayer(pointLayer.value);
     map.value.addLayer(vehicleLayer.value);
+
+    if (isBirdView) {
+        gridLayer.value = new VectorLayer({
+            source: new VectorSource(),
+            style: GRID_STYLE,
+            zIndex: 50,
+            maxResolution: GRID_MAX_RESOLUTION,
+            visible: !hideGrid.value
+        });
+        map.value.addLayer(gridLayer.value);
+        vehicleLayer.value.setVisible(!hideVehicles.value);
+        map.value.addControl(createLayoutToggleControl());
+    }
+}
+
+// 即時監控 layout 的虛線網格：每格 1 公尺（地圖座標單位即為公尺），範圍為所有點位外加幾公尺邊界。
+// 縮小到 1 公尺不足 4 px 時自動不畫，避免密成一片
+const GRID_PADDING_M = 3;
+const GRID_MAX_RESOLUTION = 0.25;
+const GRID_MAX_LINES = 2000; // 防呆：座標單位若不是公尺（例如毫米）就不畫，避免產生大量線段
+const GRID_STYLE = new Style({
+    stroke: new Stroke({ color: 'rgba(140, 150, 170, 0.35)', width: 1, lineDash: [4, 4] })
+});
+
+const updateGridLines = (mapData: any) => {
+    const source = gridLayer.value?.getSource();
+    if (!source || !mapData.Points) return;
+    source.clear();
+    const coords = Object.values(mapData.Points).map((p: any) => [p.X ?? p.x ?? 0, p.Y ?? p.y ?? 0]);
+    if (coords.length === 0) return;
+    const [minX, minY, maxX, maxY] = boundingExtent(coords as [number, number][]);
+    const x0 = Math.floor(minX) - GRID_PADDING_M, x1 = Math.ceil(maxX) + GRID_PADDING_M;
+    const y0 = Math.floor(minY) - GRID_PADDING_M, y1 = Math.ceil(maxY) + GRID_PADDING_M;
+    if ((x1 - x0) + (y1 - y0) > GRID_MAX_LINES) return;
+
+    const lines: Feature[] = [];
+    for (let x = x0; x <= x1; x++) lines.push(new Feature({ geometry: new LineString([[x, y0], [x, y1]]) }));
+    for (let y = y0; y <= y1; y++) lines.push(new Feature({ geometry: new LineString([[x0, y], [x1, y]]) }));
+    source.addFeatures(lines);
+};
+
+// 即時監控 layout：+/- 下方的 T（名稱只顯示 Tag ID）、H（隱藏 AGV 與任務站點提示）、G（隱藏網格）切換按鈕，按下時亮起
+const toggleButtons: { button: HTMLButtonElement; state: typeof showTagOnly }[] = [];
+const syncToggleButtons = () => {
+    toggleButtons.forEach(({ button, state }) => button.setAttribute('aria-pressed', String(state.value)));
+};
+const createLayoutToggleControl = () => {
+    const element = document.createElement('div');
+    element.className = 'layout-toggle ol-unselectable ol-control';
+    const addButton = (text: string, title: string, state: typeof showTagOnly) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = text;
+        button.title = title;
+        button.addEventListener('click', () => { state.value = !state.value; });
+        element.appendChild(button);
+        toggleButtons.push({ button, state });
+    };
+    addButton('T', '名稱只顯示 Tag ID', showTagOnly);
+    addButton('H', '隱藏 AGV 與任務站點提示', hideVehicles);
+    addButton('G', '隱藏網格', hideGrid);
+    syncToggleButtons();
+    return new Control({ element });
+};
+
+if (isBirdView) {
+    watch(showTagOnly, () => {
+        syncToggleButtons();
+        const mapData = getMapData();
+        if (mapData) updatePoints(mapData);
+    });
+    watch(hideVehicles, (hidden) => {
+        syncToggleButtons();
+        vehicleLayer.value?.setVisible(!hidden);
+        // 任務站點提示（執行中／待執行）畫在點位層，需重畫
+        const mapData = getMapData();
+        if (mapData) updatePoints(mapData);
+    });
+    watch(hideGrid, (hidden) => {
+        syncToggleButtons();
+        gridLayer.value?.setVisible(!hidden);
+    });
 }
 
 const renderMapAll = () => {
@@ -167,6 +257,7 @@ const renderMapAll = () => {
     const mapData = getMapData();
     
     if (mapData) {
+        if (isBirdView) updateGridLines(mapData);
         updatePathLines(mapData);
         updatePoints(mapData);
         updateVehicleMarkers();
@@ -333,6 +424,7 @@ const clearAllLayers = () => {
     pointLayer.value?.getSource()?.clear();
     vehicleLayer.value?.getSource()?.clear();
     taskPathLayer.value?.getSource()?.clear();
+    gridLayer.value?.getSource()?.clear();
 }
 
 if (isBirdView) {
@@ -399,6 +491,15 @@ watch(
   { deep: true }
 )
 
+// 切換黑暗／明亮主題時重畫路線（路線顏色依主題而不同）
+watch(
+  () => uiStats.theme,
+  () => {
+    const mapData = getMapData();
+    if (mapData) updatePathLines(mapData);
+  }
+)
+
 const updateTaskPath = (path: number[] | null) => {
     if (!taskPathLayer.value) return;
     const source = taskPathLayer.value.getSource();
@@ -458,11 +559,16 @@ const createMapPointFeatures = (mapData: any) => {
         const pX = point.X ?? point.x ?? 0;
         const pY = point.Y ?? point.y ?? 0;
         const stationType = point.StationType ?? point.stationType ?? 0;
-        const displayName = point.Graph?.Display ?? point.Name ?? point.name ?? '';
+        const tagNumber = point.TagNumber ?? point.tagNumber;
+        // 即時監控 layout 按下 T 時名稱只顯示 Tag ID
+        const displayName = isBirdView && showTagOnly.value
+            ? String(tagNumber ?? '')
+            : (point.Graph?.Display ?? point.Name ?? point.name ?? '');
         // 未啟用的點位（Enable = false）畫成紅色叉叉；沒有這個欄位的視為啟用
         const isEnabled = (point.Enable ?? point.enable) !== false;
-        // 任務起訖站點（由即時監控傳入）：執行中藍色、待執行橘黃色
-        const taskStation = taskStations[String(point.TagNumber ?? point.tagNumber ?? '')];
+        const isVirtual = (point.IsVirtualPoint ?? point.isVirtualPoint) === true;
+        // 任務起訖站點（由即時監控傳入）：執行中藍色、待執行橘黃色；按下 H 隱藏 AGV 時一併不標示
+        const taskStation = isBirdView && hideVehicles.value ? undefined : taskStations[String(tagNumber ?? '')];
 
         const feature = new Feature({
             geometry: new Point([pX, pY]),
@@ -511,7 +617,7 @@ const createMapPointFeatures = (mapData: any) => {
             image: isEnabled ? new Circle({
                 radius: 6,
                 fill: new Fill({
-                    color: getPointColor(stationType)
+                    color: getPointColor(stationType, isVirtual)
                 }),
                 stroke: new Stroke({
                     color: '#ffffff',
@@ -550,15 +656,17 @@ const createDisabledPointImage = () => new RegularShape({
     })
 });
 
-// 站點類型顏色對應表
-const getPointColor = (stationType: number) => {
-    switch (stationType) {
-        case 0: return '#42b983'; // 普通點位
-        case 1: return '#409eff'; // 工作站
-        case 2: return '#e6a23c'; // 緩衝站
-        case 3: return '#f56c6c'; // 充電站
-        default: return '#909399';
-    }
+// 站點類型顏色對應表（類型編號依 AGVS MapPoint.STATION_TYPE）；只有虛擬點位是灰色
+const RACK_STATION_TYPES = [2, 6, 12, 22];  // STK、Charge_STK、STK_LD、STK_ULD
+const CHARGE_STATION_TYPES = [3, 5];        // Charge、Charge_Buffer
+const BUFFER_STATION_TYPES = [4, 41];       // Buffer、Buffer_EQ
+const getPointColor = (stationType: number, isVirtual: boolean) => {
+    if (isVirtual) return '#909399';                                    // 虛擬點位
+    if (stationType === 0) return '#42b983';                            // 普通點位
+    if (RACK_STATION_TYPES.includes(stationType)) return '#fadb14';     // Rack
+    if (CHARGE_STATION_TYPES.includes(stationType)) return '#f56c6c';   // 充電站
+    if (BUFFER_STATION_TYPES.includes(stationType)) return '#e6a23c';   // 緩衝站
+    return '#409eff';                                                   // 工作站與其他設備
 };
 
 // 站點文字顏色
@@ -608,8 +716,10 @@ const createMapPathLineFeatures = (mapData: any) => {
         const arrowX = endCoord[0] - normalizedDx * offset;
         const arrowY = endCoord[1] - normalizedDy * offset;
 
-        // 原本的路線底色設定
-        const baseColor = mapData.Options?.pathColor ?? mapData.options?.pathColor ?? '#e5e5e5';
+        // 路線底色：黑暗主題一律白色（避免與深色背景、灰色虛線網格混在一起），明亮主題沿用圖資設定的顏色
+        const baseColor = uiStats.theme === 'dark'
+            ? DARK_THEME_PATH_COLOR
+            : (mapData.Options?.pathColor ?? mapData.options?.pathColor ?? '#e5e5e5');
 
         let overlayStyle = null;
         let arrowOverlayStyle = null;
@@ -662,6 +772,26 @@ const createMapPathLineFeatures = (mapData: any) => {
     position: relative;
     box-sizing: border-box;
     /* 如果背景看不清楚，可以加上這行輔助： */
-    /* background-color: #f5f7fa; */ 
+    /* background-color: #f5f7fa; */
+}
+
+/* T／H 切換按鈕：放在 +/- 正下方（與 OpenLayers 內建 zoom-extent 控制項同一位置），按下時亮起 */
+.map-container :deep(.layout-toggle) {
+    top: 4.643em;
+    left: 0.5em;
+}
+
+.map-container :deep(.ol-touch .layout-toggle) {
+    top: 5.5em;
+}
+
+.map-container :deep(.layout-toggle button) {
+    line-height: 1.375em;
+    cursor: pointer;
+}
+
+.map-container :deep(.layout-toggle button[aria-pressed="true"]) {
+    background-color: var(--accent-fill);
+    color: #fff;
 }
 </style>
